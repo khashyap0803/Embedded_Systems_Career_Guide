@@ -5,19 +5,22 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/bg_gradient_tech_dark"
-    android:fillViewport="true">
+    android:fillViewport="true"
+    android:scrollbars="none"
+    android:overScrollMode="never">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="16dp">
+        android:padding="16dp"
+        android:paddingBottom="32dp">
 
-        <!-- Welcome Card -->
+        <!-- Welcome Section -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/card_welcome"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
+            android:layout_marginBottom="24dp"
             app:cardBackgroundColor="@color/glass_primary"
             app:cardCornerRadius="24dp"
             app:cardElevation="12dp"
@@ -39,6 +42,7 @@
                     android:layout_height="wrap_content"
                     android:textAppearance="@style/TextAppearance.Material3.HeadlineSmall"
                     android:textColor="@color/slate_300"
+                    android:letterSpacing="0.02"
                     tools:text="Good Morning 👋" />
 
                 <TextView
@@ -49,28 +53,49 @@
                     android:textAppearance="@style/TextAppearance.Material3.HeadlineLarge"
                     android:textColor="@color/white"
                     android:textStyle="bold"
+                    android:letterSpacing="0.01"
                     tools:text="Welcome back, Developer!" />
 
                 <TextView
                     android:id="@+id/text_motivational_quote"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
+                    android:layout_marginTop="16dp"
                     android:fontFamily="serif"
                     android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
                     android:textColor="@color/slate_300"
                     android:textStyle="italic"
+                    android:lineSpacingExtra="2dp"
                     android:text="Every expert was once a beginner. Every pro was once an amateur." />
+
+                <!-- Daily Insight (New Feature) -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginBottom="12dp"
+                    android:background="@color/slate_600" />
+
+                <TextView
+                    android:id="@+id/text_daily_insight"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+                    android:textColor="@color/cyan_200"
+                    android:gravity="center"
+                    android:drawablePadding="8dp"
+                    app:drawableStartCompat="@drawable/ic_lightbulb"
+                    tools:text="💡 Tip: Practice coding for 30 minutes daily to build consistency" />
 
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Progress Dashboard Card -->
+        <!-- Progress Dashboard Section -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/card_progress"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
+            android:layout_marginBottom="24dp"
             app:cardBackgroundColor="@color/glass_primary"
             app:cardCornerRadius="20dp"
             app:cardElevation="8dp"
@@ -86,121 +111,161 @@
                 android:orientation="vertical"
                 android:padding="20dp">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    android:text="📊 Your Progress"
-                    android:textAppearance="@style/TextAppearance.Material3.TitleLarge"
-                    android:textColor="@color/white"
-                    android:textStyle="bold" />
-
-                <!-- Progress Stats Row -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:weightSum="3">
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="16dp">
 
-                    <!-- XP -->
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="📊 Your Progress"
+                        android:textAppearance="@style/TextAppearance.Material3.TitleLarge"
+                        android:textColor="@color/white"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/text_progress_percentage"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
+                        android:textColor="@color/cyan_400"
+                        android:textStyle="bold"
+                        tools:text="35%" />
+
+                </LinearLayout>
+
+                <!-- Progress Stats Grid -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="20dp">
+
+                    <!-- XP Column -->
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
+                        android:orientation="vertical"
                         android:gravity="center"
-                        android:orientation="vertical">
+                        android:background="@drawable/bg_progress_stat_item"
+                        android:padding="16dp">
 
                         <TextView
                             android:id="@+id/text_total_xp"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:textAppearance="@style/TextAppearance.Material3.HeadlineSmall"
-                            android:textColor="@color/xp_gold"
+                            android:textColor="@color/amber_400"
                             android:textStyle="bold"
-                            tools:text="1250 XP" />
+                            tools:text="1,250 XP" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Experience"
-                            android:textAppearance="@style/TextAppearance.Material3.LabelMedium"
-                            android:textColor="@color/slate_300" />
+                            android:layout_marginTop="4dp"
+                            android:text="Total XP"
+                            android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                            android:textColor="@color/slate_400" />
+
                     </LinearLayout>
 
-                    <!-- Level -->
+                    <!-- Streak Column -->
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
+                        android:orientation="vertical"
                         android:gravity="center"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:id="@+id/text_current_level"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textAppearance="@style/TextAppearance.Material3.HeadlineSmall"
-                            android:textColor="@color/indigo_400"
-                            android:textStyle="bold"
-                            tools:text="Level 5" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Current Level"
-                            android:textAppearance="@style/TextAppearance.Material3.LabelMedium"
-                            android:textColor="@color/slate_300" />
-                    </LinearLayout>
-
-                    <!-- Streak -->
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:gravity="center"
-                        android:orientation="vertical">
+                        android:layout_marginStart="8dp"
+                        android:background="@drawable/bg_progress_stat_item"
+                        android:padding="16dp">
 
                         <TextView
                             android:id="@+id/text_current_streak"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:textAppearance="@style/TextAppearance.Material3.HeadlineSmall"
-                            android:textColor="@color/streak_fire"
+                            android:textColor="@color/orange_400"
                             android:textStyle="bold"
                             tools:text="15 Days" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Streak 🔥"
-                            android:textAppearance="@style/TextAppearance.Material3.LabelMedium"
-                            android:textColor="@color/slate_300" />
+                            android:layout_marginTop="4dp"
+                            android:text="Streak"
+                            android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                            android:textColor="@color/slate_400" />
+
                     </LinearLayout>
+
+                    <!-- Level Column -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:layout_marginStart="8dp"
+                        android:background="@drawable/bg_progress_stat_item"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:id="@+id/text_current_level"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textAppearance="@style/TextAppearance.Material3.HeadlineSmall"
+                            android:textColor="@color/purple_400"
+                            android:textStyle="bold"
+                            tools:text="Level 5" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="Current Level"
+                            android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                            android:textColor="@color/slate_400" />
+
+                    </LinearLayout>
+
                 </LinearLayout>
 
-                <!-- Progress Bars -->
+                <!-- Progress Bars Section -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="20dp"
                     android:orientation="vertical">
 
                     <!-- Overall Progress -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="12dp"
-                        android:orientation="horizontal">
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="8dp">
 
                         <TextView
                             android:id="@+id/text_overall_progress"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="35% Complete"
                             android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-                            android:textColor="@color/emerald_400"
-                            android:textStyle="bold" />
+                            android:textColor="@color/slate_300"
+                            tools:text="35% Complete" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Overall"
+                            android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                            android:textColor="@color/slate_400" />
+
                     </LinearLayout>
 
                     <com.google.android.material.progressindicator.LinearProgressIndicator
@@ -208,54 +273,66 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="16dp"
-                        app:indicatorColor="@color/emerald_400"
-                        app:trackColor="@color/slate_600"
-                        app:trackThickness="8dp"
+                        app:indicatorColor="@color/cyan_400"
+                        app:trackColor="@color/slate_700"
+                        app:trackCornerRadius="4dp"
+                        app:indicatorSize="8dp"
                         tools:progress="35" />
 
                     <!-- Stages Progress -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="8dp"
-                        android:orientation="horizontal">
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="8dp">
 
                         <TextView
                             android:id="@+id/text_stages_progress"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="5 / 15 Stages"
                             android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-                            android:textColor="@color/cyan_400"
-                            android:textStyle="bold" />
+                            android:textColor="@color/slate_300"
+                            tools:text="5 / 15 Stages" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Stages"
+                            android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                            android:textColor="@color/slate_400" />
+
                     </LinearLayout>
 
                     <com.google.android.material.progressindicator.LinearProgressIndicator
                         android:id="@+id/progress_stages"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        app:indicatorColor="@color/cyan_400"
-                        app:trackColor="@color/slate_600"
-                        app:trackThickness="8dp"
+                        app:indicatorColor="@color/indigo_400"
+                        app:trackColor="@color/slate_700"
+                        app:trackCornerRadius="4dp"
+                        app:indicatorSize="8dp"
                         tools:progress="33" />
+
                 </LinearLayout>
+
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Quick Actions Card -->
+        <!-- Quick Actions Section -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/card_quick_actions"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
+            android:layout_marginBottom="24dp"
             app:cardBackgroundColor="@color/glass_primary"
             app:cardCornerRadius="20dp"
             app:cardElevation="8dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/card_progress"
-            app:strokeColor="@color/purple_400"
+            app:strokeColor="@color/emerald_400"
             app:strokeWidth="1dp">
 
             <LinearLayout
@@ -273,216 +350,335 @@
                     android:textColor="@color/white"
                     android:textStyle="bold" />
 
-                <!-- Action Buttons Grid -->
+                <!-- Actions Grid -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:weightSum="2">
+                    android:orientation="vertical">
 
-                    <!-- Assessment Card -->
-                    <com.google.android.material.card.MaterialCardView
-                        android:id="@+id/card_assessment"
-                        android:layout_width="0dp"
-                        android:layout_height="120dp"
-                        android:layout_marginEnd="8dp"
-                        android:layout_weight="1"
-                        app:cardBackgroundColor="@color/indigo_600"
-                        app:cardCornerRadius="16dp"
-                        app:cardElevation="4dp"
-                        app:strokeColor="@color/indigo_400"
-                        app:strokeWidth="1dp">
+                    <!-- First Row -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="12dp">
 
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:gravity="center"
-                            android:orientation="vertical"
-                            android:padding="16dp">
+                        <!-- Assessment Card -->
+                        <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/card_assessment"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginEnd="8dp"
+                            android:clickable="true"
+                            android:focusable="true"
+                            app:cardBackgroundColor="@color/glass_secondary"
+                            app:cardCornerRadius="16dp"
+                            app:cardElevation="4dp"
+                            app:strokeColor="@color/blue_400"
+                            app:strokeWidth="1dp">
 
-                            <TextView
-                                android:layout_width="wrap_content"
+                            <LinearLayout
+                                android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:text="📝"
-                                android:textSize="32sp" />
+                                android:orientation="vertical"
+                                android:padding="16dp"
+                                android:gravity="center">
 
-                            <TextView
-                                android:layout_width="wrap_content"
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="📝"
+                                    android:textSize="28sp"
+                                    android:layout_marginBottom="8dp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Assessment"
+                                    android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+                                    android:textColor="@color/white"
+                                    android:textStyle="bold"
+                                    android:gravity="center" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="4dp"
+                                    android:text="Test your skills"
+                                    android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                                    android:textColor="@color/slate_400"
+                                    android:gravity="center" />
+
+                            </LinearLayout>
+                        </com.google.android.material.card.MaterialCardView>
+
+                        <!-- Learning Path Card -->
+                        <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/card_learning_path"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginStart="8dp"
+                            android:clickable="true"
+                            android:focusable="true"
+                            app:cardBackgroundColor="@color/glass_secondary"
+                            app:cardCornerRadius="16dp"
+                            app:cardElevation="4dp"
+                            app:strokeColor="@color/emerald_400"
+                            app:strokeWidth="1dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:layout_marginTop="8dp"
-                                android:text="Assessment"
-                                android:textAppearance="@style/TextAppearance.Material3.LabelLarge"
-                                android:textColor="@color/white"
-                                android:textStyle="bold" />
+                                android:orientation="vertical"
+                                android:padding="16dp"
+                                android:gravity="center">
 
-                            <TextView
-                                android:layout_width="wrap_content"
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="🎯"
+                                    android:textSize="28sp"
+                                    android:layout_marginBottom="8dp" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Learning Path"
+                                    android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+                                    android:textColor="@color/white"
+                                    android:textStyle="bold"
+                                    android:gravity="center" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="4dp"
+                                    android:text="Continue learning"
+                                    android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                                    android:textColor="@color/slate_400"
+                                    android:gravity="center" />
+
+                            </LinearLayout>
+                        </com.google.android.material.card.MaterialCardView>
+
+                    </LinearLayout>
+
+                    <!-- Second Row -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <!-- Practice Mode Card -->
+                        <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/card_practice"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginEnd="8dp"
+                            android:clickable="true"
+                            android:focusable="true"
+                            app:cardBackgroundColor="@color/glass_secondary"
+                            app:cardCornerRadius="16dp"
+                            app:cardElevation="4dp"
+                            app:strokeColor="@color/amber_400"
+                            app:strokeWidth="1dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:layout_marginTop="2dp"
-                                android:text="Test Skills"
-                                android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
-                                android:textColor="@color/slate_200" />
-                        </LinearLayout>
-                    </com.google.android.material.card.MaterialCardView>
+                                android:orientation="vertical"
+                                android:padding="16dp"
+                                android:gravity="center">
 
-                    <!-- Learning Path Card -->
-                    <com.google.android.material.card.MaterialCardView
-                        android:id="@+id/card_learning_path"
-                        android:layout_width="0dp"
-                        android:layout_height="120dp"
-                        android:layout_marginStart="8dp"
-                        android:layout_weight="1"
-                        app:cardBackgroundColor="@color/emerald_600"
-                        app:cardCornerRadius="16dp"
-                        app:cardElevation="4dp"
-                        app:strokeColor="@color/emerald_400"
-                        app:strokeWidth="1dp">
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="⚡"
+                                    android:textSize="28sp"
+                                    android:layout_marginBottom="8dp" />
 
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:gravity="center"
-                            android:orientation="vertical"
-                            android:padding="16dp">
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Practice"
+                                    android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+                                    android:textColor="@color/white"
+                                    android:textStyle="bold"
+                                    android:gravity="center" />
 
-                            <TextView
-                                android:layout_width="wrap_content"
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="4dp"
+                                    android:text="Quick practice"
+                                    android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                                    android:textColor="@color/slate_400"
+                                    android:gravity="center" />
+
+                            </LinearLayout>
+                        </com.google.android.material.card.MaterialCardView>
+
+                        <!-- Profile Card -->
+                        <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/card_profile"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginStart="8dp"
+                            android:clickable="true"
+                            android:focusable="true"
+                            app:cardBackgroundColor="@color/glass_secondary"
+                            app:cardCornerRadius="16dp"
+                            app:cardElevation="4dp"
+                            app:strokeColor="@color/purple_400"
+                            app:strokeWidth="1dp">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:text="🎯"
-                                android:textSize="32sp" />
+                                android:orientation="vertical"
+                                android:padding="16dp"
+                                android:gravity="center">
 
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="8dp"
-                                android:text="Learning"
-                                android:textAppearance="@style/TextAppearance.Material3.LabelLarge"
-                                android:textColor="@color/white"
-                                android:textStyle="bold" />
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="👤"
+                                    android:textSize="28sp"
+                                    android:layout_marginBottom="8dp" />
 
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="2dp"
-                                android:text="Continue Journey"
-                                android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
-                                android:textColor="@color/slate_200" />
-                        </LinearLayout>
-                    </com.google.android.material.card.MaterialCardView>
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Profile"
+                                    android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+                                    android:textColor="@color/white"
+                                    android:textStyle="bold"
+                                    android:gravity="center" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="4dp"
+                                    android:text="View progress"
+                                    android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                                    android:textColor="@color/slate_400"
+                                    android:gravity="center" />
+
+                            </LinearLayout>
+                        </com.google.android.material.card.MaterialCardView>
+
+                    </LinearLayout>
+
                 </LinearLayout>
 
-                <!-- Second Row -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    android:orientation="horizontal"
-                    android:weightSum="2">
-
-                    <!-- Introduction Card -->
-                    <com.google.android.material.card.MaterialCardView
-                        android:id="@+id/card_introduction"
-                        android:layout_width="0dp"
-                        android:layout_height="120dp"
-                        android:layout_marginEnd="8dp"
-                        android:layout_weight="1"
-                        app:cardBackgroundColor="@color/cyan_600"
-                        app:cardCornerRadius="16dp"
-                        app:cardElevation="4dp"
-                        app:strokeColor="@color/cyan_400"
-                        app:strokeWidth="1dp">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:gravity="center"
-                            android:orientation="vertical"
-                            android:padding="16dp">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="ℹ️"
-                                android:textSize="32sp" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="8dp"
-                                android:text="Introduction"
-                                android:textAppearance="@style/TextAppearance.Material3.LabelLarge"
-                                android:textColor="@color/white"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="2dp"
-                                android:text="Get Started"
-                                android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
-                                android:textColor="@color/slate_200" />
-                        </LinearLayout>
-                    </com.google.android.material.card.MaterialCardView>
-
-                    <!-- Profile Card -->
-                    <com.google.android.material.card.MaterialCardView
-                        android:id="@+id/card_profile"
-                        android:layout_width="0dp"
-                        android:layout_height="120dp"
-                        android:layout_marginStart="8dp"
-                        android:layout_weight="1"
-                        app:cardBackgroundColor="@color/purple_600"
-                        app:cardCornerRadius="16dp"
-                        app:cardElevation="4dp"
-                        app:strokeColor="@color/purple_400"
-                        app:strokeWidth="1dp">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:gravity="center"
-                            android:orientation="vertical"
-                            android:padding="16dp">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="👤"
-                                android:textSize="32sp" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="8dp"
-                                android:text="Profile"
-                                android:textAppearance="@style/TextAppearance.Material3.LabelLarge"
-                                android:textColor="@color/white"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="2dp"
-                                android:text="View Progress"
-                                android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
-                                android:textColor="@color/slate_200" />
-                        </LinearLayout>
-                    </com.google.android.material.card.MaterialCardView>
-                </LinearLayout>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Recent Achievements Card -->
+        <!-- Recent Achievements Section -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/card_achievements"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
             app:cardBackgroundColor="@color/glass_primary"
             app:cardCornerRadius="20dp"
             app:cardElevation="8dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/card_quick_actions"
+            app:strokeColor="@color/amber_400"
+            app:strokeWidth="1dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="16dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="🏆 Recent Achievements"
+                        android:textAppearance="@style/TextAppearance.Material3.TitleLarge"
+                        android:textColor="@color/white"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/text_view_all_achievements"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="View All"
+                        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+                        android:textColor="@color/amber_400"
+                        android:textStyle="bold"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:padding="8dp" />
+
+                </LinearLayout>
+
+                <!-- Achievement Items -->
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recycler_achievements"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:nestedScrollingEnabled="false"
+                    tools:listitem="@layout/item_achievement" />
+
+                <!-- Empty State -->
+                <LinearLayout
+                    android:id="@+id/layout_empty_achievements"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:padding="24dp"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="🎯"
+                        android:textSize="48sp"
+                        android:layout_marginBottom="12dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Start learning to unlock achievements!"
+                        android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
+                        android:textColor="@color/slate_400"
+                        android:gravity="center" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Study Streak Section (New) -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/card_study_streak"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="32dp"
+            app:cardBackgroundColor="@color/glass_primary"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="8dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/card_achievements"
             app:strokeColor="@color/orange_400"
             app:strokeWidth="1dp">
 
@@ -496,22 +692,153 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="16dp"
-                    android:text="🏆 Recent Achievements"
+                    android:text="🔥 Study Streak"
                     android:textAppearance="@style/TextAppearance.Material3.TitleLarge"
                     android:textColor="@color/white"
                     android:textStyle="bold" />
 
-                <TextView
-                    android:id="@+id/text_recent_achievements"
+                <!-- Streak Calendar -->
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:lineSpacingMultiplier="1.4"
+                    android:orientation="horizontal"
+                    android:gravity="center"
+                    android:layout_marginBottom="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="M"
+                        android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                        android:textColor="@color/slate_400"
+                        android:gravity="center"
+                        android:layout_weight="1" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="T"
+                        android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                        android:textColor="@color/slate_400"
+                        android:gravity="center"
+                        android:layout_weight="1" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="W"
+                        android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                        android:textColor="@color/slate_400"
+                        android:gravity="center"
+                        android:layout_weight="1" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="T"
+                        android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                        android:textColor="@color/slate_400"
+                        android:gravity="center"
+                        android:layout_weight="1" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="F"
+                        android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                        android:textColor="@color/slate_400"
+                        android:gravity="center"
+                        android:layout_weight="1" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="S"
+                        android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                        android:textColor="@color/slate_400"
+                        android:gravity="center"
+                        android:layout_weight="1" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="S"
+                        android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                        android:textColor="@color/slate_400"
+                        android:gravity="center"
+                        android:layout_weight="1" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center"
+                    android:layout_marginBottom="16dp">
+
+                    <View
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_weight="1"
+                        android:layout_margin="4dp"
+                        android:background="@drawable/bg_streak_day_active" />
+
+                    <View
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_weight="1"
+                        android:layout_margin="4dp"
+                        android:background="@drawable/bg_streak_day_active" />
+
+                    <View
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_weight="1"
+                        android:layout_margin="4dp"
+                        android:background="@drawable/bg_streak_day_active" />
+
+                    <View
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_weight="1"
+                        android:layout_margin="4dp"
+                        android:background="@drawable/bg_streak_day_current" />
+
+                    <View
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_weight="1"
+                        android:layout_margin="4dp"
+                        android:background="@drawable/bg_streak_day_inactive" />
+
+                    <View
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_weight="1"
+                        android:layout_margin="4dp"
+                        android:background="@drawable/bg_streak_day_inactive" />
+
+                    <View
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_weight="1"
+                        android:layout_margin="4dp"
+                        android:background="@drawable/bg_streak_day_inactive" />
+
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/text_streak_message"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Great job! Keep your streak alive by studying today 🎯"
                     android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-                    android:textColor="@color/slate_200"
-                    android:text="🎯 Completed Fundamentals Stage\n💡 Earned 500 XP this week\n🔥 Maintained 15-day streak\n⭐ Perfect score on C Programming quiz" />
+                    android:textColor="@color/slate_300"
+                    android:gravity="center" />
+
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
-
 </ScrollView>

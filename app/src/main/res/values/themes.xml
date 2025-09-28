@@ -76,16 +76,27 @@
     <!-- Custom TextInputLayout Style -->
     <style name="Widget.App.TextInputLayout" parent="Widget.Material3.TextInputLayout.OutlinedBox">
         <item name="boxStrokeColor">@color/indigo_400</item>
-        <item name="boxBackgroundColor">@color/input_background</item>
-        <item name="hintTextColor">@color/text_secondary</item>
-        <item name="android:textColorHint">@color/text_secondary</item>
+        <item name="boxStrokeWidth">2dp</item>
+        <item name="boxStrokeWidthFocused">3dp</item>
+        <item name="boxCornerRadiusTopStart">16dp</item>
+        <item name="boxCornerRadiusTopEnd">16dp</item>
+        <item name="boxCornerRadiusBottomStart">16dp</item>
+        <item name="boxCornerRadiusBottomEnd">16dp</item>
+        <item name="hintTextColor">@color/slate_300</item>
+        <item name="android:textColorHint">@color/slate_400</item>
+        <item name="helperTextTextColor">@color/slate_400</item>
+        <item name="errorTextColor">@color/red_400</item>
+        <item name="endIconTint">@color/slate_400</item>
+        <item name="startIconTint">@color/indigo_400</item>
     </style>
 
     <!-- Custom CardView Style -->
-    <style name="Widget.App.CardView" parent="Widget.MaterialComponents.CardView">
+    <style name="Widget.App.CardView" parent="Widget.Material3.CardView.Elevated">
         <item name="cardBackgroundColor">@color/card_background</item>
         <item name="cardCornerRadius">16dp</item>
-        <item name="cardElevation">12dp</item>
+        <item name="cardElevation">8dp</item>
+        <item name="strokeColor">@color/card_border</item>
+        <item name="strokeWidth">1dp</item>
         <item name="rippleColor">@color/ripple_color</item>
     </style>
 
@@ -102,4 +113,3 @@
     </style>
 
 </resources>
-
