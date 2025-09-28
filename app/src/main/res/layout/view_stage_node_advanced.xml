@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="120dp"
+    android:layout_height="140dp"
+    app:cardBackgroundColor="@color/stage_available"
+    app:cardCornerRadius="20dp"
+    app:cardElevation="12dp"
+    app:strokeColor="@color/cyan_400"
+    app:strokeWidth="2dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="12dp">
+
+        <!-- Stage Icon -->
+        <ImageView
+            android:id="@+id/imageView_stage_icon"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginTop="8dp"
+            android:contentDescription="Stage Icon"
+            android:scaleType="centerInside"
+            android:src="@drawable/ic_foundations"
+            android:tint="@color/white"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <!-- Progress Indicator (for in-progress stages) -->
+        <com.google.android.material.progressindicator.CircularProgressIndicator
+            android:id="@+id/progress_stage"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:visibility="gone"
+            app:indicatorColor="@color/cyan_400"
+            app:indicatorSize="50dp"
+            app:layout_constraintBottom_toBottomOf="@id/imageView_stage_icon"
+            app:layout_constraintEnd_toEndOf="@id/imageView_stage_icon"
+            app:layout_constraintStart_toStartOf="@id/imageView_stage_icon"
+            app:layout_constraintTop_toTopOf="@id/imageView_stage_icon"
+            app:trackColor="@color/slate_600"
+            app:trackThickness="4dp"
+            tools:progress="75" />
+
+        <!-- Stage Title -->
+        <TextView
+            android:id="@+id/text_stage_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:maxLines="1"
+            android:text="Fundamentals"
+            android:textAppearance="@style/TextAppearance.Material3.LabelLarge"
+            android:textColor="@color/white"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/imageView_stage_icon" />
+
+        <!-- Stage Subtitle -->
+        <TextView
+            android:id="@+id/text_stage_subtitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:gravity="center"
+            android:maxLines="2"
+            android:text="Basic Electronics"
+            android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
+            android:textColor="@color/slate_200"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/text_stage_title" />
+
+        <!-- Stars Container (for completed stages) -->
+        <LinearLayout
+            android:id="@+id/stars_container"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="4dp"
+            android:orientation="horizontal"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            tools:visibility="visible">
+
+            <ImageView
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:layout_marginEnd="2dp"
+                android:src="@drawable/ic_star"
+                android:tint="@color/xp_gold" />
+
+            <ImageView
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:layout_marginEnd="2dp"
+                android:src="@drawable/ic_star"
+                android:tint="@color/xp_gold" />
+
+            <ImageView
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:src="@drawable/ic_star"
+                android:tint="@color/slate_400" />
+
+        </LinearLayout>
+
+        <!-- XP Reward Badge -->
+        <TextView
+            android:id="@+id/text_xp_reward"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_rounded_badge"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="2dp"
+            android:text="+100 XP"
+            android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
+            android:textColor="@color/slate_900"
+            android:textStyle="bold"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:visibility="visible" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</com.google.android.material.card.MaterialCardView>

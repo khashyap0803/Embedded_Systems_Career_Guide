@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+
+    <!-- Globe base circle -->
+    <path
+        android:pathData="M100,30 A70,70 0 1,1 100,170 A70,70 0 1,1 100,30 Z"
+        android:fillColor="#1E293B"
+        android:strokeColor="#6366F1"
+        android:strokeWidth="3"/>
+
+    <!-- Inner circle -->
+    <path
+        android:pathData="M100,40 A60,60 0 1,1 100,160 A60,60 0 1,1 100,40 Z"
+        android:fillColor="#334155"/>
+
+    <!-- Tech circuit pattern -->
+    <path
+        android:pathData="M70,80 L130,80 M70,100 L130,100 M70,120 L130,120"
+        android:strokeColor="#4F46E5"
+        android:strokeWidth="2"/>
+
+    <path
+        android:pathData="M85,65 L85,135 M100,65 L100,135 M115,65 L115,135"
+        android:strokeColor="#4F46E5"
+        android:strokeWidth="2"/>
+
+    <!-- Electronic dots -->
+    <path
+        android:pathData="M85,80 A3,3 0 1,1 91,80 A3,3 0 1,1 85,80"
+        android:fillColor="#818CF8"/>
+
+    <path
+        android:pathData="M115,100 A3,3 0 1,1 121,100 A3,3 0 1,1 115,100"
+        android:fillColor="#818CF8"/>
+
+    <path
+        android:pathData="M97,120 A3,3 0 1,1 103,120 A3,3 0 1,1 97,120"
+        android:fillColor="#818CF8"/>
+</vector>

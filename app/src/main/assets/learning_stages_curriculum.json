@@ -1,0 +1,267 @@
+{
+  "curriculum": {
+    "total_stages": 15,
+    "progression_type": "bottom_to_top",
+    "description": "Complete Embedded Systems Career Guide - From Fundamentals to Industry Expert"
+  },
+  "stages": [
+    {
+      "id": 1,
+      "title": "Introduction to Embedded Systems",
+      "subtitle": "Foundation & Basics",
+      "description": "Learn what embedded systems are, their applications, and basic concepts",
+      "icon": "ic_foundations",
+      "color": "#34D399",
+      "xp_reward": 100,
+      "topics": [
+        "What are Embedded Systems?",
+        "Applications in Daily Life",
+        "Hardware vs Software",
+        "System Components Overview"
+      ],
+      "unlock_requirement": "none",
+      "estimated_duration": "2 hours"
+    },
+    {
+      "id": 2,
+      "title": "Digital Electronics Fundamentals",
+      "subtitle": "Logic & Circuits",
+      "description": "Master digital logic, number systems, and basic electronic components",
+      "icon": "ic_circuit",
+      "color": "#818CF8",
+      "xp_reward": 120,
+      "topics": [
+        "Binary & Hexadecimal Systems",
+        "Logic Gates & Boolean Algebra",
+        "Flip-Flops & Counters",
+        "Basic Electronic Components"
+      ],
+      "unlock_requirement": "stage_1_completed",
+      "estimated_duration": "3 hours"
+    },
+    {
+      "id": 3,
+      "title": "Microprocessor Architecture",
+      "subtitle": "CPU Fundamentals",
+      "description": "Understand CPU architecture, instruction sets, and processing concepts",
+      "icon": "ic_cpu",
+      "color": "#F59E0B",
+      "xp_reward": 150,
+      "topics": [
+        "Von Neumann Architecture",
+        "CPU Components (ALU, Registers, Control Unit)",
+        "Instruction Set Architecture",
+        "Memory Hierarchy"
+      ],
+      "unlock_requirement": "stage_2_completed",
+      "estimated_duration": "4 hours"
+    },
+    {
+      "id": 4,
+      "title": "Microcontroller Basics",
+      "subtitle": "MCU Fundamentals",
+      "description": "Learn microcontroller architecture and popular MCU families",
+      "icon": "ic_microcontroller",
+      "color": "#06B6D4",
+      "xp_reward": 180,
+      "topics": [
+        "MCU vs MPU Differences",
+        "ARM Cortex Architecture",
+        "Popular MCU Families (STM32, Arduino, PIC)",
+        "Memory Organization"
+      ],
+      "unlock_requirement": "stage_3_completed",
+      "estimated_duration": "4 hours"
+    },
+    {
+      "id": 5,
+      "title": "C Programming for Embedded",
+      "subtitle": "Programming Fundamentals",
+      "description": "Master C programming specifically for embedded systems development",
+      "icon": "ic_code",
+      "color": "#A855F7",
+      "xp_reward": 200,
+      "topics": [
+        "C Language Basics",
+        "Pointers & Memory Management",
+        "Bit Manipulation",
+        "Embedded C Specifics (volatile, const)"
+      ],
+      "unlock_requirement": "stage_4_completed",
+      "estimated_duration": "5 hours"
+    },
+    {
+      "id": 6,
+      "title": "GPIO and Basic I/O",
+      "subtitle": "Input/Output Control",
+      "description": "Learn to control LEDs, buttons, and basic input/output operations",
+      "icon": "ic_sensors",
+      "color": "#EF4444",
+      "xp_reward": 150,
+      "topics": [
+        "GPIO Configuration",
+        "Digital Input/Output",
+        "Pull-up/Pull-down Resistors",
+        "LED Control & Button Reading"
+      ],
+      "unlock_requirement": "stage_5_completed",
+      "estimated_duration": "3 hours"
+    },
+    {
+      "id": 7,
+      "title": "Timers and PWM",
+      "subtitle": "Time-based Control",
+      "description": "Master timing operations, PWM generation, and time-critical applications",
+      "icon": "ic_clock",
+      "color": "#FB923C",
+      "xp_reward": 180,
+      "topics": [
+        "Timer/Counter Basics",
+        "PWM Generation",
+        "Servo Motor Control",
+        "Timing Calculations"
+      ],
+      "unlock_requirement": "stage_6_completed",
+      "estimated_duration": "4 hours"
+    },
+    {
+      "id": 8,
+      "title": "ADC and Analog Interfaces",
+      "subtitle": "Analog Signal Processing",
+      "description": "Work with analog sensors and digital conversion techniques",
+      "icon": "ic_sensors",
+      "color": "#10B981",
+      "xp_reward": 200,
+      "topics": [
+        "ADC Principles & Resolution",
+        "Sensor Interfacing",
+        "Signal Conditioning",
+        "Temperature & Light Sensors"
+      ],
+      "unlock_requirement": "stage_7_completed",
+      "estimated_duration": "4 hours"
+    },
+    {
+      "id": 9,
+      "title": "Communication Protocols",
+      "subtitle": "Serial Communication",
+      "description": "Master UART, SPI, I2C, and other communication protocols",
+      "icon": "ic_network",
+      "color": "#818CF8",
+      "xp_reward": 220,
+      "topics": [
+        "UART Communication",
+        "SPI Protocol",
+        "I2C Bus System",
+        "Protocol Selection Guidelines"
+      ],
+      "unlock_requirement": "stage_8_completed",
+      "estimated_duration": "5 hours"
+    },
+    {
+      "id": 10,
+      "title": "Interrupts and Events",
+      "subtitle": "Event-Driven Programming",
+      "description": "Understand interrupt handling and event-driven system design",
+      "icon": "ic_circuit_board",
+      "color": "#D97706",
+      "xp_reward": 250,
+      "topics": [
+        "Interrupt Concepts",
+        "Interrupt Service Routines",
+        "Priority Systems",
+        "Event-Driven Design Patterns"
+      ],
+      "unlock_requirement": "stage_9_completed",
+      "estimated_duration": "5 hours"
+    },
+    {
+      "id": 11,
+      "title": "Memory Management",
+      "subtitle": "Storage & Optimization",
+      "description": "Learn memory types, management techniques, and optimization strategies",
+      "icon": "ic_memory",
+      "color": "#7C2D12",
+      "xp_reward": 200,
+      "topics": [
+        "Memory Types (Flash, RAM, EEPROM)",
+        "Memory Mapping",
+        "Stack vs Heap",
+        "Memory Optimization Techniques"
+      ],
+      "unlock_requirement": "stage_10_completed",
+      "estimated_duration": "4 hours"
+    },
+    {
+      "id": 12,
+      "title": "Real-Time Operating Systems",
+      "subtitle": "RTOS Fundamentals",
+      "description": "Introduction to RTOS concepts, task scheduling, and multitasking",
+      "icon": "ic_rtos",
+      "color": "#059669",
+      "xp_reward": 300,
+      "topics": [
+        "RTOS vs Bare Metal",
+        "Task Creation & Scheduling",
+        "Semaphores & Mutexes",
+        "Popular RTOS (FreeRTOS, Zephyr)"
+      ],
+      "unlock_requirement": "stage_11_completed",
+      "estimated_duration": "6 hours"
+    },
+    {
+      "id": 13,
+      "title": "Wireless Communication",
+      "subtitle": "IoT Connectivity",
+      "description": "Explore wireless protocols for IoT and connected devices",
+      "icon": "ic_iot",
+      "color": "#22D3EE",
+      "xp_reward": 250,
+      "topics": [
+        "Wi-Fi Integration",
+        "Bluetooth/BLE",
+        "LoRa & LoRaWAN",
+        "Cellular Communication (GSM/LTE)"
+      ],
+      "unlock_requirement": "stage_12_completed",
+      "estimated_duration": "5 hours"
+    },
+    {
+      "id": 14,
+      "title": "Advanced Projects",
+      "subtitle": "System Integration",
+      "description": "Build complex projects integrating multiple concepts and technologies",
+      "icon": "ic_project",
+      "color": "#C084FC",
+      "xp_reward": 400,
+      "topics": [
+        "IoT Weather Station",
+        "Home Automation System",
+        "Industrial Monitoring",
+        "Automotive Applications"
+      ],
+      "unlock_requirement": "stage_13_completed",
+      "estimated_duration": "8 hours"
+    },
+    {
+      "id": 15,
+      "title": "Industry Readiness",
+      "subtitle": "Professional Skills",
+      "description": "Develop professional embedded systems engineering skills and career preparation",
+      "icon": "ic_industry_ready",
+      "color": "#F97316",
+      "xp_reward": 500,
+      "topics": [
+        "Code Review & Best Practices",
+        "Testing & Debugging Techniques",
+        "Version Control & Documentation",
+        "Career Preparation & Interview Skills"
+      ],
+      "unlock_requirement": "stage_14_completed",
+      "estimated_duration": "6 hours"
+    }
+  ],
+  "total_xp": 3200,
+  "estimated_completion": "65 hours"
+}
+

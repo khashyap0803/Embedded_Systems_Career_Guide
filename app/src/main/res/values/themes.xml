@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Base Dark Theme -->
+    <style name="Theme.EmbeddedSystemsCareerGuide" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Primary colors -->
+        <item name="colorPrimary">@color/indigo_600</item>
+        <item name="colorPrimaryVariant">@color/indigo_500</item>
+        <item name="colorOnPrimary">@color/slate_100</item>
+
+        <!-- Secondary colors -->
+        <item name="colorSecondary">@color/cyan_500</item>
+        <item name="colorSecondaryVariant">@color/cyan_400</item>
+        <item name="colorOnSecondary">@color/slate_900</item>
+
+        <!-- Background colors -->
+        <item name="android:colorBackground">@color/slate_900</item>
+        <item name="colorSurface">@color/slate_800</item>
+        <item name="colorOnBackground">@color/slate_100</item>
+        <item name="colorOnSurface">@color/slate_100</item>
+
+        <!-- Status bar and navigation -->
+        <item name="android:statusBarColor">@color/slate_900</item>
+        <item name="android:navigationBarColor">@color/slate_900</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+
+        <!-- Text colors -->
+        <item name="android:textColorPrimary">@color/text_primary</item>
+        <item name="android:textColorSecondary">@color/text_secondary</item>
+
+        <!-- Material Components -->
+        <item name="materialButtonStyle">@style/Widget.App.Button</item>
+        <item name="textInputStyle">@style/Widget.App.TextInputLayout</item>
+        <item name="materialCardViewStyle">@style/Widget.App.CardView</item>
+    </style>
+
+    <!-- Light Theme Variant -->
+    <style name="Theme.EmbeddedSystemsCareerGuide.Light" parent="Theme.Material3.Light.NoActionBar">
+        <!-- Primary colors -->
+        <item name="colorPrimary">@color/indigo_600</item>
+        <item name="colorPrimaryVariant">@color/indigo_500</item>
+        <item name="colorOnPrimary">@color/slate_100</item>
+
+        <!-- Secondary colors -->
+        <item name="colorSecondary">@color/cyan_600</item>
+        <item name="colorSecondaryVariant">@color/cyan_500</item>
+        <item name="colorOnSecondary">@color/slate_100</item>
+
+        <!-- Background colors -->
+        <item name="android:colorBackground">@color/light_background</item>
+        <item name="colorSurface">@color/light_surface</item>
+        <item name="colorOnBackground">@color/light_text_primary</item>
+        <item name="colorOnSurface">@color/light_text_primary</item>
+
+        <!-- Status bar and navigation -->
+        <item name="android:statusBarColor">@color/slate_50</item>
+        <item name="android:navigationBarColor">@color/slate_50</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+
+        <!-- Text colors -->
+        <item name="android:textColorPrimary">@color/light_text_primary</item>
+        <item name="android:textColorSecondary">@color/light_text_secondary</item>
+    </style>
+
+    <!-- Custom Button Style -->
+    <style name="Widget.App.Button" parent="Widget.Material3.Button">
+        <item name="backgroundTint">@color/indigo_600</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="cornerRadius">12dp</item>
+        <item name="android:elevation">8dp</item>
+        <item name="rippleColor">@color/ripple_color</item>
+    </style>
+
+    <!-- Custom TextInputLayout Style -->
+    <style name="Widget.App.TextInputLayout" parent="Widget.Material3.TextInputLayout.OutlinedBox">
+        <item name="boxStrokeColor">@color/indigo_400</item>
+        <item name="boxBackgroundColor">@color/input_background</item>
+        <item name="hintTextColor">@color/text_secondary</item>
+        <item name="android:textColorHint">@color/text_secondary</item>
+    </style>
+
+    <!-- Custom CardView Style -->
+    <style name="Widget.App.CardView" parent="Widget.MaterialComponents.CardView">
+        <item name="cardBackgroundColor">@color/card_background</item>
+        <item name="cardCornerRadius">16dp</item>
+        <item name="cardElevation">12dp</item>
+        <item name="rippleColor">@color/ripple_color</item>
+    </style>
+
+    <!-- Assessment Specific Styles -->
+    <style name="Theme.Assessment" parent="Theme.EmbeddedSystemsCareerGuide">
+        <item name="android:windowBackground">@color/slate_900</item>
+        <item name="android:windowContentOverlay">@null</item>
+    </style>
+
+    <!-- Learning Path Specific Styles -->
+    <style name="Theme.LearningPath" parent="Theme.EmbeddedSystemsCareerGuide">
+        <item name="android:windowBackground">@color/slate_900</item>
+        <item name="android:windowContentOverlay">@null</item>
+    </style>
+
+</resources>
+

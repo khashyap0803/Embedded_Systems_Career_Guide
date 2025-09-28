@@ -1,0 +1,202 @@
+[
+  {
+    "id": 1,
+    "question": "What is an embedded system? Explain its key characteristics compared to a general-purpose computer."
+  },
+  {
+    "id": 2,
+    "question": "Differentiate between a Microcontroller (MCU) and a Microprocessor (MPU). When would you choose one over the other for a new product?"
+  },
+  {
+    "id": 3,
+    "question": "Explain the purpose of the `volatile` keyword in C. Provide a real-world example where its omission would lead to a bug."
+  },
+  {
+    "id": 4,
+    "question": "How do you perform bitwise operations (set, clear, toggle a specific bit) on a hardware register in C? Provide a code snippet."
+  },
+  {
+    "id": 5,
+    "question": "Describe the memory layout of a typical C program (e.g., stack, heap, .data, .bss, .text). Why is understanding this crucial for embedded systems?"
+  },
+  {
+    "id": 6,
+    "question": "What is endianness? Imagine you are receiving a 32-bit integer over a serial port, byte by byte. How would you reconstruct it on a little-endian machine if the data was sent as big-endian?"
+  },
+  {
+    "id": 7,
+    "question": "Explain the difference between polling and interrupt-driven I/O. Describe a scenario where interrupts are a significantly better choice."
+  },
+  {
+    "id": 8,
+    "question": "What is a bootloader and what is its primary role in an embedded system's startup sequence?"
+  },
+  {
+    "id": 9,
+    "question": "What is a function pointer in C? Give a practical embedded example, like implementing a simple state machine."
+  },
+  {
+    "id": 10,
+    "question": "Explain struct padding. How can it lead to unexpected memory usage, and how can you control it?"
+  },
+  {
+    "id": 11,
+    "question": "Compare and contrast using `#define` macros versus `inline` functions. What are the trade-offs?"
+  },
+  {
+    "id": 12,
+    "question": "What is a reentrant function? Why is this concept critical when writing an Interrupt Service Routine (ISR)?"
+  },
+  {
+    "id": 13,
+    "question": "Explain the difference between `const char *ptr`, `char * const ptr`, and `const char * const ptr`."
+  },
+  {
+    "id": 14,
+    "question": "What is a linker script and what is its purpose in an embedded C project?"
+  },
+  {
+    "id": 15,
+    "question": "How would you implement a basic fixed-point representation for calculations on a microcontroller that lacks a Floating-Point Unit (FPU)?"
+  },
+  {
+    "id": 16,
+    "question": "Describe the sequence of events that occurs from a hardware peripheral triggering an interrupt to the CPU executing the first line of your Interrupt Service Routine (ISR)."
+  },
+  {
+    "id": 17,
+    "question": "What is a watchdog timer (WDT)? Explain how it helps improve the reliability of a system that might freeze."
+  },
+  {
+    "id": 18,
+    "question": "What is Direct Memory Access (DMA)? Describe how you would use it to transfer ADC samples to a memory buffer without CPU intervention."
+  },
+  {
+    "id": 19,
+    "question": "Explain the purpose of pull-up and pull-down resistors on GPIO pins. What might happen if they are omitted on an open-drain bus like I2C?"
+  },
+  {
+    "id": 20,
+    "question": "What is switch debouncing? Describe a simple software debouncing algorithm."
+  },
+  {
+    "id": 21,
+    "question": "What is Pulse Width Modulation (PWM)? Give two distinct applications, for example, controlling LED brightness and driving a motor at variable speed."
+  },
+  {
+    "id": 22,
+    "question": "You need to measure the temperature using an analog sensor. Explain the role of an Analog-to-Digital Converter (ADC) and the meaning of its 'resolution' and 'sampling rate'."
+  },
+  {
+    "id": 23,
+    "question": "What are general-purpose timers used for in a microcontroller? List at least three different use cases."
+  },
+  {
+    "id": 24,
+    "question": "Explain the concept of an exception vector table on an ARM Cortex-M processor. What is stored in it?"
+  },
+  {
+    "id": 25,
+    "question": "What is the purpose of decoupling capacitors, and why are they typically placed very close to an IC's power and ground pins?"
+  },
+  {
+    "id": 26,
+    "question": "Explain the difference between Memory-Mapped I/O (MMIO) and Port-Mapped I/O (PMIO). Which is more common in modern MCUs like ARM?"
+  },
+  {
+    "id": 27,
+    "question": "What are the different low-power modes available in modern microcontrollers? How do they help in battery-powered applications?"
+  },
+  {
+    "id": 28,
+    "question": "What does a logic level shifter do and when is it necessary?"
+  },
+  {
+    "id": 29,
+    "question": "Explain the purpose of a Phase-Locked Loop (PLL) in a microcontroller's clocking system."
+  },
+  {
+    "id": 30,
+    "question": "What is a Hardware Abstraction Layer (HAL)? What are its advantages and disadvantages in firmware development?"
+  },
+  {
+    "id": 31,
+    "question": "Describe the UART protocol. What information do you need to know to correctly establish communication between two devices (e.g., baud rate, parity)?"
+  },
+  {
+    "id": 32,
+    "question": "Explain the I2C protocol. How does it handle addressing multiple devices on the same two-wire bus? What are the roles of START/STOP conditions and ACK/NACK bits?"
+  },
+  {
+    "id": 33,
+    "question": "Explain the SPI protocol. What are the roles of the MOSI, MISO, SCLK, and SS (Chip Select) lines?"
+  },
+  {
+    "id": 34,
+    "question": "Compare I2C and SPI. Give one reason you might choose I2C over SPI for a particular sensor, and one reason you might choose SPI."
+  },
+  {
+    "id": 35,
+    "question": "What is the CAN bus protocol? Name two features that make it robust and suitable for the automotive industry."
+  },
+  {
+    "id": 36,
+    "question": "For a simple IoT device that sends sensor data to the cloud, would you be more likely to use Wi-Fi or Bluetooth Low Energy (BLE)? Justify your choice based on power consumption and range."
+  },
+  {
+    "id": 37,
+    "question": "What is the purpose of the I2S protocol, and what kind of application is it typically used for?"
+  },
+  {
+    "id": 38,
+    "question": "When debugging a communication bus like SPI or I2C, what is the first tool you would reach for (e.g., oscilloscope or logic analyzer) and why?"
+  },
+  {
+    "id": 39,
+    "question": "Imagine your I2C bus is not working. What are the first three things you would check to debug the issue?"
+  },
+  {
+    "id": 40,
+    "question": "Explain the concept of a network stack (like a TCP/IP stack) in the context of an embedded device. Why is it layered?"
+  },
+  {
+    "id": 41,
+    "question": "What is a Real-Time Operating System (RTOS)? How does its scheduling differ from a general-purpose OS like Windows or desktop Linux?"
+  },
+  {
+    "id": 42,
+    "question": "What is a task (or thread) in an RTOS? Describe the common states a task can be in (e.g., Ready, Running, Blocked)."
+  },
+  {
+    "id": 43,
+    "question": "What is a race condition? Provide a simple example with two tasks accessing a shared variable that leads to an incorrect result."
+  },
+  {
+    "id": 44,
+    "question": "How does a mutex solve the problem of race conditions? Explain what a critical section is in this context."
+  },
+  {
+    "id": 45,
+    "question": "What is the difference between a mutex and a semaphore? Describe a scenario where a counting semaphore would be more appropriate than a mutex."
+  },
+  {
+    "id": 46,
+    "question": "What is priority inversion? Describe a real-world scenario where this could cause a critical system failure. How is it typically solved?"
+  },
+  {
+    "id": 47,
+    "question": "Name and briefly describe two different mechanisms for inter-task communication in an RTOS (e.g., message queues, event flags)."
+  },
+  {
+    "id": 48,
+    "question": "You are designing a system that reads a sensor every 1ms, processes the data, and sends it over a network. Would you use an RTOS or a bare-metal super-loop? Justify your decision."
+  },
+  {
+    "id": 49,
+    "question": "What are the key considerations for designing a robust over-the-air (OTA) firmware update mechanism? What are the risks involved?"
+  },
+  {
+    "id": 50,
+    "question": "You are tasked with debugging a system that crashes randomly after running for a few hours. What are the first few potential causes you would investigate (e.g., stack overflow, memory leak)?"
+  }
+]

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Night Theme Colors - Modern Tech Dark Theme -->
+
+    <!-- Missing colors that are referenced but need to be defined -->
+    <color name="white">#FFFFFF</color>
+    <color name="tech_cyan_accent">@color/cyan_400</color>
+    <color name="tech_blue_dark">@color/slate_900</color>
+    <color name="tech_blue_light">@color/indigo_400</color>
+    <color name="tech_blue_medium">@color/slate_800</color>
+    <color name="tech_off_white">@color/slate_100</color>
+    <color name="tech_grey">@color/slate_500</color>
+
+    <!-- Primary theme colors for night mode -->
+    <color name="text_primary">@color/slate_100</color>
+    <color name="text_secondary">@color/slate_400</color>
+    <color name="background_primary">@color/slate_900</color>
+    <color name="background_secondary">@color/slate_800</color>
+    <color name="surface_color">@color/slate_700</color>
+    <color name="accent_primary">@color/indigo_600</color>
+    <color name="accent_secondary">@color/emerald_400</color>
+
+    <!-- Additional night theme colors -->
+    <color name="overlay_dark">#80000000</color>
+    <color name="transparent">#00000000</color>
+</resources>

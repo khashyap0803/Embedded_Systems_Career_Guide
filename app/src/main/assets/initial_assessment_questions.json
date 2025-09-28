@@ -1,0 +1,203 @@
+[
+  {
+    "id": 1,
+    "question": "What is the primary difference between a microprocessor and a microcontroller?"
+  },
+  {
+    "id": 2,
+    "question": "Explain the concept of 'volatile' memory in the context of embedded systems. Provide an example."
+  },
+  {
+    "id": 3,
+    "question": "What is a watchdog timer and why is it crucial for system reliability?"
+  },
+  {
+    "id": 4,
+    "question": "Describe the purpose of the 'volatile' keyword in C for embedded programming."
+  },
+  {
+    "id": 5,
+    "question": "What are GPIO pins and what are their common modes of operation?"
+  },
+  {
+    "id": 6,
+    "question": "Explain the difference between polling and interrupt-driven I/O."
+  },
+  {
+    "id": 7,
+    "question": "What is the role of a bootloader in an embedded system?"
+  },
+  {
+    "id": 8,
+    "question": "Describe the concept of memory mapping in embedded systems."
+  },
+  {
+    "id": 9,
+    "question": "What is the difference between SRAM and Flash memory?"
+  },
+  {
+    "id": 10,
+    "question": "Explain what an ISR (Interrupt Service Routine) is and its characteristics."
+  },
+  {
+    "id": 11,
+    "question": "What is meant by 'real-time' in embedded systems? Differentiate between hard and soft real-time."
+  },
+  {
+    "id": 12,
+    "question": "Describe the SPI (Serial Peripheral Interface) communication protocol."
+  },
+  {
+    "id": 13,
+    "question": "What is I2C and how does it differ from SPI?"
+  },
+  {
+    "id": 14,
+    "question": "Explain the concept of DMA (Direct Memory Access) and its advantages."
+  },
+  {
+    "id": 15,
+    "question": "What is a stack overflow and how can it be prevented in embedded systems?"
+  },
+  {
+    "id": 16,
+    "question": "Describe the difference between blocking and non-blocking functions."
+  },
+  {
+    "id": 17,
+    "question": "What is UART and how does it work?"
+  },
+  {
+    "id": 18,
+    "question": "Explain the concept of power management in embedded systems."
+  },
+  {
+    "id": 19,
+    "question": "What is the difference between big-endian and little-endian byte ordering?"
+  },
+  {
+    "id": 20,
+    "question": "Describe what happens during the boot process of an embedded system."
+  },
+  {
+    "id": 21,
+    "question": "What is a timer/counter peripheral and its common uses?"
+  },
+  {
+    "id": 22,
+    "question": "Explain the concept of task scheduling in RTOS."
+  },
+  {
+    "id": 23,
+    "question": "What is the difference between cooperative and preemptive multitasking?"
+  },
+  {
+    "id": 24,
+    "question": "Describe the concept of priority inversion and how to handle it."
+  },
+  {
+    "id": 25,
+    "question": "What is a semaphore and how is it used in embedded systems?"
+  },
+  {
+    "id": 26,
+    "question": "Explain the difference between mutex and semaphore."
+  },
+  {
+    "id": 27,
+    "question": "What is deadlock and how can it be prevented?"
+  },
+  {
+    "id": 28,
+    "question": "Describe the concept of memory fragmentation in embedded systems."
+  },
+  {
+    "id": 29,
+    "question": "What is the purpose of a linker script in embedded development?"
+  },
+  {
+    "id": 30,
+    "question": "Explain the difference between static and dynamic memory allocation."
+  },
+  {
+    "id": 31,
+    "question": "What is CAN (Controller Area Network) protocol and where is it used?"
+  },
+  {
+    "id": 32,
+    "question": "Describe the concept of ADC (Analog-to-Digital Converter) resolution and sampling rate."
+  },
+  {
+    "id": 33,
+    "question": "What is PWM (Pulse Width Modulation) and its applications?"
+  },
+  {
+    "id": 34,
+    "question": "Explain the concept of cross-compilation in embedded development."
+  },
+  {
+    "id": 35,
+    "question": "What is the difference between Harvard and Von Neumann architectures?"
+  },
+  {
+    "id": 36,
+    "question": "Describe the concept of cache memory in embedded processors."
+  },
+  {
+    "id": 37,
+    "question": "What is the role of a crystal oscillator in embedded systems?"
+  },
+  {
+    "id": 38,
+    "question": "Explain the concept of low-power design techniques."
+  },
+  {
+    "id": 39,
+    "question": "What is the difference between synchronous and asynchronous communication?"
+  },
+  {
+    "id": 40,
+    "question": "Describe the concept of firmware updates in embedded systems."
+  },
+  {
+    "id": 41,
+    "question": "What is the purpose of pull-up and pull-down resistors?"
+  },
+  {
+    "id": 42,
+    "question": "Explain the concept of debouncing in digital inputs."
+  },
+  {
+    "id": 43,
+    "question": "What is the difference between RISC and CISC architectures?"
+  },
+  {
+    "id": 44,
+    "question": "Describe the concept of memory protection units (MPU)."
+  },
+  {
+    "id": 45,
+    "question": "What is the role of a device driver in embedded systems?"
+  },
+  {
+    "id": 46,
+    "question": "Explain the concept of interrupt latency and how to minimize it."
+  },
+  {
+    "id": 47,
+    "question": "What is the difference between maskable and non-maskable interrupts?"
+  },
+  {
+    "id": 48,
+    "question": "Describe the concept of board support package (BSP)."
+  },
+  {
+    "id": 49,
+    "question": "What are the key considerations for thermal management in embedded design?"
+  },
+  {
+    "id": 50,
+    "question": "Explain the concept of fail-safe and fail-secure design principles."
+  }
+]
+

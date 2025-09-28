@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "484952243047",
+    "project_id": "embedded-systems-career-guide",
+    "storage_bucket": "embedded-systems-career-guide.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:484952243047:android:2f84267c6c7889339f0dc2",
+        "android_client_info": {
+          "package_name": "com.example.embeddedsystemscareerguide"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "484952243047-noc4afeti1hjs8tq3pb7o6c2kmpfbj1s.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.embeddedsystemscareerguide",
+            "certificate_hash": "2fb02f86689f31c7319785e2b5ab09848e5244b3"
+          }
+        },
+        {
+          "client_id": "484952243047-vq5eugsi1u7dtn4ln9rmt93ef8djk6pv.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAHxbQck19GGOtxBOG3K3lvlt1hFPcIwxU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "484952243047-vq5eugsi1u7dtn4ln9rmt93ef8djk6pv.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Embedded Systems Career Guide</string>
+
+    <!-- Navigation Menu -->
+    <string name="menu_home">Home</string>
+    <string name="menu_gallery">Learning Path</string>
+    <string name="menu_slideshow">Profile</string>
+    <string name="menu_slideshow_subtitle">View your progress and achievements</string>
+    <string name="menu_transform">Home</string>
+    <string name="menu_reflow">Learning Path</string>
+    <string name="menu_settings">Settings</string>
+    <string name="menu_learning">Learning</string>
+    <string name="menu_profile">Profile</string>
+    <string name="menu_logout">Logout</string>
+
+    <!-- Authentication -->
+    <string name="login_title">Welcome Back</string>
+    <string name="register_title">Create Account</string>
+    <string name="email_hint">Email Address</string>
+    <string name="password_hint">Password</string>
+    <string name="confirm_password_hint">Confirm Password</string>
+    <string name="login_button">Sign In</string>
+    <string name="register_button">Create Account</string>
+    <string name="google_signin">Sign in with Google</string>
+    <string name="no_account">Don\'t have an account? Sign Up</string>
+    <string name="have_account">Already have an account? Sign In</string>
+
+    <!-- Home Screen -->
+    <string name="continue_learning">Continue Learning</string>
+    <string name="welcome_message">Welcome to your Embedded Systems journey! Start learning and unlock your potential.</string>
+
+    <!-- Assessment -->
+    <string name="assessment_title">Embedded Systems Assessment</string>
+    <string name="assessment_subtitle">Test your knowledge of embedded systems fundamentals</string>
+    <string name="questions_count">50 Questions</string>
+    <string name="difficulty_basic">Difficulty: Basic/Fundamentals</string>
+    <string name="start_assessment">Start Assessment</string>
+    <string name="take_assessment">Take Assessment</string>
+    <string name="question_progress">Question %1$d of %2$d</string>
+    <string name="your_answer_hint">Type your answer here…</string>
+    <string name="speech_to_text">Voice Input</string>
+    <string name="back_button">Back</string>
+    <string name="next_button">Save &amp; Next</string>
+    <string name="submit_button">Submit Assessment</string>
+    <string name="assessment_details">50 Questions • Basic/Fundamentals</string>
+    <string name="your_answer_label">Your Answer:</string>
+
+    <!-- Introduction -->
+    <string name="intro_title">Embedded Systems Career Guide</string>
+    <string name="intro_subtitle">Your comprehensive platform for embedded systems career guidance and training</string>
+    <string name="intro_description">Master embedded systems through interactive assessments, gamified learning paths, and real-world projects.</string>
+    <string name="get_started">Get Started</string>
+
+    <!-- Learning Path -->
+    <string name="learning_path_title">🚀 Learning Journey</string>
+    <string name="progress_complete">%1$d%% Complete</string>
+    <string name="total_xp">Total XP</string>
+    <string name="current_streak">Streak</string>
+    <string name="current_level">Level %1$d</string>
+    <string name="label_current">Current</string>
+    <string name="stage_locked">This stage is locked</string>
+    <string name="stage_unlock_requirement">Complete previous stages to unlock</string>
+    <string name="xp_reward">+%1$d XP</string>
+
+    <plurals name="streak_days">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
+
+    <!-- Learning Path Stages -->
+    <string name="stage_foundations">Foundations</string>
+    <string name="stage_foundations_desc">Learn the basics of embedded systems</string>
+
+    <string name="stage_microcontrollers">Microcontrollers</string>
+    <string name="stage_microcontrollers_desc">Master Arduino and PIC programming</string>
+
+    <string name="stage_programming">Programming</string>
+    <string name="stage_programming_desc">Advanced C/C++ for embedded systems</string>
+
+    <string name="stage_protocols">Protocols</string>
+    <string name="stage_protocols_desc">Communication protocols and interfaces</string>
+
+    <string name="stage_rtos">RTOS</string>
+    <string name="stage_rtos_desc">Real-time operating systems</string>
+
+    <string name="stage_iot">IoT Integration</string>
+    <string name="stage_iot_desc">Connect devices to the internet</string>
+
+    <string name="stage_projects">Advanced Projects</string>
+    <string name="stage_projects_desc">Build complex embedded solutions</string>
+
+    <string name="stage_industry">Industry Ready</string>
+    <string name="stage_industry_desc">Professional skills and certifications</string>
+
+    <!-- Navigation Drawer -->
+    <string name="nav_header_title">Embedded Systems Guide</string>
+    <string name="nav_header_subtitle">Your Career Companion</string>
+    <string name="nav_header_desc">Navigation Header</string>
+    <string name="fab_content_description">Floating Action Button</string>
+
+    <!-- Content Descriptions -->
+    <string name="image_view_item_transform_content_description">Transform Item</string>
+
+    <!-- Decorative Background -->
+    <string name="decorative_background">Decorative background</string>
+
+    <!-- GameifiedStagesAdapter Strings -->
+    <string name="completed_label">Completed!</string>
+    <string name="percent_format">%1$d%%</string>
+</resources>

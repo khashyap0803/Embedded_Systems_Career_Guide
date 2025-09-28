@@ -1,0 +1,70 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme for Dark Mode -->
+    <style name="Theme.EmbeddedSystemsCareerGuide" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Primary colors -->
+        <item name="colorPrimary">@color/indigo_600</item>
+        <item name="colorOnPrimary">@color/slate_100</item>
+        <item name="colorPrimaryContainer">@color/indigo_400</item>
+        <item name="colorOnPrimaryContainer">@color/slate_100</item>
+
+        <!-- Secondary colors -->
+        <item name="colorSecondary">@color/cyan_500</item>
+        <item name="colorOnSecondary">@color/slate_900</item>
+        <item name="colorSecondaryContainer">@color/slate_800</item>
+        <item name="colorOnSecondaryContainer">@color/slate_100</item>
+
+        <!-- Background colors -->
+        <item name="android:colorBackground">@color/slate_900</item>
+        <item name="colorSurface">@color/slate_800</item>
+        <item name="colorOnBackground">@color/slate_100</item>
+        <item name="colorOnSurface">@color/slate_100</item>
+        <item name="colorSurfaceVariant">@color/slate_700</item>
+        <item name="colorOnSurfaceVariant">@color/slate_400</item>
+        <item name="colorOutline">@color/slate_600</item>
+
+        <!-- Status bar and navigation -->
+        <item name="android:statusBarColor">@color/slate_900</item>
+        <item name="android:navigationBarColor">@color/slate_900</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+
+        <!-- Text colors -->
+        <item name="android:textColorPrimary">@color/slate_100</item>
+        <item name="android:textColorSecondary">@color/slate_400</item>
+
+        <!-- Material Components -->
+        <item name="materialButtonStyle">@style/Widget.App.Button</item>
+        <item name="textInputStyle">@style/Widget.App.TextInputLayout</item>
+        <item name="materialCardViewStyle">@style/Widget.App.CardView</item>
+    </style>
+
+    <!-- Custom Button Style -->
+    <style name="Widget.App.Button" parent="Widget.Material3.Button">
+        <item name="backgroundTint">@color/indigo_600</item>
+        <item name="android:textColor">@color/slate_100</item>
+        <item name="cornerRadius">12dp</item>
+        <item name="android:elevation">8dp</item>
+        <item name="rippleColor">@color/ripple_color</item>
+    </style>
+
+    <!-- Custom TextInputLayout Style -->
+    <style name="Widget.App.TextInputLayout" parent="Widget.Material3.TextInputLayout.OutlinedBox">
+        <item name="boxStrokeColor">@color/indigo_400</item>
+        <item name="boxBackgroundColor">@color/slate_800</item>
+        <item name="hintTextColor">@color/slate_400</item>
+        <item name="android:textColorHint">@color/slate_400</item>
+    </style>
+
+    <!-- Custom CardView Style -->
+    <style name="Widget.App.CardView" parent="Widget.MaterialComponents.CardView">
+        <item name="cardBackgroundColor">@color/glass_primary</item>
+        <item name="cardCornerRadius">16dp</item>
+        <item name="cardElevation">12dp</item>
+        <item name="rippleColor">@color/ripple_color</item>
+    </style>
+
+    <!-- AppBar and Popup Overlays -->
+    <style name="Theme.EmbeddedSystemsCareerGuide.AppBarOverlay" parent="ThemeOverlay.Material3.Dark.ActionBar" />
+    <style name="Theme.EmbeddedSystemsCareerGuide.PopupOverlay" parent="ThemeOverlay.Material3.Dark" />
+
+</resources>

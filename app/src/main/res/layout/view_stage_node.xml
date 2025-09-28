@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/cardStage"
+    android:layout_width="120dp"
+    android:layout_height="160dp"
+    android:layout_margin="8dp"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?android:attr/selectableItemBackground"
+    app:cardBackgroundColor="@color/slate_700"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="8dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="12dp">
+
+        <!-- Stage Icon -->
+        <ImageView
+            android:id="@+id/imageStageIcon"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/ic_foundation"
+            android:scaleType="centerInside"
+            android:contentDescription="@null"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:tint="@color/indigo_400"
+            tools:src="@drawable/ic_foundation" />
+
+        <!-- Completion Icon -->
+        <ImageView
+            android:id="@+id/iconComplete"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/ic_check_circle"
+            android:visibility="gone"
+            android:contentDescription="@null"
+            app:layout_constraintTop_toTopOf="@id/imageStageIcon"
+            app:layout_constraintEnd_toEndOf="@id/imageStageIcon"
+            app:tint="@color/emerald_400" />
+
+        <!-- Lock Icon -->
+        <ImageView
+            android:id="@+id/iconLocked"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/ic_lock"
+            android:visibility="gone"
+            android:contentDescription="@null"
+            app:layout_constraintTop_toTopOf="@id/imageStageIcon"
+            app:layout_constraintEnd_toEndOf="@id/imageStageIcon"
+            app:tint="@color/slate_400" />
+
+        <!-- Stage Title -->
+        <TextView
+            android:id="@+id/textStageTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:textColor="@color/white"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="end"
+            app:layout_constraintTop_toBottomOf="@id/imageStageIcon"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            tools:text="Foundations" />
+
+        <!-- Stage Subtitle -->
+        <TextView
+            android:id="@+id/textStageSubtitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:gravity="center"
+            android:textColor="@color/slate_300"
+            android:textSize="11sp"
+            android:maxLines="1"
+            android:ellipsize="end"
+            app:layout_constraintTop_toBottomOf="@id/textStageTitle"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            tools:text="Master Basics" />
+
+        <!-- XP Reward -->
+        <TextView
+            android:id="@+id/textXpReward"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:gravity="center"
+            android:textColor="@color/amber_400"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            app:layout_constraintTop_toBottomOf="@id/textStageSubtitle"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            tools:text="+150 XP" />
+
+        <!-- Star Row (hidden by default) -->
+        <LinearLayout
+            android:id="@+id/starRow"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:visibility="gone"
+            app:layout_constraintTop_toBottomOf="@id/textXpReward"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent">
+
+            <ImageView
+                android:id="@+id/star1"
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:layout_marginEnd="2dp"
+                android:src="@drawable/ic_star_outline"
+                android:contentDescription="@null"
+                app:tint="@color/amber_400" />
+            <ImageView
+                android:id="@+id/star2"
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:layout_marginEnd="2dp"
+                android:src="@drawable/ic_star_outline"
+                android:contentDescription="@null"
+                app:tint="@color/amber_400" />
+            <ImageView
+                android:id="@+id/star3"
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:src="@drawable/ic_star_outline"
+                android:contentDescription="@null"
+                app:tint="@color/amber_400" />
+        </LinearLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.cardview.widget.CardView>

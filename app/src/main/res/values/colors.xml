@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Base Colors - Dark Tech Theme -->
+    <color name="black">#000000</color>
+    <color name="white">#FFFFFF</color>
+
+    <!-- Slate Color Palette -->
+    <color name="slate_950">#020617</color>
+    <color name="slate_900">#0F172A</color>
+    <color name="slate_800">#1E293B</color>
+    <color name="slate_700">#334155</color>
+    <color name="slate_600">#475569</color>
+    <color name="slate_500">#64748B</color>
+    <color name="slate_400">#94A3B8</color>
+    <color name="slate_300">#CBD5E1</color>
+    <color name="slate_200">#E2E8F0</color>
+    <color name="slate_100">#F1F5F9</color>
+    <color name="slate_50">#F8FAFC</color>
+
+    <!-- Primary Accent Colors - Indigo -->
+    <color name="indigo_900">#312E81</color>
+    <color name="indigo_800">#3730A3</color>
+    <color name="indigo_700">#4338CA</color>
+    <color name="indigo_600">#4F46E5</color>
+    <color name="indigo_500">#6366F1</color>
+    <color name="indigo_400">#818CF8</color>
+    <color name="indigo_300">#A5B4FC</color>
+    <color name="indigo_200">#C7D2FE</color>
+    <color name="indigo_100">#E0E7FF</color>
+
+    <!-- Purple Colors -->
+    <color name="purple_900">#581C87</color>
+    <color name="purple_800">#6B21A8</color>
+    <color name="purple_700">#7C2D12</color>
+    <color name="purple_600">#9333EA</color>
+    <color name="purple_500">#A855F7</color>
+    <color name="purple_400">#C084FC</color>
+    <color name="purple_300">#D8B4FE</color>
+
+    <!-- Cyan Colors -->
+    <color name="cyan_900">#164E63</color>
+    <color name="cyan_800">#155E75</color>
+    <color name="cyan_700">#0E7490</color>
+    <color name="cyan_600">#0891B2</color>
+    <color name="cyan_500">#06B6D4</color>
+    <color name="cyan_400">#22D3EE</color>
+    <color name="cyan_300">#67E8F9</color>
+    <color name="cyan_200">#A5F3FC</color>
+    <color name="cyan_100">#CFFAFE</color>
+
+    <!-- Success Colors - Green/Emerald -->
+    <color name="green_900">#14532D</color>
+    <color name="green_800">#166534</color>
+    <color name="green_700">#15803D</color>
+    <color name="green_600">#059669</color>
+    <color name="green_500">#10B981</color>
+    <color name="green_400">#34D399</color>
+    <color name="green_300">#6EE7B7</color>
+    <color name="emerald_600">#059669</color>
+    <color name="emerald_500">#10B981</color>
+    <color name="emerald_400">#34D399</color>
+    <color name="emerald_300">#6EE7B7</color>
+
+    <!-- Warning/Action Colors -->
+    <color name="red_900">#7F1D1D</color>
+    <color name="red_800">#991B1B</color>
+    <color name="red_700">#B91C1C</color>
+    <color name="red_600">#DC2626</color>
+    <color name="red_500">#EF4444</color>
+    <color name="red_400">#F87171</color>
+
+    <color name="yellow_600">#CA8A04</color>
+    <color name="yellow_500">#EAB308</color>
+    <color name="yellow_400">#FBBF24</color>
+    <color name="yellow_300">#FCD34D</color>
+
+    <color name="amber_600">#D97706</color>
+    <color name="amber_500">#F59E0B</color>
+    <color name="amber_400">#FBBF24</color>
+    <color name="amber_300">#FCD34D</color>
+
+    <color name="orange_600">#EA580C</color>
+    <color name="orange_500">#F97316</color>
+    <color name="orange_400">#FB923C</color>
+    <color name="orange_300">#FDBA74</color>
+
+    <!-- Tech Theme Colors -->
+    <color name="tech_cyan_accent">#00D4AA</color>
+    <color name="tech_blue_dark">#0F172A</color>
+    <color name="tech_blue_medium">#1E293B</color>
+    <color name="tech_blue_light">#334155</color>
+    <color name="tech_off_white">#F1F5F9</color>
+    <color name="tech_grey">#64748B</color>
+
+    <!-- Glassmorphism & Transparency -->
+    <color name="glass_primary">#1E293B80</color>
+    <color name="glass_secondary">#33415580</color>
+    <color name="glass_tertiary">#47556980</color>
+    <color name="backdrop_blur">#0F172A95</color>
+    <color name="overlay_dark">#00000080</color>
+    <color name="overlay_light">#FFFFFF20</color>
+
+    <!-- Light Theme Colors (for Material Design components) -->
+    <color name="light_background">#FFFFFF</color>
+    <color name="light_surface">#F8FAFC</color>
+    <color name="light_text_primary">#0F172A</color>
+    <color name="light_text_secondary">#64748B</color>
+
+    <!-- Gamification Colors -->
+    <color name="xp_gold">#FFD700</color>
+    <color name="streak_fire">#FF6B35</color>
+    <color name="stage_available">#10B981</color>
+    <color name="stage_locked">#64748B</color>
+    <color name="stage_completed">#22D3EE</color>
+
+    <!-- Ripple Effects -->
+    <color name="ripple_color">#FFFFFF30</color>
+    <color name="slate_800_50">#1E293B80</color>
+    <color name="ripple_dark">#00000030</color>
+
+    <!-- Material 3 Theme Colors -->
+    <color name="colorPrimary">@color/indigo_600</color>
+    <color name="colorPrimaryVariant">@color/indigo_500</color>
+    <color name="colorOnPrimary">@color/slate_100</color>
+    <color name="colorSecondary">@color/cyan_500</color>
+    <color name="colorSecondaryVariant">@color/cyan_400</color>
+    <color name="colorOnSecondary">@color/slate_900</color>
+    <color name="colorError">@color/red_500</color>
+    <color name="colorOnError">@color/white</color>
+    <color name="colorSurface">@color/slate_800</color>
+    <color name="colorOnSurface">@color/slate_100</color>
+    <color name="colorBackground">@color/slate_900</color>
+    <color name="colorOnBackground">@color/slate_100</color>
+
+    <!-- Status Bar Colors -->
+    <color name="status_bar_color">@color/slate_950</color>
+    <color name="navigation_bar_color">@color/slate_900</color>
+
+    <!-- Button Colors -->
+    <color name="button_primary">@color/indigo_600</color>
+    <color name="button_secondary">@color/slate_700</color>
+    <color name="button_success">@color/green_600</color>
+    <color name="button_danger">@color/red_500</color>
+    <color name="button_warning">@color/amber_500</color>
+
+    <!-- Card Colors -->
+    <color name="card_background">@color/glass_primary</color>
+    <color name="card_elevated">@color/slate_700</color>
+    <color name="card_border">@color/slate_600</color>
+
+    <!-- Text Colors -->
+    <color name="text_primary">@color/slate_100</color>
+    <color name="text_secondary">@color/slate_400</color>
+    <color name="text_hint">@color/slate_500</color>
+    <color name="text_disabled">@color/slate_600</color>
+    <color name="text_tertiary">@color/slate_500</color>
+
+    <!-- Panel & Input Colors -->
+    <color name="panel_background">@color/slate_800</color>
+    <color name="input_background">@color/slate_700</color>
+
+    <!-- Backward Compatibility Aliases -->
+    <color name="background">@color/colorBackground</color>
+    <color name="primary">@color/colorPrimary</color>
+    <color name="surface_variant">@color/slate_700</color>
+
+</resources>

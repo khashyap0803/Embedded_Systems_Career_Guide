@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/stageCard"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="8dp"
+    app:strokeWidth="2dp"
+    app:strokeColor="@color/slate_600">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="16dp">
+
+        <ImageView
+            android:id="@+id/stageIcon"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@drawable/ic_foundation"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/stageTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Stage Title"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@color/text_primary"
+            android:layout_marginStart="16dp"
+            app:layout_constraintStart_toEndOf="@id/stageIcon"
+            app:layout_constraintTop_toTopOf="@id/stageIcon"
+            app:layout_constraintEnd_toStartOf="@id/lockIcon" />
+
+        <TextView
+            android:id="@+id/stageDescription"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Stage description"
+            android:textSize="14sp"
+            android:textColor="@color/text_secondary"
+            android:layout_marginStart="16dp"
+            app:layout_constraintStart_toEndOf="@id/stageIcon"
+            app:layout_constraintTop_toBottomOf="@id/stageTitle"
+            app:layout_constraintEnd_toStartOf="@id/lockIcon" />
+
+        <ImageView
+            android:id="@+id/lockIcon"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_lock"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@id/stageIcon" />
+
+        <ImageView
+            android:id="@+id/completionIcon"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_check_circle"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@id/stageIcon" />
+
+        <ProgressBar
+            android:id="@+id/stageProgress"
+            style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+            android:layout_width="0dp"
+            android:layout_height="8dp"
+            android:layout_marginTop="12dp"
+            android:progressTint="@color/emerald_400"
+            android:progressBackgroundTint="@color/slate_600"
+            app:layout_constraintStart_toStartOf="@id/stageIcon"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/stageDescription" />
+
+        <TextView
+            android:id="@+id/progressText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0%"
+            android:textSize="12sp"
+            android:textColor="@color/text_secondary"
+            android:layout_marginTop="4dp"
+            app:layout_constraintStart_toStartOf="@id/stageProgress"
+            app:layout_constraintTop_toBottomOf="@id/stageProgress" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</com.google.android.material.card.MaterialCardView>

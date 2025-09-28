@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="CircularProgressView">
+        <attr name="progress" format="integer" />
+        <attr name="maxProgress" format="integer" />
+        <attr name="ringColor" format="color" />
+        <attr name="progressColor" format="color" />
+        <attr name="ringWidth" format="dimension" />
+        <attr name="animationDuration" format="integer" />
+    </declare-styleable>
+
+    <declare-styleable name="GamePathView">
+        <attr name="pathColor" format="color" />
+        <attr name="pathWidth" format="dimension" />
+        <attr name="particleColor" format="color" />
+        <attr name="animationSpeed" format="integer" />
+    </declare-styleable>
+
+    <declare-styleable name="ParticleAnimationView">
+        <attr name="particleCount" format="integer" />
+        <attr name="particleSpeed" format="float" />
+        <attr name="particleSize" format="dimension" />
+        <attr name="backgroundColor" format="color" />
+    </declare-styleable>
+</resources>
