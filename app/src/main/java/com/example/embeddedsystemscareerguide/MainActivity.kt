@@ -17,7 +17,6 @@ import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import com.example.embeddedsystemscareerguide.databinding.ActivityMainBinding
 import com.example.embeddedsystemscareerguide.ui.auth.LoginActivity
-import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.FirebaseAuth
@@ -130,10 +129,6 @@ class MainActivity : AppCompatActivity() {
                 setupActionBarWithNavController(navController, appBarConfiguration)
             }
 
-            // Handle bottom navigation if it exists
-            findViewById<BottomNavigationView>(R.id.bottomNavView)?.let { bottomNav ->
-                bottomNav.setupWithNavController(navController)
-            }
         } catch (e: Exception) {
             // Navigation setup failed, continue without navigation
         }
