@@ -255,11 +255,58 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun navigateToMainActivity() {
-        val intent = Intent(this, MainActivity::class.java)
-        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        startActivity(intent)
-        overridePendingTransition(R.anim.fade_in, R.anim.fade_out)
-        finish()
+        // Show loading while checking assessment status
+        showLoading()
+
+        val user = auth.currentUser
+        if (user != null) {
+            // Check Firebase Firestore for existing report
+            val firestore = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+            firestore.collection("assessment_reports")
+                .document(user.uid)
+                .get()
+                .addOnSuccessListener { document ->
+                    hideLoading()
+
+                    if (document.exists()) {
+                        // Report exists in Firebase - returning user, go to Home
+                        // Also update local SharedPreferences flag
+                        val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
+                        prefs.edit().putBoolean("assessment_completed", true).commit()
+
+                        val intent = Intent(this, MainActivity::class.java)
+                        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                        startActivity(intent)
+                    } else {
+                        // No report in Firebase - first time user, go to Assessment
+                        val intent = Intent(this, com.example.embeddedsystemscareerguide.ui.assessment.AssessmentActivity::class.java)
+                        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                        startActivity(intent)
+                    }
+                    overridePendingTransition(R.anim.fade_in, R.anim.fade_out)
+                    finish()
+                }
+                .addOnFailureListener { e ->
+                    hideLoading()
+                    // On failure, fall back to local check
+                    val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
+                    val assessmentCompleted = prefs.getBoolean("assessment_completed", false)
+
+                    if (assessmentCompleted) {
+                        val intent = Intent(this, MainActivity::class.java)
+                        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                        startActivity(intent)
+                    } else {
+                        val intent = Intent(this, com.example.embeddedsystemscareerguide.ui.assessment.AssessmentActivity::class.java)
+                        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                        startActivity(intent)
+                    }
+                    overridePendingTransition(R.anim.fade_in, R.anim.fade_out)
+                    finish()
+                }
+        } else {
+            hideLoading()
+        }
     }
 
     private fun showLoading() {

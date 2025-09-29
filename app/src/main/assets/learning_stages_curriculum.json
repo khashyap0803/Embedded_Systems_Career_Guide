@@ -1,6 +1,6 @@
 {
   "curriculum": {
-    "total_stages": 15,
+    "total_stages": 16,
     "progression_type": "bottom_to_top",
     "description": "Complete Embedded Systems Career Guide - From Fundamentals to Industry Expert"
   },
@@ -49,9 +49,9 @@
       "xp_reward": 150,
       "topics": [
         "Von Neumann Architecture",
-        "CPU Components (ALU, Registers, Control Unit)",
-        "Instruction Set Architecture",
-        "Memory Hierarchy"
+        "Instruction Sets & Assembly",
+        "Memory Hierarchy",
+        "CPU Performance Metrics"
       ],
       "unlock_requirement": "stage_2_completed",
       "estimated_duration": "4 hours"
@@ -60,15 +60,15 @@
       "id": 4,
       "title": "Microcontroller Basics",
       "subtitle": "MCU Fundamentals",
-      "description": "Learn microcontroller architecture and popular MCU families",
+      "description": "Learn microcontroller architecture, GPIO, and basic programming",
       "icon": "ic_microcontroller",
-      "color": "#06B6D4",
+      "color": "#EF4444",
       "xp_reward": 180,
       "topics": [
         "MCU vs MPU Differences",
-        "ARM Cortex Architecture",
-        "Popular MCU Families (STM32, Arduino, PIC)",
-        "Memory Organization"
+        "Popular MCU Families",
+        "GPIO Configuration",
+        "Basic MCU Programming"
       ],
       "unlock_requirement": "stage_3_completed",
       "estimated_duration": "4 hours"
@@ -76,192 +76,206 @@
     {
       "id": 5,
       "title": "C Programming for Embedded",
-      "subtitle": "Programming Fundamentals",
+      "subtitle": "Programming Skills",
       "description": "Master C programming specifically for embedded systems development",
       "icon": "ic_code",
-      "color": "#A855F7",
+      "color": "#8B5CF6",
       "xp_reward": 200,
       "topics": [
-        "C Language Basics",
-        "Pointers & Memory Management",
-        "Bit Manipulation",
-        "Embedded C Specifics (volatile, const)"
+        "Embedded C Concepts",
+        "Memory Management",
+        "Pointers & Arrays",
+        "Optimization Techniques"
       ],
       "unlock_requirement": "stage_4_completed",
       "estimated_duration": "5 hours"
     },
     {
       "id": 6,
-      "title": "GPIO and Basic I/O",
+      "title": "GPIO and Digital I/O",
       "subtitle": "Input/Output Control",
-      "description": "Learn to control LEDs, buttons, and basic input/output operations",
+      "description": "Master digital input/output operations and GPIO programming",
       "icon": "ic_sensors",
-      "color": "#EF4444",
-      "xp_reward": 150,
+      "color": "#06B6D4",
+      "xp_reward": 160,
       "topics": [
         "GPIO Configuration",
-        "Digital Input/Output",
+        "Input/Output Operations",
         "Pull-up/Pull-down Resistors",
-        "LED Control & Button Reading"
+        "Debouncing Techniques"
       ],
       "unlock_requirement": "stage_5_completed",
       "estimated_duration": "3 hours"
     },
     {
       "id": 7,
-      "title": "Timers and PWM",
-      "subtitle": "Time-based Control",
-      "description": "Master timing operations, PWM generation, and time-critical applications",
+      "title": "Timers and Interrupts",
+      "subtitle": "Time-Critical Operations",
+      "description": "Learn timer operations, interrupt handling, and real-time programming",
       "icon": "ic_clock",
-      "color": "#FB923C",
-      "xp_reward": 180,
+      "color": "#F97316",
+      "xp_reward": 220,
       "topics": [
-        "Timer/Counter Basics",
-        "PWM Generation",
-        "Servo Motor Control",
-        "Timing Calculations"
+        "Timer/Counter Operations",
+        "Interrupt Service Routines",
+        "Priority Management",
+        "Real-time Constraints"
       ],
       "unlock_requirement": "stage_6_completed",
       "estimated_duration": "4 hours"
     },
     {
       "id": 8,
-      "title": "ADC and Analog Interfaces",
-      "subtitle": "Analog Signal Processing",
-      "description": "Work with analog sensors and digital conversion techniques",
-      "icon": "ic_sensors",
-      "color": "#10B981",
-      "xp_reward": 200,
-      "topics": [
-        "ADC Principles & Resolution",
-        "Sensor Interfacing",
-        "Signal Conditioning",
-        "Temperature & Light Sensors"
-      ],
-      "unlock_requirement": "stage_7_completed",
-      "estimated_duration": "4 hours"
-    },
-    {
-      "id": 9,
       "title": "Communication Protocols",
-      "subtitle": "Serial Communication",
-      "description": "Master UART, SPI, I2C, and other communication protocols",
+      "subtitle": "UART, SPI, I2C",
+      "description": "Master serial communication protocols for embedded systems",
       "icon": "ic_network",
-      "color": "#818CF8",
-      "xp_reward": 220,
+      "color": "#10B981",
+      "xp_reward": 250,
       "topics": [
         "UART Communication",
         "SPI Protocol",
         "I2C Bus System",
-        "Protocol Selection Guidelines"
+        "Protocol Selection"
+      ],
+      "unlock_requirement": "stage_7_completed",
+      "estimated_duration": "5 hours"
+    },
+    {
+      "id": 9,
+      "title": "ADC and Sensor Integration",
+      "subtitle": "Analog Interface",
+      "description": "Learn analog-to-digital conversion and sensor interfacing",
+      "icon": "ic_circuit_board",
+      "color": "#EC4899",
+      "xp_reward": 190,
+      "topics": [
+        "ADC Principles",
+        "Sensor Types",
+        "Signal Conditioning",
+        "Data Processing"
       ],
       "unlock_requirement": "stage_8_completed",
-      "estimated_duration": "5 hours"
-    },
-    {
-      "id": 10,
-      "title": "Interrupts and Events",
-      "subtitle": "Event-Driven Programming",
-      "description": "Understand interrupt handling and event-driven system design",
-      "icon": "ic_circuit_board",
-      "color": "#D97706",
-      "xp_reward": 250,
-      "topics": [
-        "Interrupt Concepts",
-        "Interrupt Service Routines",
-        "Priority Systems",
-        "Event-Driven Design Patterns"
-      ],
-      "unlock_requirement": "stage_9_completed",
-      "estimated_duration": "5 hours"
-    },
-    {
-      "id": 11,
-      "title": "Memory Management",
-      "subtitle": "Storage & Optimization",
-      "description": "Learn memory types, management techniques, and optimization strategies",
-      "icon": "ic_memory",
-      "color": "#7C2D12",
-      "xp_reward": 200,
-      "topics": [
-        "Memory Types (Flash, RAM, EEPROM)",
-        "Memory Mapping",
-        "Stack vs Heap",
-        "Memory Optimization Techniques"
-      ],
-      "unlock_requirement": "stage_10_completed",
       "estimated_duration": "4 hours"
     },
     {
-      "id": 12,
-      "title": "Real-Time Operating Systems",
-      "subtitle": "RTOS Fundamentals",
-      "description": "Introduction to RTOS concepts, task scheduling, and multitasking",
-      "icon": "ic_rtos",
-      "color": "#059669",
-      "xp_reward": 300,
+      "id": 10,
+      "title": "Memory Management",
+      "subtitle": "RAM, Flash, EEPROM",
+      "description": "Understand memory types, management, and optimization techniques",
+      "icon": "ic_memory",
+      "color": "#6366F1",
+      "xp_reward": 170,
       "topics": [
-        "RTOS vs Bare Metal",
-        "Task Creation & Scheduling",
-        "Semaphores & Mutexes",
-        "Popular RTOS (FreeRTOS, Zephyr)"
+        "Memory Types",
+        "Memory Mapping",
+        "Memory Optimization",
+        "Data Storage Strategies"
+      ],
+      "unlock_requirement": "stage_9_completed",
+      "estimated_duration": "3 hours"
+    },
+    {
+      "id": 11,
+      "title": "Real-Time Operating Systems",
+      "subtitle": "RTOS Concepts",
+      "description": "Learn RTOS fundamentals, task scheduling, and multitasking",
+      "icon": "ic_rtos",
+      "color": "#84CC16",
+      "xp_reward": 280,
+      "topics": [
+        "RTOS Fundamentals",
+        "Task Scheduling",
+        "Inter-task Communication",
+        "Resource Management"
+      ],
+      "unlock_requirement": "stage_10_completed",
+      "estimated_duration": "6 hours"
+    },
+    {
+      "id": 12,
+      "title": "Power Management",
+      "subtitle": "Low Power Design",
+      "description": "Master power optimization and low-power design techniques",
+      "icon": "ic_foundations",
+      "color": "#F59E0B",
+      "xp_reward": 160,
+      "topics": [
+        "Power Consumption Analysis",
+        "Sleep Modes",
+        "Power Optimization",
+        "Battery Management"
       ],
       "unlock_requirement": "stage_11_completed",
-      "estimated_duration": "6 hours"
+      "estimated_duration": "3 hours"
     },
     {
       "id": 13,
-      "title": "Wireless Communication",
-      "subtitle": "IoT Connectivity",
-      "description": "Explore wireless protocols for IoT and connected devices",
-      "icon": "ic_iot",
-      "color": "#22D3EE",
-      "xp_reward": 250,
+      "title": "Debugging and Testing",
+      "subtitle": "Development Tools",
+      "description": "Learn debugging techniques, testing methodologies, and development tools",
+      "icon": "ic_project",
+      "color": "#EF4444",
+      "xp_reward": 200,
       "topics": [
-        "Wi-Fi Integration",
-        "Bluetooth/BLE",
-        "LoRa & LoRaWAN",
-        "Cellular Communication (GSM/LTE)"
+        "Debugging Techniques",
+        "Hardware Debuggers",
+        "Testing Strategies",
+        "Development Tools"
       ],
       "unlock_requirement": "stage_12_completed",
-      "estimated_duration": "5 hours"
+      "estimated_duration": "4 hours"
     },
     {
       "id": 14,
-      "title": "Advanced Projects",
-      "subtitle": "System Integration",
-      "description": "Build complex projects integrating multiple concepts and technologies",
-      "icon": "ic_project",
-      "color": "#C084FC",
-      "xp_reward": 400,
+      "title": "Wireless Communication",
+      "subtitle": "WiFi, Bluetooth, LoRa",
+      "description": "Explore wireless communication protocols and IoT connectivity",
+      "icon": "ic_network",
+      "color": "#06B6D4",
+      "xp_reward": 240,
       "topics": [
-        "IoT Weather Station",
-        "Home Automation System",
-        "Industrial Monitoring",
-        "Automotive Applications"
+        "WiFi Integration",
+        "Bluetooth Communication",
+        "LoRa & LoRaWAN",
+        "Wireless Security"
       ],
       "unlock_requirement": "stage_13_completed",
-      "estimated_duration": "8 hours"
+      "estimated_duration": "5 hours"
     },
     {
       "id": 15,
-      "title": "Industry Readiness",
-      "subtitle": "Professional Skills",
-      "description": "Develop professional embedded systems engineering skills and career preparation",
-      "icon": "ic_industry_ready",
-      "color": "#F97316",
-      "xp_reward": 500,
+      "title": "IoT Integration",
+      "subtitle": "Internet of Things",
+      "description": "Master IoT platforms, cloud connectivity, and data analytics",
+      "icon": "ic_iot",
+      "color": "#8B5CF6",
+      "xp_reward": 260,
       "topics": [
-        "Code Review & Best Practices",
-        "Testing & Debugging Techniques",
-        "Version Control & Documentation",
-        "Career Preparation & Interview Skills"
+        "IoT Platforms",
+        "Cloud Connectivity",
+        "Data Analytics",
+        "Security Considerations"
       ],
       "unlock_requirement": "stage_14_completed",
-      "estimated_duration": "6 hours"
+      "estimated_duration": "5 hours"
+    },
+    {
+      "id": 16,
+      "title": "Final Assessment",
+      "subtitle": "Industry Readiness Test",
+      "description": "Complete comprehensive assessment to demonstrate your embedded systems expertise",
+      "icon": "ic_industry_ready",
+      "color": "#DC2626",
+      "xp_reward": 500,
+      "topics": [
+        "Comprehensive Assessment",
+        "Advanced Problem Solving",
+        "Industry Case Studies",
+        "Professional Certification"
+      ],
+      "unlock_requirement": "stage_15_completed",
+      "estimated_duration": "2 hours"
     }
-  ],
-  "total_xp": 3200,
-  "estimated_completion": "65 hours"
+  ]
 }
-

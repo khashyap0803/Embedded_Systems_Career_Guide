@@ -2,6 +2,7 @@
 <resources>
     <!-- Base Colors - Dark Tech Theme -->
     <color name="black">#000000</color>
+    <color name="black_50">#00000080</color>
     <color name="white">#FFFFFF</color>
 
     <!-- Slate Color Palette -->

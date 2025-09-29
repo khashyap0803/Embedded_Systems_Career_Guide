@@ -9,12 +9,20 @@ import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
+import androidx.lifecycle.lifecycleScope
 import com.example.embeddedsystemscareerguide.MainActivity
 import com.example.embeddedsystemscareerguide.R
 import com.example.embeddedsystemscareerguide.databinding.ActivityAssessmentBinding
+import com.example.embeddedsystemscareerguide.models.AssessmentReport
 import com.example.embeddedsystemscareerguide.models.Question
+import com.example.embeddedsystemscareerguide.models.QuestionAnswer
+import com.example.embeddedsystemscareerguide.services.GeminiReportService
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import kotlinx.coroutines.launch
+import java.io.File
 import java.util.*
 
 class AssessmentActivity : AppCompatActivity() {
@@ -23,6 +31,9 @@ class AssessmentActivity : AppCompatActivity() {
     private var questions: List<Question> = emptyList()
     private var currentQuestionIndex = 0
     private var answers = mutableMapOf<Int, String>()
+    private val geminiService = GeminiReportService()
+    private val firestore = FirebaseFirestore.getInstance()
+    private val auth = FirebaseAuth.getInstance()
 
     private val speechRecognizerLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -150,13 +161,118 @@ class AssessmentActivity : AppCompatActivity() {
     private fun submitAssessment() {
         saveCurrentAnswer()
 
-        // TODO: Process answers and generate report using AI
-        Toast.makeText(this, "Assessment completed! ${answers.size} answers submitted.", Toast.LENGTH_LONG).show()
-
-        val intent = Intent(this, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+        // Prevent multiple simultaneous submissions
+        if (binding.loadingOverlay.isVisible) {
+            return
         }
-        startActivity(intent)
-        finish()
+
+        // Show loading overlay
+        binding.loadingOverlay.isVisible = true
+        binding.progressText.text = "Generating your personalized report...\nThis may take a few moments."
+
+        // Disable buttons to prevent multiple clicks
+        binding.buttonNext.isEnabled = false
+        binding.buttonBack.isEnabled = false
+
+        // Process assessment and generate report
+        lifecycleScope.launch {
+            try {
+                // Prepare question-answer pairs
+                val qaList = questions.mapIndexed { index, question ->
+                    QuestionAnswer(
+                        n = index + 1,
+                        q = question.question,
+                        u = answers[question.id] ?: ""
+                    )
+                }
+
+                // Get user info
+                val user = auth.currentUser
+                val userName = user?.displayName ?: "Student"
+                val userEmail = user?.email ?: ""
+
+                // Generate report using Gemini API
+                binding.progressText.text = "Analyzing your answers with AI...\nPlease wait..."
+                val reportHtml = geminiService.generateReport(userName, userEmail, qaList)
+
+                // Save report locally
+                saveReportLocally(reportHtml)
+
+                // Save report to Firebase
+                binding.progressText.text = "Saving your report..."
+                saveReportToFirebase(reportHtml, user?.uid ?: "", userName, userEmail)
+
+                // Mark assessment as completed SYNCHRONOUSLY
+                markAssessmentCompleted()
+
+                // Hide loading and show success
+                binding.loadingOverlay.isVisible = false
+                Toast.makeText(this@AssessmentActivity, "Report generated successfully!", Toast.LENGTH_LONG).show()
+
+                // Navigate to home with delay to ensure flag is saved
+                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                    val intent = Intent(this@AssessmentActivity, MainActivity::class.java).apply {
+                        flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+                    }
+                    startActivity(intent)
+                    finish()
+                }, 300)
+
+            } catch (e: Exception) {
+                binding.loadingOverlay.isVisible = false
+                binding.buttonNext.isEnabled = true
+                binding.buttonBack.isEnabled = true
+                Toast.makeText(
+                    this@AssessmentActivity,
+                    "Error generating report: ${e.message}. Please try again.",
+                    Toast.LENGTH_LONG
+                ).show()
+                e.printStackTrace()
+            }
+        }
+    }
+
+    private fun saveReportLocally(htmlContent: String) {
+        try {
+            val reportFile = File(filesDir, "assessment_report.html")
+            reportFile.writeText(htmlContent)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private suspend fun saveReportToFirebase(
+        htmlContent: String,
+        userId: String,
+        userName: String,
+        userEmail: String
+    ) {
+        try {
+            val report = AssessmentReport(
+                userId = userId,
+                userName = userName,
+                userEmail = userEmail,
+                reportHtml = htmlContent,
+                timestamp = System.currentTimeMillis(),
+                totalQuestions = questions.size
+            )
+
+            firestore.collection("assessment_reports")
+                .document(userId)
+                .set(report)
+                .addOnSuccessListener {
+                    // Report saved successfully
+                }
+                .addOnFailureListener { e ->
+                    e.printStackTrace()
+                }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun markAssessmentCompleted() {
+        val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
+        prefs.edit().putBoolean("assessment_completed", true).commit() // Use commit() for synchronous save
     }
 }

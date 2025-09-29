@@ -425,6 +425,7 @@
 
                 <!-- Streak Visual Indicators -->
                 <LinearLayout
+                    android:id="@+id/streak_indicators_container"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
@@ -432,27 +433,7 @@
                     android:layout_marginBottom="16dp">
 
                     <View
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:layout_weight="1"
-                        android:layout_margin="4dp"
-                        android:background="@drawable/bg_streak_day_active" />
-
-                    <View
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:layout_weight="1"
-                        android:layout_margin="4dp"
-                        android:background="@drawable/bg_streak_day_active" />
-
-                    <View
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:layout_weight="1"
-                        android:layout_margin="4dp"
-                        android:background="@drawable/bg_streak_day_active" />
-
-                    <View
+                        android:id="@+id/streak_day_monday"
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:layout_weight="1"
@@ -460,6 +441,7 @@
                         android:background="@drawable/bg_streak_day_inactive" />
 
                     <View
+                        android:id="@+id/streak_day_tuesday"
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:layout_weight="1"
@@ -467,6 +449,7 @@
                         android:background="@drawable/bg_streak_day_inactive" />
 
                     <View
+                        android:id="@+id/streak_day_wednesday"
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:layout_weight="1"
@@ -474,6 +457,31 @@
                         android:background="@drawable/bg_streak_day_inactive" />
 
                     <View
+                        android:id="@+id/streak_day_thursday"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_weight="1"
+                        android:layout_margin="4dp"
+                        android:background="@drawable/bg_streak_day_inactive" />
+
+                    <View
+                        android:id="@+id/streak_day_friday"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_weight="1"
+                        android:layout_margin="4dp"
+                        android:background="@drawable/bg_streak_day_inactive" />
+
+                    <View
+                        android:id="@+id/streak_day_saturday"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_weight="1"
+                        android:layout_margin="4dp"
+                        android:background="@drawable/bg_streak_day_inactive" />
+
+                    <View
+                        android:id="@+id/streak_day_sunday"
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:layout_weight="1"
