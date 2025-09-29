@@ -18,6 +18,12 @@
         tools:layout="@layout/fragment_learning_path" />
 
     <fragment
+        android:id="@+id/nav_practice"
+        android:name="com.example.embeddedsystemscareerguide.ui.practice.PracticeFragment"
+        android:label="Practice"
+        tools:layout="@layout/fragment_practice" />
+
+    <fragment
         android:id="@+id/nav_profile"
         android:name="com.example.embeddedsystemscareerguide.ui.profile.ProfileFragment"
         android:label="@string/menu_profile"

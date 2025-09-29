@@ -6,15 +6,10 @@ import android.view.Menu
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
-import androidx.core.view.GravityCompat
-import androidx.drawerlayout.widget.DrawerLayout
 import androidx.navigation.findNavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
-import androidx.navigation.ui.NavigationUI
-import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupActionBarWithNavController
-import androidx.navigation.ui.setupWithNavController
 import com.example.embeddedsystemscareerguide.databinding.ActivityMainBinding
 import com.example.embeddedsystemscareerguide.ui.auth.LoginActivity
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -52,129 +47,49 @@ class MainActivity : AppCompatActivity() {
             val navHostFragment = (supportFragmentManager.findFragmentById(R.id.nav_host_fragment_content_main) as NavHostFragment)
             val navController = navHostFragment.navController
 
-            // Handle drawer layout if it exists
-            val drawerLayout: DrawerLayout? = binding.drawerLayout
-            val navView: com.google.android.material.navigation.NavigationView? = binding.navView
-
-            if (navView != null && drawerLayout != null) {
-                appBarConfiguration = AppBarConfiguration(
-                    setOf(
-                        R.id.nav_home,
-                        R.id.nav_learning,
-                        R.id.nav_profile
-                    ),
-                    drawerLayout
+            // Simplified navigation without drawer - all navigation through fragment cards
+            appBarConfiguration = AppBarConfiguration(
+                setOf(
+                    R.id.nav_home,
+                    R.id.nav_learning,
+                    R.id.nav_practice,
+                    R.id.nav_profile
                 )
-                setupActionBarWithNavController(navController, appBarConfiguration)
-                navView.setupWithNavController(navController)
-
-                navView.setNavigationItemSelectedListener { item ->
-                    val handled = when (item.itemId) {
-                        R.id.nav_logout -> {
-                            logout()
-                            true
-                        }
-                        R.id.nav_home -> {
-                            try {
-                                navController.navigate(R.id.nav_home)
-                            } catch (e: Exception) {
-                                // Navigation failed, ignore
-                            }
-                            true
-                        }
-                        R.id.nav_learning -> {
-                            try {
-                                navController.navigate(R.id.nav_learning)
-                            } catch (e: Exception) {
-                                // Navigation failed, ignore
-                            }
-                            true
-                        }
-                        R.id.nav_profile -> {
-                            try {
-                                navController.navigate(R.id.nav_profile)
-                            } catch (e: Exception) {
-                                // Navigation failed, ignore
-                            }
-                            true
-                        }
-                        R.id.nav_settings -> {
-                            try {
-                                navController.navigate(R.id.nav_settings)
-                            } catch (e: Exception) {
-                                // Navigation failed, ignore
-                            }
-                            true
-                        }
-                        else -> {
-                            try {
-                                NavigationUI.onNavDestinationSelected(item, navController)
-                            } catch (e: Exception) {
-                                false
-                            }
-                        }
-                    }
-                    drawerLayout.closeDrawer(GravityCompat.START)
-                    handled
-                }
-            } else {
-                // If no drawer layout, set up basic app bar configuration
-                appBarConfiguration = AppBarConfiguration(
-                    setOf(
-                        R.id.nav_home,
-                        R.id.nav_learning,
-                        R.id.nav_profile
-                    )
-                )
-                setupActionBarWithNavController(navController, appBarConfiguration)
-            }
+            )
+            setupActionBarWithNavController(navController, appBarConfiguration)
 
         } catch (e: Exception) {
-            // Navigation setup failed, continue without navigation
+            e.printStackTrace()
         }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        menuInflater.inflate(R.menu.main_activity_menu, menu)
+        // Inflate a simple menu for logout option
+        menu.add(0, R.id.action_logout, 0, "Logout")
         return true
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        // Handle action bar item clicks here
         return when (item.itemId) {
             R.id.action_logout -> {
                 logout()
-                true
-            }
-            R.id.action_settings -> {
-                // Handle settings navigation
-                Snackbar.make(binding.root, "Settings coming soon!", Snackbar.LENGTH_SHORT).show()
                 true
             }
             else -> super.onOptionsItemSelected(item)
         }
     }
 
-    private fun logout() {
-        try {
-            // Sign out from Firebase
-            FirebaseAuth.getInstance().signOut()
-
-            // Navigate to LoginActivity
-            val intent = Intent(this, LoginActivity::class.java)
-            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            startActivity(intent)
-            finish()
-        } catch (e: Exception) {
-            // If logout fails, still try to go to login
-            val intent = Intent(this, LoginActivity::class.java)
-            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            startActivity(intent)
-            finish()
-        }
-    }
-
     override fun onSupportNavigateUp(): Boolean {
         val navController = findNavController(R.id.nav_host_fragment_content_main)
-        return navController.navigateUp(appBarConfiguration) || super.onSupportNavigateUp()
+        return navController.navigateUp() || super.onSupportNavigateUp()
+    }
+
+    private fun logout() {
+        FirebaseAuth.getInstance().signOut()
+        val intent = Intent(this, LoginActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        startActivity(intent)
+        finish()
     }
 }

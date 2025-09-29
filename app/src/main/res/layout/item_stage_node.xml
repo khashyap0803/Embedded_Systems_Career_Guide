@@ -21,18 +21,18 @@
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="20dp">
 
-        <!-- Main Stage Card -->
+        <!-- Main Stage Card with improved dimensions for better XP display -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/stage_card"
-            android:layout_width="280dp"
-            android:layout_height="140dp"
+            android:layout_width="340dp"
+            android:layout_height="180dp"
             android:layout_centerInParent="true"
             android:clickable="true"
             android:focusable="true"
             android:foreground="?android:attr/selectableItemBackground"
             app:cardBackgroundColor="@color/glass_primary"
-            app:cardCornerRadius="20dp"
-            app:cardElevation="12dp"
+            app:cardCornerRadius="24dp"
+            app:cardElevation="16dp"
             app:strokeColor="@color/indigo_400"
             app:strokeWidth="2dp">
 
@@ -40,7 +40,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:orientation="horizontal"
-                android:padding="16dp">
+                android:padding="20dp">
 
                 <!-- Stage Icon Container -->
                 <FrameLayout
@@ -48,19 +48,19 @@
                     android:layout_height="match_parent"
                     android:layout_gravity="center_vertical">
 
-                    <!-- Icon Background Circle -->
+                    <!-- Enhanced Icon Background Circle -->
                     <com.google.android.material.card.MaterialCardView
-                        android:layout_width="64dp"
-                        android:layout_height="64dp"
+                        android:layout_width="72dp"
+                        android:layout_height="72dp"
                         android:layout_gravity="center"
                         app:cardBackgroundColor="@color/indigo_600"
-                        app:cardCornerRadius="32dp"
-                        app:cardElevation="8dp">
+                        app:cardCornerRadius="36dp"
+                        app:cardElevation="12dp">
 
                         <ImageView
                             android:id="@+id/stage_icon"
-                            android:layout_width="32dp"
-                            android:layout_height="32dp"
+                            android:layout_width="36dp"
+                            android:layout_height="36dp"
                             android:layout_gravity="center"
                             android:src="@drawable/ic_foundations"
                             android:tint="@color/white" />
@@ -69,145 +69,181 @@
                     <!-- Lock Overlay for Locked Stages -->
                     <ImageView
                         android:id="@+id/lock_overlay"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
                         android:layout_gravity="bottom|end"
                         android:background="@drawable/rounded_background"
                         android:backgroundTint="@color/slate_700"
-                        android:padding="4dp"
+                        android:padding="6dp"
                         android:src="@drawable/ic_lock"
                         android:tint="@color/slate_400"
                         android:visibility="gone" />
                 </FrameLayout>
 
-                <!-- Stage Content -->
+                <!-- Stage Content with improved spacing and layout -->
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
                     android:orientation="vertical"
-                    android:paddingStart="12dp">
+                    android:paddingStart="16dp">
 
-                    <!-- Stage Number -->
-                    <TextView
-                        android:id="@+id/stage_number"
-                        android:layout_width="wrap_content"
+                    <!-- Top Row: Stage Number and XP Reward -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:background="@drawable/rounded_background"
-                        android:backgroundTint="@color/emerald_400"
-                        android:paddingHorizontal="8dp"
-                        android:paddingVertical="2dp"
-                        android:text="Stage 1"
-                        android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
-                        android:textColor="@color/black"
-                        android:textStyle="bold" />
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
 
-                    <!-- Stage Title -->
+                        <!-- Stage Number -->
+                        <TextView
+                            android:id="@+id/stage_number"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/rounded_background"
+                            android:backgroundTint="@color/emerald_400"
+                            android:paddingHorizontal="12dp"
+                            android:paddingVertical="4dp"
+                            android:text="Stage 1"
+                            android:textAppearance="@style/TextAppearance.Material3.LabelMedium"
+                            android:textColor="@color/white"
+                            android:textStyle="bold" />
+
+                        <!-- Spacer to push XP to the right -->
+                        <View
+                            android:layout_width="0dp"
+                            android:layout_height="1dp"
+                            android:layout_weight="1" />
+
+                        <!-- XP Reward with better positioning and visibility -->
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/rounded_background"
+                            android:backgroundTint="@color/orange_400"
+                            android:paddingHorizontal="10dp"
+                            android:paddingVertical="5dp"
+                            android:orientation="horizontal"
+                            android:gravity="center">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="⭐"
+                                android:textSize="12sp" />
+
+                            <TextView
+                                android:id="@+id/stage_xp"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="3dp"
+                                android:text="+100XP"
+                                android:textAppearance="@style/TextAppearance.Material3.LabelMedium"
+                                android:textColor="@color/white"
+                                android:textStyle="bold"
+                                android:maxLines="1" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Stage Title with more space -->
                     <TextView
                         android:id="@+id/stage_title"
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
+                        android:layout_marginTop="12dp"
                         android:text="Introduction to Embedded Systems"
                         android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
                         android:textColor="@color/white"
-                        android:textStyle="bold" />
+                        android:textStyle="bold"
+                        android:maxLines="2"
+                        android:ellipsize="end" />
 
                     <!-- Stage Subtitle -->
                     <TextView
                         android:id="@+id/stage_subtitle"
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
+                        android:layout_marginTop="6dp"
                         android:text="Foundation &amp; Basics"
                         android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-                        android:textColor="@color/slate_300" />
+                        android:textColor="@color/slate_300"
+                        android:maxLines="2"
+                        android:ellipsize="end" />
 
-                    <!-- XP Reward -->
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
+                    <!-- Spacer to fill remaining space -->
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="0dp"
+                        android:layout_weight="1" />
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="⭐"
-                            android:textSize="16sp" />
-
-                        <TextView
-                            android:id="@+id/stage_xp"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="4dp"
-                            android:text="+100 XP"
-                            android:textAppearance="@style/TextAppearance.Material3.LabelMedium"
-                            android:textColor="@color/yellow_400"
-                            android:textStyle="bold" />
-                    </LinearLayout>
                 </LinearLayout>
+            </LinearLayout>
 
-                <!-- Completion Stars -->
-                <LinearLayout
-                    android:id="@+id/stars_container"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:gravity="center"
-                    android:orientation="vertical"
-                    android:visibility="gone">
+            <!-- Stars Container for completed stages - repositioned for better visibility -->
+            <LinearLayout
+                android:id="@+id/stars_container"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|end"
+                android:layout_margin="16dp"
+                android:orientation="horizontal"
+                android:visibility="gone"
+                android:background="@drawable/rounded_background"
+                android:backgroundTint="@color/black_50"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="4dp">
 
-                    <ImageView
-                        android:id="@+id/star_1"
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:src="@drawable/ic_star_outline"
-                        android:tint="@color/yellow_400" />
+                <ImageView
+                    android:id="@+id/star_1"
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:layout_marginEnd="2dp"
+                    android:src="@drawable/ic_star_outline"
+                    android:tint="@color/orange_400" />
 
-                    <ImageView
-                        android:id="@+id/star_2"
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:layout_marginTop="4dp"
-                        android:src="@drawable/ic_star_outline"
-                        android:tint="@color/yellow_400" />
+                <ImageView
+                    android:id="@+id/star_2"
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:layout_marginEnd="2dp"
+                    android:src="@drawable/ic_star_outline"
+                    android:tint="@color/orange_400" />
 
-                    <ImageView
-                        android:id="@+id/star_3"
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:layout_marginTop="4dp"
-                        android:src="@drawable/ic_star_outline"
-                        android:tint="@color/yellow_400" />
-                </LinearLayout>
+                <ImageView
+                    android:id="@+id/star_3"
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:src="@drawable/ic_star_outline"
+                    android:tint="@color/orange_400" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!-- Side Decorations for Active Stage -->
+        <!-- Sparkle Effects for completed stages -->
         <ImageView
             android:id="@+id/sparkle_left"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
             android:layout_alignTop="@id/stage_card"
-            android:layout_marginStart="10dp"
-            android:layout_marginTop="20dp"
             android:layout_toStartOf="@id/stage_card"
-            android:src="@drawable/ic_star_filled"
-            android:tint="@color/yellow_400"
-            android:visibility="gone" />
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="20dp"
+            android:src="@drawable/ic_sparkle"
+            android:tint="@color/orange_400"
+            android:visibility="gone"
+            android:alpha="0.8" />
 
         <ImageView
             android:id="@+id/sparkle_right"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
             android:layout_alignTop="@id/stage_card"
-            android:layout_marginTop="60dp"
-            android:layout_marginEnd="10dp"
             android:layout_toEndOf="@id/stage_card"
-            android:src="@drawable/ic_star_filled"
-            android:tint="@color/cyan_400"
-            android:visibility="gone" />
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="20dp"
+            android:src="@drawable/ic_sparkle"
+            android:tint="@color/emerald_400"
+            android:visibility="gone"
+            android:alpha="0.8" />
     </RelativeLayout>
 
     <!-- Connection Line (Bottom) -->
@@ -218,4 +254,5 @@
         android:layout_gravity="center"
         android:background="@color/cyan_400"
         android:visibility="visible" />
+
 </LinearLayout>

@@ -6,12 +6,12 @@
     android:layout_height="match_parent"
     android:background="@color/slate_950">
 
-    <!-- Animated Background -->
+    <!-- Animated Background with better transparency -->
     <ImageView
         android:id="@+id/background_animation"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:alpha="0.3"
+        android:alpha="0.2"
         android:scaleType="centerCrop"
         android:src="@drawable/bg_tech_grid_tile" />
 
@@ -31,9 +31,9 @@
             android:paddingStart="20dp"
             android:paddingTop="40dp"
             android:paddingEnd="20dp"
-            android:paddingBottom="120dp">
+            android:paddingBottom="80dp">
 
-            <!-- Top Header Card -->
+            <!-- Enhanced Header Card with better glassmorphism -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/header_card"
                 android:layout_width="match_parent"
@@ -41,16 +41,16 @@
                 android:layout_alignParentTop="true"
                 android:layout_marginBottom="30dp"
                 app:cardBackgroundColor="@color/glass_primary"
-                app:cardCornerRadius="20dp"
-                app:cardElevation="12dp"
+                app:cardCornerRadius="24dp"
+                app:cardElevation="16dp"
                 app:strokeColor="@color/indigo_400"
-                app:strokeWidth="2dp">
+                app:strokeWidth="1dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="20dp">
+                    android:padding="24dp">
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -61,15 +61,15 @@
                         android:textColor="@color/white"
                         android:textStyle="bold" />
 
-                    <!-- User Progress Stats -->
+                    <!-- User Progress Stats with reset values -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
+                        android:layout_marginTop="20dp"
                         android:orientation="horizontal"
                         android:weightSum="3">
 
-                        <!-- Total XP -->
+                        <!-- Total XP - Start with 0 -->
                         <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
@@ -81,7 +81,7 @@
                                 android:id="@+id/text_total_xp"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="1250"
+                                android:text="0"
                                 android:textAppearance="@style/TextAppearance.Material3.HeadlineMedium"
                                 android:textColor="@color/emerald_400"
                                 android:textStyle="bold" />
@@ -94,7 +94,7 @@
                                 android:textColor="@color/slate_300" />
                         </LinearLayout>
 
-                        <!-- Current Level -->
+                        <!-- Current Stage - Start with 1 -->
                         <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
@@ -106,7 +106,7 @@
                                 android:id="@+id/text_current_level"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="5"
+                                android:text="1"
                                 android:textAppearance="@style/TextAppearance.Material3.HeadlineMedium"
                                 android:textColor="@color/indigo_400"
                                 android:textStyle="bold" />
@@ -119,7 +119,7 @@
                                 android:textColor="@color/slate_300" />
                         </LinearLayout>
 
-                        <!-- Streak -->
+                        <!-- Streak - Start with 1 for today -->
                         <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
@@ -131,7 +131,7 @@
                                 android:id="@+id/text_streak"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="15"
+                                android:text="1"
                                 android:textAppearance="@style/TextAppearance.Material3.HeadlineMedium"
                                 android:textColor="@color/orange_400"
                                 android:textStyle="bold" />
@@ -145,24 +145,25 @@
                         </LinearLayout>
                     </LinearLayout>
 
-                    <!-- Progress Bar -->
+                    <!-- Progress Bar - Start at 0% -->
                     <com.google.android.material.progressindicator.LinearProgressIndicator
                         android:id="@+id/progress_overall"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
-                        android:progress="33"
+                        android:layout_marginTop="20dp"
+                        android:progress="0"
                         app:indicatorColor="@color/emerald_400"
                         app:trackColor="@color/slate_700"
                         app:trackCornerRadius="8dp"
                         app:trackThickness="8dp" />
 
                     <TextView
+                        android:id="@+id/text_progress_detail"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="center"
                         android:layout_marginTop="8dp"
-                        android:text="33% Complete • 5 of 15 stages"
+                        android:text="0% Complete • 0 of 16 stages"
                         android:textAppearance="@style/TextAppearance.Material3.LabelMedium"
                         android:textColor="@color/slate_400" />
                 </LinearLayout>
@@ -176,63 +177,9 @@
                 android:layout_below="@id/header_card"
                 android:orientation="vertical" />
 
-            <!-- Motivational Quote Card at Bottom -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/motivation_card"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_alignParentBottom="true"
-                android:layout_marginTop="40dp"
-                app:cardBackgroundColor="@color/glass_secondary"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="8dp"
-                app:strokeColor="@color/cyan_400"
-                app:strokeWidth="1dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center"
-                    android:orientation="vertical"
-                    android:padding="20dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="💡"
-                        android:textSize="32sp" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:text="&quot;Every expert was once a beginner.&quot;"
-                        android:textAlignment="center"
-                        android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
-                        android:textColor="@color/white"
-                        android:textStyle="italic" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text="Keep learning, keep growing! 🚀"
-                        android:textAppearance="@style/TextAppearance.Material3.LabelMedium"
-                        android:textColor="@color/slate_400" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
         </RelativeLayout>
     </ScrollView>
 
-    <!-- Floating Action Button for Help -->
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fab_help"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
-        android:layout_margin="24dp"
-        android:contentDescription="Help"
-        android:src="@drawable/ic_help_outline"
-        app:backgroundTint="@color/indigo_600"
-        app:tint="@color/white" />
+    <!-- Removed Floating Action Button for Help as requested -->
+
 </FrameLayout>

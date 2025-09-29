@@ -20,10 +20,10 @@ data class LearningStage(
     val estimatedDuration: String = "",
     val order: Int = 0,
     val type: String = "foundation", // Stage type for categorization
-    val isUnlocked: Boolean = false,
-    val isCompleted: Boolean = false,
-    val starsEarned: Int = 0,
-    val progress: Int = 0
+    var isUnlocked: Boolean = false, // Changed to var for mutability
+    var isCompleted: Boolean = false, // Changed to var for mutability
+    var starsEarned: Int = 0, // Changed to var for mutability
+    var progress: Int = 0 // Changed to var for mutability
 )
 
 /**
