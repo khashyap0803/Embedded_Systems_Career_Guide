@@ -260,7 +260,7 @@ class LoginActivity : AppCompatActivity() {
 
         val user = auth.currentUser
         if (user != null) {
-            // Check Firebase Firestore for existing report
+            // Check Firebase Firestore for existing report (ONLY source, no local storage)
             val firestore = com.google.firebase.firestore.FirebaseFirestore.getInstance()
             firestore.collection("assessment_reports")
                 .document(user.uid)
@@ -270,9 +270,9 @@ class LoginActivity : AppCompatActivity() {
 
                     if (document.exists()) {
                         // Report exists in Firebase - returning user, go to Home
-                        // Also update local SharedPreferences flag
+                        // Also update user-specific SharedPreferences flag
                         val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
-                        prefs.edit().putBoolean("assessment_completed", true).commit()
+                        prefs.edit().putBoolean("assessment_completed_${user.uid}", true).commit()
 
                         val intent = Intent(this, MainActivity::class.java)
                         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
@@ -288,9 +288,9 @@ class LoginActivity : AppCompatActivity() {
                 }
                 .addOnFailureListener { e ->
                     hideLoading()
-                    // On failure, fall back to local check
+                    // On failure, fall back to user-specific SharedPreferences check
                     val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
-                    val assessmentCompleted = prefs.getBoolean("assessment_completed", false)
+                    val assessmentCompleted = prefs.getBoolean("assessment_completed_${user.uid}", false)
 
                     if (assessmentCompleted) {
                         val intent = Intent(this, MainActivity::class.java)

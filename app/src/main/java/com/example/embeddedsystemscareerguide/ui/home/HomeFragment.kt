@@ -143,8 +143,12 @@ class HomeFragment : Fragment() {
     }
 
     private fun showAssessmentOptions() {
+        val user = auth.currentUser
+        if (user == null) return
+
         val prefs = requireContext().getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
-        val assessmentCompleted = prefs.getBoolean("assessment_completed", false)
+        // Use user-specific key to check assessment completion
+        val assessmentCompleted = prefs.getBoolean("assessment_completed_${user.uid}", false)
 
         if (assessmentCompleted) {
             // Show dialog with View Report and Retake options
@@ -174,13 +178,16 @@ class HomeFragment : Fragment() {
     }
 
     private fun showRetakeConfirmationDialog() {
+        val user = auth.currentUser
+        if (user == null) return
+
         val builder = androidx.appcompat.app.AlertDialog.Builder(requireContext())
         builder.setTitle("Retake Assessment")
         builder.setMessage("Are you sure you want to retake the assessment? Your previous report will be replaced with a new one.")
         builder.setPositiveButton("Yes, Retake") { _, _ ->
-            // Clear assessment completion flag
+            // Clear user-specific assessment completion flag
             val prefs = requireContext().getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
-            prefs.edit().putBoolean("assessment_completed", false).apply()
+            prefs.edit().putBoolean("assessment_completed_${user.uid}", false).apply()
 
             // Start assessment
             val intent = Intent(requireContext(), AssessmentActivity::class.java)

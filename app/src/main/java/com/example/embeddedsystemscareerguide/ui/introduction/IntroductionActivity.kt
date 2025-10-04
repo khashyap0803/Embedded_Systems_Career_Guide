@@ -9,7 +9,6 @@ import com.example.embeddedsystemscareerguide.databinding.ActivityIntroductionBi
 import com.example.embeddedsystemscareerguide.ui.assessment.AssessmentActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import java.io.File
 
 class IntroductionActivity : AppCompatActivity() {
 
@@ -22,11 +21,11 @@ class IntroductionActivity : AppCompatActivity() {
         binding = ActivityIntroductionBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Check if report already exists before showing UI
-        checkExistingReport()
+        // Check if report already exists in Firebase (ONLY source of truth)
+        checkExistingReportInFirebase()
     }
 
-    private fun checkExistingReport() {
+    private fun checkExistingReportInFirebase() {
         val user = auth.currentUser
         if (user == null) {
             // User not logged in, show introduction
@@ -38,33 +37,27 @@ class IntroductionActivity : AppCompatActivity() {
         binding.buttonStartAssessment.isEnabled = false
         binding.buttonStartAssessment.text = "Checking..."
 
-        // First, check local storage (faster)
-        val reportFile = File(filesDir, "assessment_report.html")
-        if (reportFile.exists()) {
-            // Local report exists, go to home
-            navigateToHome()
-            return
-        }
-
-        // If no local report, check Firebase
+        // Check Firebase Firestore for existing report (ONLY check, no local storage)
         firestore.collection("assessment_reports")
             .document(user.uid)
             .get()
             .addOnSuccessListener { document ->
                 if (document.exists()) {
-                    // Report exists in Firebase, update local flag and go to home
+                    // Report exists in Firebase - update user-specific SharedPreferences flag
                     val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
-                    prefs.edit().putBoolean("assessment_completed", true).commit()
+                    prefs.edit().putBoolean("assessment_completed_${user.uid}", true).commit()
+
+                    // Navigate to home
                     navigateToHome()
                 } else {
-                    // No report exists anywhere, show introduction for assessment
+                    // No report exists in Firebase - show assessment introduction
                     setupUI()
                 }
             }
             .addOnFailureListener {
-                // On error, check local SharedPreferences as fallback
+                // On error, check user-specific SharedPreferences as fallback
                 val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
-                val assessmentCompleted = prefs.getBoolean("assessment_completed", false)
+                val assessmentCompleted = prefs.getBoolean("assessment_completed_${user.uid}", false)
 
                 if (assessmentCompleted) {
                     navigateToHome()

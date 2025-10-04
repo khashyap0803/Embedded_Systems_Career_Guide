@@ -2,15 +2,17 @@ package com.example.embeddedsystemscareerguide.ui.assessment
 
 import android.os.Bundle
 import android.view.MenuItem
-import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.appcompat.app.AppCompatActivity
 import com.example.embeddedsystemscareerguide.databinding.ActivityReportViewerBinding
-import java.io.File
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 class ReportViewerActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityReportViewerBinding
+    private val firestore = FirebaseFirestore.getInstance()
+    private val auth = FirebaseAuth.getInstance()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -25,8 +27,8 @@ class ReportViewerActivity : AppCompatActivity() {
         // Configure WebView
         setupWebView()
 
-        // Load report
-        loadReport()
+        // Load report from Firebase only
+        loadReportFromFirebase()
     }
 
     private fun setupWebView() {
@@ -44,34 +46,12 @@ class ReportViewerActivity : AppCompatActivity() {
         }
     }
 
-    private fun loadReport() {
-        try {
-            // Try to load from local storage first
-            val reportFile = File(filesDir, "assessment_report.html")
-
-            if (reportFile.exists()) {
-                val htmlContent = reportFile.readText()
-                binding.webView.loadDataWithBaseURL(
-                    null,
-                    htmlContent,
-                    "text/html",
-                    "UTF-8",
-                    null
-                )
-            } else {
-                // Local file doesn't exist, try Firebase
-                loadReportFromFirebase()
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            loadReportFromFirebase()
-        }
-    }
-
     private fun loadReportFromFirebase() {
-        val user = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
+        val user = auth.currentUser
         if (user != null) {
-            val firestore = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+            // Show loading in WebView
+            showLoadingMessage()
+
             firestore.collection("assessment_reports")
                 .document(user.uid)
                 .get()
@@ -79,10 +59,7 @@ class ReportViewerActivity : AppCompatActivity() {
                     if (document.exists()) {
                         val htmlContent = document.getString("reportHtml")
                         if (htmlContent != null) {
-                            // Save locally for future offline access
-                            saveReportLocally(htmlContent)
-
-                            // Display report
+                            // Display report directly from Firebase
                             binding.webView.loadDataWithBaseURL(
                                 null,
                                 htmlContent,
@@ -105,17 +82,67 @@ class ReportViewerActivity : AppCompatActivity() {
         }
     }
 
-    private fun saveReportLocally(htmlContent: String) {
-        try {
-            val reportFile = File(filesDir, "assessment_report.html")
-            reportFile.writeText(htmlContent)
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+    private fun showLoadingMessage() {
+        val loadingHtml = """
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <style>
+                    body {
+                        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                        background-color: #0f172a;
+                        color: #cbd5e1;
+                        padding: 2rem;
+                        text-align: center;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        min-height: 100vh;
+                    }
+                    .loading-container {
+                        max-width: 400px;
+                    }
+                    .spinner {
+                        border: 4px solid #1e293b;
+                        border-top: 4px solid #6366f1;
+                        border-radius: 50%;
+                        width: 50px;
+                        height: 50px;
+                        animation: spin 1s linear infinite;
+                        margin: 0 auto 1rem;
+                    }
+                    @keyframes spin {
+                        0% { transform: rotate(0deg); }
+                        100% { transform: rotate(360deg); }
+                    }
+                    h1 {
+                        color: #6366f1;
+                        font-size: 1.5rem;
+                        margin-bottom: 1rem;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="loading-container">
+                    <div class="spinner"></div>
+                    <h1>Loading Your Report...</h1>
+                    <p>Please wait while we fetch your assessment report from the cloud.</p>
+                </div>
+            </body>
+            </html>
+        """.trimIndent()
+
+        binding.webView.loadDataWithBaseURL(
+            null,
+            loadingHtml,
+            "text/html",
+            "UTF-8",
+            null
+        )
     }
 
     private fun showErrorMessage() {
-        // Show error message
         val errorHtml = """
             <!DOCTYPE html>
             <html>
@@ -149,7 +176,7 @@ class ReportViewerActivity : AppCompatActivity() {
             <body>
                 <div class="error-container">
                     <h1>📄 No Report Found</h1>
-                    <p>You haven't completed the assessment yet. Please take the assessment first to generate your personalized report.</p>
+                    <p>Unable to load your assessment report. Please ensure you have completed the assessment and have an active internet connection.</p>
                 </div>
             </body>
             </html>

@@ -22,7 +22,6 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.launch
-import java.io.File
 import java.util.*
 
 class AssessmentActivity : AppCompatActivity() {
@@ -190,20 +189,18 @@ class AssessmentActivity : AppCompatActivity() {
                 val user = auth.currentUser
                 val userName = user?.displayName ?: "Student"
                 val userEmail = user?.email ?: ""
+                val userId = user?.uid ?: ""
 
                 // Generate report using Gemini API
                 binding.progressText.text = "Analyzing your answers with AI...\nPlease wait..."
                 val reportHtml = geminiService.generateReport(userName, userEmail, qaList)
 
-                // Save report locally
-                saveReportLocally(reportHtml)
-
-                // Save report to Firebase
+                // Save report to Firebase ONLY (no local storage)
                 binding.progressText.text = "Saving your report..."
-                saveReportToFirebase(reportHtml, user?.uid ?: "", userName, userEmail)
+                saveReportToFirebase(reportHtml, userId, userName, userEmail)
 
-                // Mark assessment as completed SYNCHRONOUSLY
-                markAssessmentCompleted()
+                // Mark assessment as completed SYNCHRONOUSLY with user-specific key
+                markAssessmentCompleted(userId)
 
                 // Hide loading and show success
                 binding.loadingOverlay.isVisible = false
@@ -229,15 +226,6 @@ class AssessmentActivity : AppCompatActivity() {
                 ).show()
                 e.printStackTrace()
             }
-        }
-    }
-
-    private fun saveReportLocally(htmlContent: String) {
-        try {
-            val reportFile = File(filesDir, "assessment_report.html")
-            reportFile.writeText(htmlContent)
-        } catch (e: Exception) {
-            e.printStackTrace()
         }
     }
 
@@ -271,8 +259,9 @@ class AssessmentActivity : AppCompatActivity() {
         }
     }
 
-    private fun markAssessmentCompleted() {
+    private fun markAssessmentCompleted(userId: String) {
         val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
-        prefs.edit().putBoolean("assessment_completed", true).commit() // Use commit() for synchronous save
+        // Use user-specific key to prevent cross-user contamination
+        prefs.edit().putBoolean("assessment_completed_$userId", true).commit() // Use commit() for synchronous save
     }
 }
