@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import com.example.embeddedsystemscareerguide.R
 import com.example.embeddedsystemscareerguide.databinding.FragmentSettingsBinding
+import com.example.embeddedsystemscareerguide.services.UserProgressSyncService
 import com.example.embeddedsystemscareerguide.ui.auth.LoginActivity
 import com.google.android.material.button.MaterialButton
 import com.google.firebase.auth.FirebaseAuth
@@ -37,6 +38,13 @@ class SettingsFragment : Fragment() {
 
     private fun performLogout() {
         try {
+            // Clear local progress data before signing out to prevent data leakage
+            UserProgressSyncService(requireContext()).clearLocalProgress()
+            
+            // Clear user-specific prefs (including username)
+            requireContext().getSharedPreferences("user_prefs", android.content.Context.MODE_PRIVATE)
+                .edit().clear().apply()
+            
             // Sign out from Firebase
             FirebaseAuth.getInstance().signOut()
 

@@ -108,4 +108,23 @@
     <!-- GameifiedStagesAdapter Strings -->
     <string name="completed_label">Completed!</string>
     <string name="percent_format">%1$d%%</string>
+
+    <!-- M5 fix: Accessibility Content Descriptions -->
+    <string name="cd_learning_path_card">Navigate to Learning Path</string>
+    <string name="cd_assessment_card">Access Assessment Options</string>
+    <string name="cd_practice_card">Navigate to Practice Section</string>
+    <string name="cd_profile_card">Navigate to Profile</string>
+    <string name="cd_ai_tutor_card">Open AI Chat Tutor</string>
+    <string name="cd_progress_bar">Overall Progress Indicator</string>
+    <string name="cd_xp_display">Experience Points Display</string>
+    <string name="cd_streak_display">Learning Streak Display</string>
+    <string name="cd_level_display">Current Level Display</string>
+    <string name="cd_send_message">Send Message</string>
+    <string name="cd_clear_chat">Clear Chat History</string>
+    <string name="cd_quiz_option">Quiz Answer Option</string>
+    <string name="cd_stage_icon">Learning Stage Icon</string>
+    <string name="cd_star_rating">Star Rating Indicator</string>
+    <string name="cd_loading">Loading Content</string>
+    <string name="cd_voice_input">Voice Input Button</string>
 </resources>
+

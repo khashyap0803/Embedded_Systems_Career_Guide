@@ -14,11 +14,11 @@
       },
       "oauth_client": [
         {
-          "client_id": "484952243047-noc4afeti1hjs8tq3pb7o6c2kmpfbj1s.apps.googleusercontent.com",
+          "client_id": "484952243047-tn4r1a3jta1rumv4hl1lkl2nq7en8big.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.example.embeddedsystemscareerguide",
-            "certificate_hash": "2fb02f86689f31c7319785e2b5ab09848e5244b3"
+            "certificate_hash": "f27f146a770d6b20f785edd59c3335663eb217a0"
           }
         },
         {

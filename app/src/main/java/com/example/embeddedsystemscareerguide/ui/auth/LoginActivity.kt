@@ -3,17 +3,22 @@
 package com.example.embeddedsystemscareerguide.ui.auth
 
 import android.animation.ObjectAnimator
-import android.animation.ValueAnimator
 import android.app.Activity
+import android.app.AlertDialog
 import android.content.Intent
 import android.os.Bundle
 import android.util.Patterns
+import android.view.LayoutInflater
 import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
+import com.example.embeddedsystemscareerguide.services.UserProgressSyncService
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import com.example.embeddedsystemscareerguide.MainActivity
 import com.example.embeddedsystemscareerguide.R
 import com.example.embeddedsystemscareerguide.databinding.ActivityLoginBinding
@@ -23,14 +28,24 @@ import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
+import com.google.firebase.firestore.FirebaseFirestore
 
 class LoginActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityLoginBinding
     private lateinit var auth: FirebaseAuth
     private lateinit var googleSignInClient: GoogleSignInClient
+    private val firestore = FirebaseFirestore.getInstance()
+
+    companion object {
+        private val USERNAME_PATTERN = Regex("^[a-z0-9_]{3,20}$")
+    }
 
     private val googleSignInLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -220,13 +235,11 @@ class LoginActivity : AppCompatActivity() {
 
         auth.signInWithEmailAndPassword(email, password)
             .addOnCompleteListener(this) { task ->
-                hideLoading()
                 if (task.isSuccessful) {
-                    // Login successful
-                    showSuccess("Welcome back!")
-                    navigateToMainActivity()
+                    // Login successful - check for username
+                    checkUserProfileAndNavigate(auth.currentUser!!)
                 } else {
-                    // Login failed
+                    hideLoading()
                     showError("Login failed: ${task.exception?.message}")
                 }
             }
@@ -242,70 +255,232 @@ class LoginActivity : AppCompatActivity() {
         val credential = GoogleAuthProvider.getCredential(acct.idToken, null)
         auth.signInWithCredential(credential)
             .addOnCompleteListener(this) { task ->
-                hideLoading()
                 if (task.isSuccessful) {
-                    // Sign in success
-                    showSuccess("Welcome!")
-                    navigateToMainActivity()
+                    // Sign in success - check for username
+                    checkUserProfileAndNavigate(auth.currentUser!!)
                 } else {
-                    // Sign in failed
+                    hideLoading()
                     showError("Authentication failed: ${task.exception?.message}")
                 }
             }
     }
 
-    private fun navigateToMainActivity() {
-        // Show loading while checking assessment status
+    /**
+     * Check if user has a profile with username, if not, create one
+     */
+    private fun checkUserProfileAndNavigate(user: FirebaseUser) {
+        lifecycleScope.launch {
+            try {
+                // First, try to find user by UID in usernames collection
+                val usernameQuery = firestore.collection("usernames")
+                    .whereEqualTo("uid", user.uid)
+                    .get()
+                    .await()
+
+                if (!usernameQuery.isEmpty) {
+                    // User has username, get it and save to SharedPreferences
+                    val username = usernameQuery.documents.first().id
+                    saveUsernameToPrefs(username)
+                    hideLoading()
+                    showSuccess("Welcome back, @$username!")
+                    navigateToMainActivity(username)
+                } else {
+                    // No username found - need to create one
+                    hideLoading()
+                    promptForUsername(user)
+                }
+            } catch (e: Exception) {
+                hideLoading()
+                showError("Error checking profile: ${e.message}")
+            }
+        }
+    }
+
+    /**
+     * Extract username from email (e.g., hello123@gmail.com → hello123)
+     */
+    private fun extractUsernameFromEmail(email: String): String {
+        val localPart = email.substringBefore("@").lowercase()
+        // Clean up: keep only letters, numbers, underscore
+        return localPart.replace(Regex("[^a-z0-9_]"), "").take(20)
+    }
+
+    /**
+     * Prompt user to choose a username (for Google Sign-In users)
+     */
+    private fun promptForUsername(user: FirebaseUser) {
+        val suggestedUsername = extractUsernameFromEmail(user.email ?: "user")
+
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_username_prompt, null)
+        val usernameInput = dialogView.findViewById<TextInputEditText>(R.id.editTextUsername)
+        val usernameLayout = dialogView.findViewById<TextInputLayout>(R.id.textFieldUsername)
+        
+        usernameInput.setText(suggestedUsername)
+
+        val dialog = MaterialAlertDialogBuilder(this)
+            .setTitle("Choose Your Username")
+            .setMessage("This will be your unique identifier in the app")
+            .setView(dialogView)
+            .setCancelable(false)
+            .setPositiveButton("Continue", null) // Set null to override later
+            .create()
+
+        dialog.show()
+
+        // Override positive button to add validation
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+            val username = usernameInput.text.toString().lowercase().trim()
+
+            if (!USERNAME_PATTERN.matches(username)) {
+                usernameLayout.error = "3-20 characters: letters, numbers, underscore only"
+                return@setOnClickListener
+            }
+
+            usernameLayout.error = null
+            showLoading()
+
+            lifecycleScope.launch {
+                try {
+                    // Check if username is available
+                    val exists = firestore.collection("usernames")
+                        .document(username)
+                        .get()
+                        .await()
+                        .exists()
+
+                    if (exists) {
+                        hideLoading()
+                        usernameLayout.error = "Username already taken"
+                        return@launch
+                    }
+
+                    // Create user profile and username mapping
+                    createUserProfile(user, username)
+                    dialog.dismiss()
+                    
+                    showSuccess("Welcome, @$username!")
+                    navigateToMainActivity(username)
+                } catch (e: Exception) {
+                    hideLoading()
+                    usernameLayout.error = "Error: ${e.message}"
+                }
+            }
+        }
+    }
+
+    /**
+     * Create user profile and username mapping in Firestore
+     */
+    private suspend fun createUserProfile(user: FirebaseUser, username: String) {
+        val batch = firestore.batch()
+
+        // 1. Create username mapping
+        val usernameRef = firestore.collection("usernames").document(username)
+        batch.set(usernameRef, mapOf(
+            "uid" to user.uid,
+            "createdAt" to System.currentTimeMillis()
+        ))
+
+        // 2. Create user profile
+        val userRef = firestore.collection("users").document(username)
+        batch.set(userRef, mapOf(
+            "uid" to user.uid,
+            "username" to username,
+            "email" to (user.email ?: ""),
+            "displayName" to (user.displayName ?: username),
+            "photoUrl" to (user.photoUrl?.toString() ?: ""),
+            "createdAt" to System.currentTimeMillis(),
+            "lastLogin" to System.currentTimeMillis()
+        ))
+
+        batch.commit().await()
+        
+        // Save username to SharedPreferences
+        saveUsernameToPrefs(username)
+    }
+
+    private fun saveUsernameToPrefs(username: String) {
+        getSharedPreferences("user_prefs", MODE_PRIVATE)
+            .edit()
+            .putString("current_username", username)
+            .apply()
+    }
+
+    private fun navigateToMainActivity(username: String) {
         showLoading()
 
         val user = auth.currentUser
         if (user != null) {
-            // Check Firebase Firestore for existing report (ONLY source, no local storage)
-            val firestore = com.google.firebase.firestore.FirebaseFirestore.getInstance()
-            firestore.collection("assessment_reports")
-                .document(user.uid)
+            // Check Firebase Firestore for existing report using username
+            firestore.collection("users")
+                .document(username)
+                .collection("data")
+                .document("report")
                 .get()
                 .addOnSuccessListener { document ->
                     hideLoading()
 
                     if (document.exists()) {
-                        // Report exists in Firebase - returning user, go to Home
-                        // Also update user-specific SharedPreferences flag
-                        val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
-                        prefs.edit().putBoolean("assessment_completed_${user.uid}", true).commit()
-
-                        val intent = Intent(this, MainActivity::class.java)
-                        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                        startActivity(intent)
+                        // Report exists - returning user
+                        syncProgressAndNavigate(username)
                     } else {
-                        // No report in Firebase - first time user, go to Assessment
+                        // No report - first time user, go to Assessment
                         val intent = Intent(this, com.example.embeddedsystemscareerguide.ui.assessment.AssessmentActivity::class.java)
                         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                         startActivity(intent)
+                        overridePendingTransition(R.anim.fade_in, R.anim.fade_out)
+                        finish()
                     }
-                    overridePendingTransition(R.anim.fade_in, R.anim.fade_out)
-                    finish()
                 }
                 .addOnFailureListener { e ->
                     hideLoading()
-                    // On failure, fall back to user-specific SharedPreferences check
-                    val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
-                    val assessmentCompleted = prefs.getBoolean("assessment_completed_${user.uid}", false)
-
-                    if (assessmentCompleted) {
-                        val intent = Intent(this, MainActivity::class.java)
-                        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                        startActivity(intent)
-                    } else {
-                        val intent = Intent(this, com.example.embeddedsystemscareerguide.ui.assessment.AssessmentActivity::class.java)
-                        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                        startActivity(intent)
-                    }
-                    overridePendingTransition(R.anim.fade_in, R.anim.fade_out)
-                    finish()
+                    // On failure, check with old path for backwards compatibility
+                    checkLegacyReportAndNavigate(user.uid, username)
                 }
         } else {
             hideLoading()
+        }
+    }
+
+    private fun checkLegacyReportAndNavigate(uid: String, username: String) {
+        // Check old assessment_reports collection
+        firestore.collection("assessment_reports")
+            .document(uid)
+            .get()
+            .addOnSuccessListener { document ->
+                if (document.exists()) {
+                    // Migrate old report to new location
+                    lifecycleScope.launch {
+                        migrateReport(document.data, username)
+                        syncProgressAndNavigate(username)
+                    }
+                } else {
+                    // No report anywhere - go to Assessment
+                    val intent = Intent(this, com.example.embeddedsystemscareerguide.ui.assessment.AssessmentActivity::class.java)
+                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    startActivity(intent)
+                    overridePendingTransition(R.anim.fade_in, R.anim.fade_out)
+                    finish()
+                }
+            }
+            .addOnFailureListener {
+                // Go to Assessment on error
+                val intent = Intent(this, com.example.embeddedsystemscareerguide.ui.assessment.AssessmentActivity::class.java)
+                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                startActivity(intent)
+                overridePendingTransition(R.anim.fade_in, R.anim.fade_out)
+                finish()
+            }
+    }
+
+    private suspend fun migrateReport(reportData: Map<String, Any>?, username: String) {
+        if (reportData != null) {
+            firestore.collection("users")
+                .document(username)
+                .collection("data")
+                .document("report")
+                .set(reportData)
+                .await()
         }
     }
 
@@ -329,12 +504,6 @@ class LoginActivity : AppCompatActivity() {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 
-    private fun shakeView(view: View) {
-        val shake = ObjectAnimator.ofFloat(view, "translationX", 0f, 25f, -25f, 25f, -25f, 15f, -15f, 6f, -6f, 0f)
-        shake.duration = 500
-        shake.start()
-    }
-
     private fun navigateToIntroduction() {
         val intent = Intent(this, IntroductionActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
@@ -349,6 +518,42 @@ class LoginActivity : AppCompatActivity() {
         val currentUser = auth.currentUser
         if (currentUser != null) {
             navigateToIntroduction()
+        }
+    }
+
+    /**
+     * Sync progress from cloud and navigate to MainActivity
+     */
+    private fun syncProgressAndNavigate(username: String) {
+        lifecycleScope.launch {
+            try {
+                val syncService = UserProgressSyncService(this@LoginActivity)
+                
+                // Sync progress (merge local and cloud, take better values)
+                val syncSuccess = syncService.syncProgress()
+                
+                if (syncSuccess) {
+                    android.util.Log.d("LoginActivity", "Progress synced for user: $username")
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("LoginActivity", "Error syncing progress: ${e.message}")
+            }
+            
+            // Update assessment completion flag
+            val user = auth.currentUser
+            if (user != null) {
+                val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
+                prefs.edit().putBoolean("assessment_completed_${user.uid}", true).apply()
+            }
+            
+            // Navigate to MainActivity
+            runOnUiThread {
+                val intent = Intent(this@LoginActivity, MainActivity::class.java)
+                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                startActivity(intent)
+                overridePendingTransition(R.anim.fade_in, R.anim.fade_out)
+                finish()
+            }
         }
     }
 }

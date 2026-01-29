@@ -11,6 +11,7 @@ import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupActionBarWithNavController
 import com.example.embeddedsystemscareerguide.databinding.ActivityMainBinding
+import com.example.embeddedsystemscareerguide.services.UserProgressSyncService
 import com.example.embeddedsystemscareerguide.ui.auth.LoginActivity
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
@@ -86,6 +87,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun logout() {
+        // Clear local progress data before signing out to prevent data leakage
+        UserProgressSyncService(this).clearLocalProgress()
+        
+        // Clear user-specific prefs (including username)
+        getSharedPreferences("user_prefs", MODE_PRIVATE).edit().clear().apply()
+        
         FirebaseAuth.getInstance().signOut()
         val intent = Intent(this, LoginActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK

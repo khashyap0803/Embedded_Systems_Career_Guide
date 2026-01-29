@@ -48,6 +48,9 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:hint="Username"
+        app:helperTextEnabled="true"
+        app:helperText="3-20 characters, letters, numbers, underscore only"
+        app:endIconMode="custom"
         app:layout_constraintTop_toBottomOf="@id/textViewRegisterSubtitle"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -57,7 +60,8 @@
             android:id="@+id/editTextUsernameRegister"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:inputType="textPersonName" />
+            android:inputType="textPersonName"
+            android:maxLength="20" />
     </com.google.android.material.textfield.TextInputLayout>
 
     <com.google.android.material.textfield.TextInputLayout

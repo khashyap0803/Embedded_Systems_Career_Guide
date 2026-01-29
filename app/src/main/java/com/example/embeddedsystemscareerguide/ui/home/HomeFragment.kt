@@ -13,6 +13,7 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
+import com.example.embeddedsystemscareerguide.PrefsKeys
 import com.example.embeddedsystemscareerguide.R
 import com.example.embeddedsystemscareerguide.databinding.FragmentHomeBinding
 import com.example.embeddedsystemscareerguide.ui.assessment.AssessmentActivity
@@ -20,6 +21,19 @@ import com.example.embeddedsystemscareerguide.ui.assessment.ReportViewerActivity
 import com.google.firebase.auth.FirebaseAuth
 import java.util.*
 
+/**
+ * Home Fragment - Main dashboard and app entry point
+ *
+ * Displays user progress, daily insights, and quick navigation actions.
+ * Features include:
+ * - Personalized welcome message with username
+ * - Progress dashboard (XP, level, completed stages)
+ * - Daily streak tracking and motivational insights
+ * - Quick action buttons for learning, assessment, AI chat
+ * - Achievement badges display
+ *
+ * @see HomeViewModel for state management
+ */
 class HomeFragment : Fragment() {
 
     private var _binding: FragmentHomeBinding? = null
@@ -47,7 +61,7 @@ class HomeFragment : Fragment() {
         viewModel = ViewModelProvider(this)[HomeViewModel::class.java]
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
         auth = FirebaseAuth.getInstance()
-        prefs = requireContext().getSharedPreferences("learning_progress", Context.MODE_PRIVATE)
+        prefs = requireContext().getSharedPreferences(PrefsKeys.PREFS_LEARNING, Context.MODE_PRIVATE)
         return binding.root
     }
 
@@ -58,6 +72,7 @@ class HomeFragment : Fragment() {
         setupProgressDashboard()
         setupQuickActions()
         setupStudyStreak()
+        setupAchievements()  // Fix RecyclerView warning
         startAnimations()
     }
 
@@ -69,10 +84,16 @@ class HomeFragment : Fragment() {
 
     private fun setupUserWelcome() {
         val user = auth.currentUser
-        val userName = user?.displayName?.split(" ")?.firstOrNull() ?: "Developer"
+        
+        // Get username from SharedPreferences (unique identifier)
+        val userPrefs = requireContext().getSharedPreferences(PrefsKeys.PREFS_USER, Context.MODE_PRIVATE)
+        val username = userPrefs.getString(PrefsKeys.CURRENT_USERNAME, null)
+        
+        // Display username with @ prefix, fallback to first name or "Developer"
+        val displayName = username ?: (user?.displayName?.split(" ")?.firstOrNull() ?: "Developer")
 
         // Animate welcome message
-        binding.textWelcomeMessage.text = "Welcome back, $userName!"
+        binding.textWelcomeMessage.text = "Welcome back, $displayName!"
 
         // Set greeting based on time of day
         val currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
@@ -91,11 +112,12 @@ class HomeFragment : Fragment() {
 
     private fun setupProgressDashboard() {
         // Load real progress from shared preferences (synced with learning path)
-        val totalXP = prefs.getInt("home_total_xp", 0)
-        val currentLevel = prefs.getInt("home_current_level", 1)
-        val currentStreak = prefs.getInt("home_streak", 1)
+        // M8 fix: Using PrefsKeys constants instead of hardcoded strings
+        val totalXP = prefs.getInt(PrefsKeys.TOTAL_XP, 0)
+        val currentLevel = prefs.getInt(PrefsKeys.CURRENT_LEVEL, 1)
+        val currentStreak = prefs.getInt(PrefsKeys.STREAK, 1)
         val overallProgress = prefs.getInt("home_progress_percentage", 0)
-        val completedStages = prefs.getInt("home_completed_stages", 0)
+        val completedStages = prefs.getInt(PrefsKeys.COMPLETED_STAGES, 0)
         val totalStages = prefs.getInt("home_total_stages", 16)
 
         // Update progress percentage display
@@ -140,6 +162,11 @@ class HomeFragment : Fragment() {
         binding.cardProfile.setOnClickListener {
             findNavController().navigate(R.id.nav_profile)
         }
+
+        // AI Tutor card - navigates to AI chat fragment
+        binding.cardAiTutor.setOnClickListener {
+            findNavController().navigate(R.id.nav_chat)
+        }
     }
 
     private fun showAssessmentOptions() {
@@ -152,24 +179,24 @@ class HomeFragment : Fragment() {
 
         if (assessmentCompleted) {
             // Show dialog with View Report and Retake options
-            val options = arrayOf("View Report", "Retake Assessment")
-            val builder = androidx.appcompat.app.AlertDialog.Builder(requireContext())
-            builder.setTitle("Assessment Options")
-            builder.setItems(options) { _, which ->
-                when (which) {
-                    0 -> {
-                        // View Report
-                        val intent = Intent(requireContext(), ReportViewerActivity::class.java)
-                        startActivity(intent)
-                    }
-                    1 -> {
-                        // Retake Assessment
-                        showRetakeConfirmationDialog()
+            val options = arrayOf("📊 View Report", "🔄 Retake Assessment")
+            com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext(), R.style.Theme_App_AlertDialog)
+                .setTitle("📋 Assessment Options")
+                .setItems(options) { _, which ->
+                    when (which) {
+                        0 -> {
+                            // View Report
+                            val intent = Intent(requireContext(), ReportViewerActivity::class.java)
+                            startActivity(intent)
+                        }
+                        1 -> {
+                            // Retake Assessment
+                            showRetakeConfirmationDialog()
+                        }
                     }
                 }
-            }
-            builder.setNegativeButton("Cancel", null)
-            builder.show()
+                .setNegativeButton("Cancel", null)
+                .show()
         } else {
             // First time - directly start assessment
             val intent = Intent(requireContext(), AssessmentActivity::class.java)
@@ -181,26 +208,26 @@ class HomeFragment : Fragment() {
         val user = auth.currentUser
         if (user == null) return
 
-        val builder = androidx.appcompat.app.AlertDialog.Builder(requireContext())
-        builder.setTitle("Retake Assessment")
-        builder.setMessage("Are you sure you want to retake the assessment? Your previous report will be replaced with a new one.")
-        builder.setPositiveButton("Yes, Retake") { _, _ ->
-            // Clear user-specific assessment completion flag
-            val prefs = requireContext().getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
-            prefs.edit().putBoolean("assessment_completed_${user.uid}", false).apply()
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext(), R.style.Theme_App_AlertDialog)
+            .setTitle("⚠️ Retake Assessment")
+            .setMessage("Are you sure you want to retake the assessment? Your previous report will be replaced with a new one.")
+            .setPositiveButton("Yes, Retake") { _, _ ->
+                // Clear user-specific assessment completion flag
+                val prefs = requireContext().getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+                prefs.edit().putBoolean("assessment_completed_${user.uid}", false).apply()
 
-            // Start assessment
-            val intent = Intent(requireContext(), AssessmentActivity::class.java)
-            startActivity(intent)
-        }
-        builder.setNegativeButton("Cancel", null)
-        builder.show()
+                // Start assessment
+                val intent = Intent(requireContext(), AssessmentActivity::class.java)
+                startActivity(intent)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     private fun setupStudyStreak() {
         // Load real streak data from SharedPreferences (synced with learning path)
-        val streak = prefs.getInt("home_streak", 1)
-        val lastVisitDate = prefs.getString("last_visit_date", "")
+        val streak = prefs.getInt(PrefsKeys.STREAK, 1)
+        val lastVisitDate = prefs.getString(PrefsKeys.LAST_ACTIVE_DATE, "")
         val today = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())
 
         // Update streak display with real data
@@ -219,6 +246,17 @@ class HomeFragment : Fragment() {
 
         // Update visual streak indicators based on real data
         updateStreakVisualIndicators(streak)
+    }
+
+    /**
+     * Setup achievements section - hide RecyclerView and show empty state
+     * This fixes the "No adapter attached" warning
+     */
+    private fun setupAchievements() {
+        // Hide the RecyclerView since we're not using it yet
+        // Show the empty state instead
+        binding.recyclerAchievements.visibility = android.view.View.GONE
+        binding.layoutEmptyAchievements.visibility = android.view.View.VISIBLE
     }
 
     private fun updateStreakVisualIndicators(streak: Int) {

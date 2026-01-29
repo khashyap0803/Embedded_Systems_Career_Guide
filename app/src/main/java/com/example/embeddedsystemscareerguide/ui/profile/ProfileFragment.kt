@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import com.example.embeddedsystemscareerguide.R
 import com.example.embeddedsystemscareerguide.databinding.FragmentProfileBinding
+import com.example.embeddedsystemscareerguide.services.UserProgressSyncService
 import com.example.embeddedsystemscareerguide.ui.auth.LoginActivity
 import com.google.android.material.button.MaterialButton
 import com.google.firebase.auth.FirebaseAuth
@@ -41,14 +42,25 @@ class ProfileFragment : Fragment() {
     private fun setupUserInfo() {
         val currentUser = FirebaseAuth.getInstance().currentUser
         currentUser?.let { user ->
+            // Get username from SharedPreferences
+            val userPrefs = requireContext().getSharedPreferences("user_prefs", android.content.Context.MODE_PRIVATE)
+            val username = userPrefs.getString("current_username", null)
+            
             // Update UI with user information
             binding.textViewUserEmail?.text = user.email ?: "No email"
-            binding.textViewUserName?.text = user.displayName ?: "User"
+            binding.textViewUserName?.text = username ?: (user.displayName ?: "User")
         }
     }
 
     private fun performLogout() {
         try {
+            // Clear local progress data before signing out to prevent data leakage
+            UserProgressSyncService(requireContext()).clearLocalProgress()
+            
+            // Clear user-specific prefs (including username)
+            requireContext().getSharedPreferences("user_prefs", android.content.Context.MODE_PRIVATE)
+                .edit().clear().apply()
+            
             // Sign out from Firebase
             FirebaseAuth.getInstance().signOut()
 

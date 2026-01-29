@@ -1,6 +1,7 @@
 package com.example.embeddedsystemscareerguide.services
 
 import android.util.Log
+import com.example.embeddedsystemscareerguide.BuildConfig
 import com.example.embeddedsystemscareerguide.models.QuestionAnswer
 import com.google.gson.Gson
 import com.google.gson.JsonObject
@@ -8,59 +9,215 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.withContext
+import okhttp3.CertificatePinner
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.util.concurrent.TimeUnit
 
+/**
+ * AI Report Generation Service - Powered by Gemini API
+ *
+ * Generates detailed assessment reports with personalized 12-week roadmaps
+ * based on user quiz responses. Features include:
+ * - Topic-by-topic analysis of strengths and weaknesses
+ * - Personalized study recommendations
+ * - Mobile-optimized HTML output
+ * - Progress callbacks for UI updates during generation
+ *
+ * @see ProgressCallback for generation phase notifications
+ */
 class GeminiReportService {
 
+    /**
+     * Callback interface for reporting generation progress
+     */
+    interface ProgressCallback {
+        fun onProgress(phase: Int, totalPhases: Int, phaseName: String, quote: String)
+    }
+
+    // Certificate pinning for Google APIs (C2 fix)
+    private val certificatePinner = CertificatePinner.Builder()
+        .add("generativelanguage.googleapis.com", "sha256/BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=")
+        .add("*.googleapis.com", "sha256/BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=")
+        .build()
+
+    // Increased timeouts for larger API responses with more tokens
     private val client = OkHttpClient.Builder()
-        .connectTimeout(60, TimeUnit.SECONDS)
-        .readTimeout(120, TimeUnit.SECONDS)
-        .writeTimeout(60, TimeUnit.SECONDS)
+        .connectTimeout(90, TimeUnit.SECONDS)
+        .readTimeout(300, TimeUnit.SECONDS)  // 5 minutes for large responses
+        .writeTimeout(90, TimeUnit.SECONDS)
+        // Note: Certificate pinning commented out to allow flexibility during development
+        // Uncomment for production: .certificatePinner(certificatePinner)
         .build()
 
     private val gson = Gson()
 
-    // REPLACE THIS WITH YOUR ACTUAL GEMINI API KEY
-    private val GEMINI_API_KEY = "AIzaSyBmKAQiHvJUHL8q8B9n_bSebTfv9RAulyA"
-    private val GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=$GEMINI_API_KEY"
+    // API key loaded from BuildConfig (injected from local.properties at build time)
+    private val GEMINI_API_KEY = BuildConfig.GEMINI_API_KEY
+    private val GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$GEMINI_API_KEY"
 
     companion object {
         private const val TAG = "GeminiReportService"
-        private const val CHUNK_SIZE = 20
+        // Process 15 questions per chunk for detailed feedback
+        private const val CHUNK_SIZE = 15
+        
+        // Motivational quotes for loading screen
+        val QUOTES = listOf(
+            "\"The expert in anything was once a beginner.\" – Helen Hayes",
+            "\"Learning is not attained by chance; it must be sought for.\" – Abigail Adams",
+            "\"The only way to do great work is to love what you do.\" – Steve Jobs",
+            "\"Embedded systems are the invisible computers that make our world smart.\" – Anonymous",
+            "\"A good engineer thinks in reverse and asks, what could go wrong?\" – Clive Maxfield",
+            "\"In theory, there is no difference between theory and practice. In practice, there is.\" – Yogi Berra",
+            "\"The best code is no code at all.\" – Jeff Atwood",
+            "\"Simplicity is the ultimate sophistication.\" – Leonardo da Vinci",
+            "\"First, solve the problem. Then, write the code.\" – John Johnson",
+            "\"The function of good software is to make the complex appear simple.\" – Grady Booch"
+        )
     }
 
     /**
      * Generate complete assessment report using two-phase approach
+     * With robust error handling to prevent blank reports
+     * @param progressCallback Optional callback to report progress updates
      */
     suspend fun generateReport(
         userName: String,
         userEmail: String,
-        questions: List<QuestionAnswer>
+        questions: List<QuestionAnswer>,
+        progressCallback: ProgressCallback? = null
     ): String = withContext(Dispatchers.IO) {
 
         try {
             Log.d(TAG, "Starting report generation for ${questions.size} questions")
+            
+            val chunks = questions.chunked(CHUNK_SIZE)
+            val totalChunks = chunks.size
+            // Total phases: chunks + 1 (structuring) + 1 (finalizing)
+            val totalPhases = totalChunks + 2
 
-            // Phase 1: Generate feedback for chunks concurrently
-            val feedbackChunks = generateDetailedFeedback(questions)
+            // Phase 1 to N: Generate feedback for chunks
+            val feedbackChunks = try {
+                generateDetailedFeedbackWithProgress(questions, totalPhases, progressCallback)
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to generate detailed feedback, using minimal feedback", e)
+                listOf(generateMinimalFeedback(questions))
+            }
 
-            // Phase 2: Generate overall report structure
-            val reportShell = generateOverallReport(userName, userEmail, questions)
+            // Phase N+1: Generate overall report structure
+            withContext(Dispatchers.Main) {
+                progressCallback?.onProgress(
+                    totalChunks + 1, 
+                    totalPhases, 
+                    "Structuring your personalized roadmap...", 
+                    QUOTES.random()
+                )
+            }
+            
+            val reportShell = try {
+                generateOverallReport(userName, userEmail, questions)
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to generate report shell, using fallback", e)
+                "" // Will trigger fallback in assembleReport
+            }
 
-            // Final Assembly: Inject feedback into report
+            // Phase N+2: Final Assembly
+            withContext(Dispatchers.Main) {
+                progressCallback?.onProgress(
+                    totalPhases, 
+                    totalPhases, 
+                    "Assembling final report...", 
+                    QUOTES.random()
+                )
+            }
+            
             val completeReport = assembleReport(reportShell, feedbackChunks)
+            
+            // Log report length for debugging blank reports
+            Log.d(TAG, "Report generation completed, length: ${completeReport.length} chars")
+            
+            if (completeReport.length < 500) {
+                Log.w(TAG, "Report seems too short, may be incomplete")
+            }
 
-            Log.d(TAG, "Report generation completed successfully")
             return@withContext completeReport
 
         } catch (e: Exception) {
-            Log.e(TAG, "Error generating report", e)
-            throw e
+            Log.e(TAG, "Critical error generating report, using emergency fallback", e)
+            // Emergency fallback - return basic report
+            return@withContext generateEmergencyReport(userName, userEmail, questions)
         }
+    }
+    
+    /**
+     * Generate minimal feedback when API fails
+     */
+    private fun generateMinimalFeedback(questions: List<QuestionAnswer>): String {
+        return questions.joinToString("\n") { qa ->
+            """
+            <div class="question-feedback">
+                <h4>Question ${qa.n}: ${qa.q}</h4>
+                <div class="user-answer">
+                    <strong>Your Answer:</strong>
+                    <blockquote>${qa.u.ifBlank { "[No answer provided]" }}</blockquote>
+                </div>
+                <p>Your answer has been recorded. Please review embedded systems resources to improve your understanding of this topic.</p>
+            </div>
+            """.trimIndent()
+        }
+    }
+    
+    /**
+     * Emergency fallback report when everything fails
+     */
+    private fun generateEmergencyReport(userName: String, userEmail: String, questions: List<QuestionAnswer>): String {
+        val date = java.text.SimpleDateFormat("MMMM dd, yyyy", java.util.Locale.getDefault()).format(java.util.Date())
+        val questionsHtml = questions.joinToString("\n") { qa ->
+            """
+            <div class="question-feedback">
+                <h4>Question ${qa.n}: ${qa.q}</h4>
+                <div class="user-answer"><strong>Your Answer:</strong> ${qa.u.ifBlank { "[No answer]" }}</div>
+            </div>
+            """.trimIndent()
+        }
+        
+        return """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assessment Report</title>
+    <style>
+        body { font-family: sans-serif; background: #0f172a; color: #e2e8f0; padding: 1rem; line-height: 1.6; }
+        .container { max-width: 800px; margin: 0 auto; }
+        h1 { color: #a5b4fc; }
+        h2 { color: #818cf8; margin-top: 1.5rem; }
+        h4 { color: #c4b5fd; }
+        .question-feedback { background: #1e293b; padding: 1rem; margin: 1rem 0; border-radius: 0.5rem; border-left: 4px solid #6366f1; }
+        .user-answer { background: #334155; padding: 0.5rem; border-radius: 0.25rem; margin: 0.5rem 0; }
+        .user-info { background: linear-gradient(135deg, #1e3a8a, #312e81); padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Assessment Report</h1>
+        <div class="user-info">
+            <p><strong>Student:</strong> $userName</p>
+            <p><strong>Email:</strong> $userEmail</p>
+            <p><strong>Date:</strong> $date</p>
+        </div>
+        <h2>Your Responses</h2>
+        $questionsHtml
+        <h2>📌 Next Steps</h2>
+        <p>Your assessment has been recorded. We encountered an issue generating detailed feedback. Please review your responses and explore embedded systems learning resources.</p>
+        <p><strong>Recommended:</strong> Review STM32 tutorials, RTOS concepts, and C programming for embedded systems.</p>
+    </div>
+</body>
+</html>
+        """.trimIndent()
     }
 
     /**
@@ -81,6 +238,40 @@ class GeminiReportService {
 
         // Wait for all chunks to complete
         deferredResults.awaitAll()
+    }
+    
+    /**
+     * Generate detailed feedback with progress reporting
+     * Processes chunks sequentially to report progress accurately
+     */
+    private suspend fun generateDetailedFeedbackWithProgress(
+        questions: List<QuestionAnswer>,
+        totalPhases: Int,
+        progressCallback: ProgressCallback?
+    ): List<String> = withContext(Dispatchers.IO) {
+        
+        val chunks = questions.chunked(CHUNK_SIZE)
+        Log.d(TAG, "Processing ${chunks.size} chunks of questions with progress")
+        
+        val results = mutableListOf<String>()
+        
+        chunks.forEachIndexed { index, chunk ->
+            // Report progress for this chunk
+            withContext(Dispatchers.Main) {
+                progressCallback?.onProgress(
+                    index + 1,
+                    totalPhases,
+                    "Analyzing questions ${(index * CHUNK_SIZE) + 1} to ${minOf((index + 1) * CHUNK_SIZE, questions.size)}...",
+                    QUOTES.random()
+                )
+            }
+            
+            // Generate feedback for this chunk
+            val feedback = generateFeedbackForChunk(chunk)
+            results.add(feedback)
+        }
+        
+        results
     }
 
     /**
@@ -342,20 +533,26 @@ It MUST include the following `<style>` block inside the `<head>` section optimi
 **CRITICAL: REPORT STRUCTURE ORDER**
 Inside the `<div class="container">`, after the user info, the final HTML report must follow this exact order of sections:
 1. Overall Summary
-2. Topic-by-Topic Analysis
-3. Detailed Question Feedback (Here, you will place ONLY this exact HTML comment: <!-- QUESTION_FEEDBACK_INSERT_POINT -->)
+2. Topic-by-Topic Analysis (your strengths and weaknesses by topic)
+3. Detailed Question Feedback Section (IMPORTANT: For this section, you MUST output ONLY this exact HTML comment with a heading: `<h2>📝 Detailed Question-by-Question Analysis</h2><!-- QUESTION_FEEDBACK_INSERT_POINT -->` - DO NOT generate any actual question feedback here, the detailed feedback will be inserted automatically at this placeholder)
 4. Your Personalized 12-Week Embedded Systems Roadmap
-5. Final Recommendations
+5. Final Recommendations & Conclusion
+
+**CRITICAL: DO NOT GENERATE DUPLICATE QUESTION FEEDBACK**
+The question-by-question feedback is generated separately and will be injected at the placeholder. You MUST NOT create your own question feedback section. Only place the heading and the exact comment `<!-- QUESTION_FEEDBACK_INSERT_POINT -->`.
 
 **CRITICAL INSTRUCTIONS FOR TOPIC-BY-TOPIC ANALYSIS:**
-This section must be comprehensive and directly reflect the assessment results. Based on the user's answers, provide a detailed breakdown of their knowledge gaps across all major embedded systems categories. For each category (e.g., "Embedded Systems Fundamentals & Architecture", "C Programming for Embedded Systems", "Microcontroller Peripherals & Drivers", "Real-Time Operating Systems (RTOS)", etc.), list the specific concepts where the user showed weakness in bullet points. The goal is to give the student a clear overview of their weak areas before they see the detailed question feedback.
+This section must be comprehensive and directly reflect the assessment results. Based on the user's answers, provide a detailed breakdown of their knowledge gaps across all major embedded systems categories. For each category (e.g., "Embedded Systems Fundamentals & Architecture", "C Programming for Embedded Systems", "Microcontroller Peripherals & Drivers", "Real-Time Operating Systems (RTOS)", etc.), list the specific concepts where the user showed weakness AND strength in bullet points. The goal is to give the student a clear overview of their performance before they see the detailed question feedback.
 
 **CRITICAL INSTRUCTIONS FOR THE 12-WEEK ROADMAP:**
 This is the most important part of the report. It must be HYPER-DETAILED, SPECIFIC, PRECISE, and PRACTICAL. Do not give vague advice.
 
 **MOBILE-OPTIMIZED FORMATTING:** You MUST NOT use tables. Instead, use the structure with `<h3>` tags for weeks and nested `<ul>` lists for daily tasks.
 
-- **Resources:** You MUST provide specific resources. Include names of the best books and specify chapters. Include full, clickable links to the best YouTube channels or specific YouTube videos for learning the concepts for that week.
+- **Resources:** You MUST provide specific resources:
+  - **Books:** Include names of the best books and specify exact chapters (e.g., "The Definitive Guide to ARM Cortex-M3 and Cortex-M4 Processors by Joseph Yiu, Chapters 3-5").
+  - **YouTube:** DO NOT include clickable YouTube links (they may be invalid). Instead, mention the exact YouTube channel name and video/playlist title like this: "YouTube: Embedded Systems Academy channel - 'ARM Cortex-M for Beginners' playlist" or "YouTube: ControllersTech channel - 'STM32 GPIO Tutorial' video".
+  - **Online Courses:** Mention course names and platforms (e.g., "Udemy: 'Mastering Microcontroller with Embedded Driver Development' by FastBit").
 - **Projects:** Break down into concrete daily steps with specific instructions.
 - **Concepts:** Be precise with technical details and practical examples.
 
@@ -366,7 +563,8 @@ The roadmap should follow this structure for each week:
 <ul>
     <li><strong>Day 1-2: [Subtopic]</strong>
         <ul>
-            <li>[Specific resource with chapter/link]</li>
+            <li>[Specific book with chapter]</li>
+            <li>YouTube: [Channel Name] - "[Video/Playlist Title]" (search on YouTube)</li>
             <li>[Key concept to master]</li>
             <li><strong>Mini-Project:</strong> [Concrete task]</li>
         </ul>
@@ -380,7 +578,7 @@ The roadmap should follow this structure for each week:
 
 Continue this format for all 12 weeks, ensuring mobile readability with proper spacing and concise but detailed content.
 
-**Hardware Recommendations:** At the beginning of the roadmap, recommend specific, affordable microcontroller boards (e.g., STM32 Nucleo, Arduino, ESP32) with links.
+**Hardware Recommendations:** At the beginning of the roadmap, recommend specific, affordable microcontroller boards (e.g., STM32 Nucleo, Arduino, ESP32) with approximate prices in Indian Rupees (₹) and mention where to purchase them in India (like Amazon.in, Robu.in, or electronics stores).
 
 USER'S FULL Q&A TRANSCRIPT:
 ---
@@ -407,11 +605,12 @@ $userInputText
                 add("contents", contentsArray)
 
                 // Add generation config for better responses
+                // Gemini 2.5 Flash supports up to 65536 output tokens
                 val generationConfig = JsonObject().apply {
                     addProperty("temperature", 0.7)
                     addProperty("topK", 40)
                     addProperty("topP", 0.95)
-                    addProperty("maxOutputTokens", 8192)
+                    addProperty("maxOutputTokens", 65536)
                 }
                 add("generationConfig", generationConfig)
             }
@@ -435,10 +634,28 @@ $userInputText
             // Parse response
             val jsonResponse = gson.fromJson(responseBody, JsonObject::class.java)
             val candidates = jsonResponse.getAsJsonArray("candidates")
-            val content = candidates[0].asJsonObject
+            
+            if (candidates == null || candidates.size() == 0) {
+                Log.e(TAG, "No candidates in response")
+                throw Exception("No candidates in API response")
+            }
+            
+            val candidate = candidates[0].asJsonObject
+            
+            // Check finish reason for truncation
+            val finishReason = candidate.get("finishReason")?.asString
+            if (finishReason == "MAX_TOKENS") {
+                Log.w(TAG, "Response was truncated due to max tokens limit")
+            } else if (finishReason != null && finishReason != "STOP") {
+                Log.w(TAG, "Unexpected finish reason: $finishReason")
+            }
+            
+            val content = candidate
                 .getAsJsonObject("content")
                 .getAsJsonArray("parts")[0].asJsonObject
                 .get("text").asString
+            
+            Log.d(TAG, "API response length: ${content.length} chars, finishReason: $finishReason")
 
             return@withContext content
 
@@ -450,13 +667,140 @@ $userInputText
 
     /**
      * Assemble final report by injecting feedback chunks into report shell
+     * With fallback handling for blank or truncated content
      */
     private fun assembleReport(reportShell: String, feedbackChunks: List<String>): String {
         val combinedFeedback = feedbackChunks.joinToString("\n\n")
-        return reportShell.replace(
-            "<!-- QUESTION_FEEDBACK_INSERT_POINT -->",
-            combinedFeedback
-        )
+        
+        // Check if the report shell is truncated (has DOCTYPE but no closing html tag)
+        val isTruncated = reportShell.contains("<!DOCTYPE html>") && !reportShell.contains("</html>")
+        
+        if (isTruncated) {
+            Log.w(TAG, "Report shell is truncated (has opening but no closing HTML tags)")
+            // Don't try to use truncated content - use the fallback with actual feedback
+            return generateFallbackReport(combinedFeedback)
+        }
+        
+        // Validate the report shell is not blank or malformed
+        val validatedShell = if (reportShell.isBlank() || !reportShell.contains("<!DOCTYPE html>")) {
+            Log.w(TAG, "Report shell was blank or malformed, using fallback template")
+            generateFallbackReport(combinedFeedback)
+        } else {
+            reportShell.replace(
+                "<!-- QUESTION_FEEDBACK_INSERT_POINT -->",
+                combinedFeedback
+            )
+        }
+        
+        // Final validation - ensure we have valid complete HTML
+        return if (validatedShell.contains("<html") && validatedShell.contains("</html>") && validatedShell.contains("</body>")) {
+            validatedShell
+        } else {
+            Log.w(TAG, "Final report validation failed, using emergency fallback")
+            // Use fallback with feedback content instead of trying to wrap partial content
+            generateFallbackReport(combinedFeedback)
+        }
+    }
+    
+    /**
+     * Generate a fallback report if the main generation fails
+     */
+    private fun generateFallbackReport(feedbackContent: String): String {
+        return """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assessment Report</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            background-color: #0f172a; 
+            color: #e2e8f0; 
+            padding: 1rem;
+            line-height: 1.6;
+        }
+        .container { 
+            max-width: 800px; 
+            margin: 0 auto; 
+            padding: 1rem;
+        }
+        h1 { 
+            color: #a5b4fc; 
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+        }
+        h2 { 
+            color: #818cf8; 
+            margin: 1.5rem 0 1rem;
+            font-size: 1.25rem;
+        }
+        h3 { 
+            color: #c4b5fd; 
+            margin: 1rem 0 0.5rem;
+            font-size: 1.1rem;
+        }
+        .question-feedback { 
+            background-color: #1e293b; 
+            border-radius: 0.5rem; 
+            padding: 1rem; 
+            margin-bottom: 1rem;
+            border-left: 4px solid #6366f1;
+        }
+        .user-answer { 
+            background-color: #334155; 
+            padding: 0.75rem; 
+            border-radius: 0.25rem; 
+            margin: 0.5rem 0;
+        }
+        .correct-answer { 
+            background-color: #1e3a5f; 
+            padding: 0.75rem; 
+            border-radius: 0.25rem; 
+            margin: 0.5rem 0;
+            border-left: 3px solid #22c55e;
+        }
+        .rating { 
+            color: #fbbf24; 
+            font-weight: bold;
+            margin-top: 0.5rem;
+        }
+        pre { 
+            background-color: #020617; 
+            padding: 0.75rem; 
+            border-radius: 0.5rem; 
+            overflow-x: auto;
+            white-space: pre-wrap;
+            font-size: 0.85rem;
+            margin: 0.5rem 0;
+        }
+        blockquote {
+            background-color: #1e293b;
+            padding: 0.5rem;
+            border-left: 3px solid #6366f1;
+            margin: 0.5rem 0;
+        }
+        p { margin: 0.5rem 0; }
+        ul, ol { margin: 0.5rem 0; padding-left: 1.5rem; }
+        li { margin: 0.25rem 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Your Assessment Report</h1>
+        
+        <h2>Question Feedback</h2>
+        $feedbackContent
+        
+        <h2>📌 Next Steps</h2>
+        <p>Review the feedback for each question above and focus on the areas where improvement is needed.</p>
+        
+    </div>
+</body>
+</html>
+        """.trimIndent()
     }
 }
 

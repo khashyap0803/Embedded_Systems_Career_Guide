@@ -22,6 +22,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import java.util.*
 
 class AssessmentActivity : AppCompatActivity() {
@@ -165,9 +166,15 @@ class AssessmentActivity : AppCompatActivity() {
             return
         }
 
-        // Show loading overlay
+        // Show full-screen loading overlay (hides question)
         binding.loadingOverlay.isVisible = true
-        binding.progressText.text = "Generating your personalized report...\nThis may take a few moments."
+        binding.loadingState.visibility = android.view.View.VISIBLE
+        binding.completionState.visibility = android.view.View.GONE
+        binding.progressText.text = "Initializing AI analysis..."
+        binding.progressSubstatus.text = "Preparing your answers..."
+        binding.phaseCounter.text = "Phase 0 of 6"
+        binding.phaseProgressBar.progress = 0
+        binding.quoteText.text = GeminiReportService.QUOTES.random()
 
         // Disable buttons to prevent multiple clicks
         binding.buttonNext.isEnabled = false
@@ -187,33 +194,51 @@ class AssessmentActivity : AppCompatActivity() {
 
                 // Get user info
                 val user = auth.currentUser
-                val userName = user?.displayName ?: "Student"
                 val userEmail = user?.email ?: ""
                 val userId = user?.uid ?: ""
+                
+                // Get username from SharedPreferences (unique identifier for report)
+                val userPrefs = getSharedPreferences("user_prefs", MODE_PRIVATE)
+                val username = userPrefs.getString("current_username", null)
+                // Use username for display in report, fallback to display name
+                val userName = username ?: (user?.displayName ?: "Student")
 
-                // Generate report using Gemini API
-                binding.progressText.text = "Analyzing your answers with AI...\nPlease wait..."
-                val reportHtml = geminiService.generateReport(userName, userEmail, qaList)
-
-                // Save report to Firebase ONLY (no local storage)
-                binding.progressText.text = "Saving your report..."
-                saveReportToFirebase(reportHtml, userId, userName, userEmail)
-
-                // Mark assessment as completed SYNCHRONOUSLY with user-specific key
-                markAssessmentCompleted(userId)
-
-                // Hide loading and show success
-                binding.loadingOverlay.isVisible = false
-                Toast.makeText(this@AssessmentActivity, "Report generated successfully!", Toast.LENGTH_LONG).show()
-
-                // Navigate to home with delay to ensure flag is saved
-                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                    val intent = Intent(this@AssessmentActivity, MainActivity::class.java).apply {
-                        flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+                // Create progress callback
+                val progressCallback = object : GeminiReportService.ProgressCallback {
+                    override fun onProgress(phase: Int, totalPhases: Int, phaseName: String, quote: String) {
+                        // Update UI on main thread
+                        binding.phaseCounter.text = "Phase $phase of $totalPhases"
+                        binding.phaseProgressBar.progress = ((phase.toFloat() / totalPhases) * 100).toInt()
+                        binding.progressText.text = phaseName
+                        binding.quoteText.text = quote
+                        
+                        // Update substatus based on phase
+                        binding.progressSubstatus.text = when {
+                            phase <= totalPhases - 2 -> "Processing question feedback..."
+                            phase == totalPhases - 1 -> "Building your 12-week roadmap..."
+                            else -> "Almost done!"
+                        }
                     }
-                    startActivity(intent)
-                    finish()
-                }, 300)
+                }
+
+                // Generate report using Gemini API with progress callback
+                val reportHtml = geminiService.generateReport(userName, userEmail, qaList, progressCallback)
+
+                // Save report to Firebase and WAIT for completion
+                binding.progressText.text = "Saving your report to cloud..."
+                binding.progressSubstatus.text = "Almost done..."
+                binding.phaseProgressBar.progress = 100
+                val saveSuccess = saveReportToFirebaseSync(reportHtml, userId, userName, userEmail)
+
+                if (saveSuccess) {
+                    // Mark assessment as completed ONLY after Firebase save succeeds
+                    markAssessmentCompleted(userId)
+
+                    // Show completion state with Preview/Continue options
+                    showCompletionState()
+                } else {
+                    throw Exception("Failed to save report to cloud")
+                }
 
             } catch (e: Exception) {
                 binding.loadingOverlay.isVisible = false
@@ -229,39 +254,87 @@ class AssessmentActivity : AppCompatActivity() {
         }
     }
 
-    private suspend fun saveReportToFirebase(
+    /**
+     * Show completion state with Preview and Continue buttons
+     */
+    private fun showCompletionState() {
+        // Switch from loading to completion state
+        binding.loadingState.visibility = android.view.View.GONE
+        binding.completionState.visibility = android.view.View.VISIBLE
+
+        // Setup Preview Report button
+        binding.btnPreviewReport.setOnClickListener {
+            val intent = Intent(this, ReportViewerActivity::class.java)
+            startActivity(intent)
+        }
+
+        // Setup Continue to Home button
+        binding.btnContinueHome.setOnClickListener {
+            navigateToHome()
+        }
+    }
+
+    /**
+     * Navigate to home screen
+     */
+    private fun navigateToHome() {
+        val intent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+        }
+        startActivity(intent)
+        finish()
+    }
+
+    /**
+     * Save report to Firebase SYNCHRONOUSLY using Tasks.await()
+     * Saves to: users/{username}/data/report (replaces any existing report)
+     */
+    private suspend fun saveReportToFirebaseSync(
         htmlContent: String,
         userId: String,
         userName: String,
         userEmail: String
-    ) {
-        try {
-            val report = AssessmentReport(
-                userId = userId,
-                userName = userName,
-                userEmail = userEmail,
-                reportHtml = htmlContent,
-                timestamp = System.currentTimeMillis(),
-                totalQuestions = questions.size
+    ): Boolean {
+        return try {
+            // Get username from SharedPreferences
+            val userPrefs = getSharedPreferences("user_prefs", MODE_PRIVATE)
+            val username = userPrefs.getString("current_username", null)
+            
+            if (username == null) {
+                android.util.Log.e("AssessmentActivity", "No username found, cannot save report")
+                return false
+            }
+
+            val reportData = mapOf(
+                "userId" to userId,
+                "userName" to userName,
+                "userEmail" to userEmail,
+                "reportHtml" to htmlContent,
+                "timestamp" to System.currentTimeMillis(),
+                "totalQuestions" to questions.size
             )
 
-            firestore.collection("assessment_reports")
-                .document(userId)
-                .set(report)
-                .addOnSuccessListener {
-                    // Report saved successfully
-                }
-                .addOnFailureListener { e ->
-                    e.printStackTrace()
-                }
+            // Save to new path: users/{username}/data/report
+            // Using set() will replace any existing report
+            firestore.collection("users")
+                .document(username)
+                .collection("data")
+                .document("report")
+                .set(reportData)
+                .await()
+            
+            android.util.Log.d("AssessmentActivity", "Report saved for user: $username")
+            true
         } catch (e: Exception) {
             e.printStackTrace()
+            false
         }
     }
 
     private fun markAssessmentCompleted(userId: String) {
         val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
-        // Use user-specific key to prevent cross-user contamination
-        prefs.edit().putBoolean("assessment_completed_$userId", true).commit() // Use commit() for synchronous save
+        // H8 fix: Use apply() instead of commit() to avoid blocking main thread
+        // The flag will be set asynchronously and persisted before process exit
+        prefs.edit().putBoolean("assessment_completed_$userId", true).apply()
     }
 }

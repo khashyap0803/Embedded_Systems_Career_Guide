@@ -256,44 +256,214 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <!-- Loading Overlay (initially hidden) -->
+    <!-- Loading Overlay (initially hidden) - FULL SCREEN OPAQUE -->
     <FrameLayout
         android:id="@+id/loading_overlay"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="#CC000000"
+        android:background="@color/slate_900"
         android:clickable="true"
         android:focusable="true"
         android:visibility="gone"
+        android:elevation="100dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
+        <!-- Loading State -->
         <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:background="@drawable/rounded_background"
+            android:id="@+id/loading_state"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
             android:gravity="center"
             android:orientation="vertical"
-            android:padding="32dp">
+            android:padding="32dp"
+            android:background="@color/slate_900">
 
+            <!-- AI Icon with Animation -->
+            <TextView
+                android:id="@+id/loading_emoji"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🤖"
+                android:textSize="64sp"
+                android:layout_marginBottom="24dp" />
+
+            <!-- Circular Progress Indicator -->
             <ProgressBar
-                android:layout_width="64dp"
-                android:layout_height="64dp"
+                android:id="@+id/circular_progress"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
                 android:indeterminateTint="@color/indigo_400" />
 
+            <!-- Phase Progress Bar (horizontal) -->
+            <ProgressBar
+                android:id="@+id/phase_progress_bar"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="280dp"
+                android:layout_height="8dp"
+                android:layout_marginTop="24dp"
+                android:max="100"
+                android:progress="0"
+                android:progressDrawable="@drawable/progress_gradient"
+                android:background="@color/slate_700" />
+
+            <!-- Phase Counter -->
+            <TextView
+                android:id="@+id/phase_counter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Phase 1 of 6"
+                android:textColor="@color/indigo_300"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <!-- Main Status Text -->
             <TextView
                 android:id="@+id/progress_text"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="20dp"
                 android:gravity="center"
-                android:text="Processing your assessment...\nPlease wait."
+                android:text="Generating your personalized report..."
                 android:textColor="@color/text_primary"
-                android:textSize="16sp"
+                android:textSize="18sp"
                 android:textStyle="bold" />
+
+            <!-- Substatus Text -->
+            <TextView
+                android:id="@+id/progress_substatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center"
+                android:text="Analyzing your answers with AI..."
+                android:textColor="@color/slate_400"
+                android:textSize="14sp" />
+
+            <!-- Quote Card -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="32dp"
+                app:cardBackgroundColor="@color/glass_primary"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="8dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="💡 Did you know?"
+                        android:textColor="@color/amber_400"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/quote_text"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="&quot;The expert in anything was once a beginner.&quot; – Helen Hayes"
+                        android:textColor="@color/slate_300"
+                        android:textSize="14sp"
+                        android:fontFamily="serif"
+                        android:lineSpacingExtra="4dp" />
+
+                </LinearLayout>
+
+            </androidx.cardview.widget.CardView>
+
+            <!-- Estimated Time -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:text="⏱️ This may take 2-3 minutes..."
+                android:textColor="@color/slate_500"
+                android:textSize="12sp" />
+
+        </LinearLayout>
+
+        <!-- Completion State (hidden initially) -->
+        <LinearLayout
+            android:id="@+id/completion_state"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="32dp"
+            android:visibility="gone"
+            android:background="@color/slate_900">
+
+            <!-- Success Icon -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="✅"
+                android:textSize="80sp"
+                android:layout_marginBottom="24dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Report Generated Successfully!"
+                android:textColor="@color/emerald_400"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:gravity="center" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="Your personalized career report is ready.\nYou can preview it now or continue to home."
+                android:textColor="@color/slate_300"
+                android:textSize="16sp"
+                android:gravity="center" />
+
+            <!-- Buttons -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="32dp"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <!-- Preview Report Button -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_preview_report"
+                    android:layout_width="280dp"
+                    android:layout_height="56dp"
+                    android:text="📄 Preview Report"
+                    android:textColor="@color/white"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    app:backgroundTint="@color/indigo_600"
+                    app:cornerRadius="16dp" />
+
+                <!-- Continue to Home Button -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_continue_home"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="280dp"
+                    android:layout_height="56dp"
+                    android:layout_marginTop="12dp"
+                    android:text="Continue to Home"
+                    android:textColor="@color/slate_300"
+                    android:textSize="16sp"
+                    app:strokeColor="@color/slate_600"
+                    app:strokeWidth="2dp"
+                    app:cornerRadius="16dp" />
+
+            </LinearLayout>
 
         </LinearLayout>
 

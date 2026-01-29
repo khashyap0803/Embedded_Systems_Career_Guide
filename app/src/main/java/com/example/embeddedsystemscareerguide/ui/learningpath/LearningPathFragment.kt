@@ -5,6 +5,7 @@ import android.animation.ValueAnimator
 import android.content.Context
 import android.content.SharedPreferences
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -15,16 +16,34 @@ import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import com.example.embeddedsystemscareerguide.services.UserProgressSyncService
+import kotlinx.coroutines.launch
+import com.example.embeddedsystemscareerguide.PrefsKeys
 import com.example.embeddedsystemscareerguide.R
 import com.example.embeddedsystemscareerguide.databinding.FragmentLearningPathBinding
 import com.example.embeddedsystemscareerguide.models.LearningStage
 import com.google.android.material.card.MaterialCardView
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import java.io.InputStreamReader
 import java.text.SimpleDateFormat
 import java.util.*
 
+/**
+ * Learning Path Fragment - Main gamified learning journey screen
+ *
+ * Displays a visual game-like path through 16 learning stages covering
+ * embedded systems concepts. Features include:
+ * - Visual stage progression with stars and completion status
+ * - Cloud-synced progress via Firebase Firestore
+ * - AI-generated quizzes for each stage via Gemini API
+ * - XP rewards and streak tracking
+ *
+ * @see UserProgressSyncService for cloud sync functionality
+ * @see GeminiQuizService for quiz generation
+ */
 class LearningPathFragment : Fragment() {
 
     private var _binding: FragmentLearningPathBinding? = null
@@ -32,17 +51,24 @@ class LearningPathFragment : Fragment() {
     private lateinit var viewModel: LearningPathViewModel
     private val stages = mutableListOf<LearningStage>()
     private lateinit var prefs: SharedPreferences
+    private lateinit var progressSyncService: UserProgressSyncService
+    private var cloudProgress: UserProgressSyncService.UserProgress? = null
 
+
+    // M4 fix: Constants delegate to PrefsKeys for centralization
     companion object {
-        private const val PREFS_NAME = "learning_progress"
-        private const val KEY_TOTAL_XP = "total_xp"
-        private const val KEY_CURRENT_STAGE = "current_stage"
-        private const val KEY_STREAK = "streak"
-        private const val KEY_LAST_VISIT_DATE = "last_visit_date"
+        private val PREFS_NAME = PrefsKeys.PREFS_LEARNING
+        private val KEY_TOTAL_XP = PrefsKeys.TOTAL_XP
+        private val KEY_CURRENT_STAGE = PrefsKeys.CURRENT_STAGE
+        private val KEY_STREAK = PrefsKeys.STREAK
+        private val KEY_LAST_VISIT_DATE = PrefsKeys.LAST_ACTIVE_DATE
+        // Keep using original "completed_stages" for StringSet - don't use the Integer count key
         private const val KEY_COMPLETED_STAGES = "completed_stages"
-        private const val KEY_STAGE_STARS = "stage_stars_"
+        private val KEY_STAGE_STARS = PrefsKeys.STAGE_STARS_PREFIX
         private const val KEY_FIRST_LAUNCH = "is_first_launch"
     }
+
+
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -52,6 +78,7 @@ class LearningPathFragment : Fragment() {
         _binding = FragmentLearningPathBinding.inflate(inflater, container, false)
         viewModel = ViewModelProvider(this)[LearningPathViewModel::class.java]
         prefs = requireContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        progressSyncService = UserProgressSyncService(requireContext())
 
         return binding.root
     }
@@ -59,19 +86,93 @@ class LearningPathFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        setupUI()
+        // L2 fix: Removed empty setupUI() call
         loadStagesFromAssets()
-        initializeProgressForNewUsers()
-        loadProgressFromPreferences()
-        updateStreakSystem()
-        createGamePath()
+        
+        // Load progress from cloud first (async)
+        loadProgressFromCloud()
+        
         startBackgroundAnimation()
-        updateHomePageProgress() // Sync progress with home page
     }
 
-    private fun setupUI() {
-        // FAB help removed as per user request
+    override fun onResume() {
+        super.onResume()
+        // Refresh progress from cloud when returning to this fragment
+        loadProgressFromCloud()
     }
+    
+    /**
+     * Load progress from cloud (primary source of truth)
+     * Falls back to local cache if cloud unavailable
+     */
+    private fun loadProgressFromCloud() {
+        lifecycleScope.launch {
+            try {
+                // Try to load from cloud first
+                val progress = progressSyncService.loadProgressFromCloud()
+                
+                if (progress != null) {
+                    cloudProgress = progress
+                    Log.d("LearningPath", "Loaded progress from cloud: XP=${progress.totalXP}, completed=${progress.completedStages.size}, stars=${progress.stageStars}")
+                    applyProgressToStages(progress)
+                } else {
+                    // Fallback to local cache
+                    Log.d("LearningPath", "No cloud progress, using local cache")
+                    val localProgress = progressSyncService.getLocalProgress()
+                    cloudProgress = localProgress
+                    applyProgressToStages(localProgress)
+                }
+                
+                updateStreakSystem()
+                createGamePath()
+                updateHomePageProgress()
+                
+            } catch (e: Exception) {
+                Log.e("LearningPath", "Error loading progress from cloud", e)
+                // Fallback to local cache on error
+                val localProgress = progressSyncService.getLocalProgress()
+                cloudProgress = localProgress
+                applyProgressToStages(localProgress)
+                createGamePath()
+                updateHomePageProgress()
+            }
+        }
+    }
+    
+    /**
+     * Apply UserProgress to stage objects
+     */
+    private fun applyProgressToStages(progress: UserProgressSyncService.UserProgress) {
+        stages.forEach { stage ->
+            val stageId = stage.id
+            val stageNumber = stageId.toIntOrNull() ?: 1
+            
+            stage.isCompleted = progress.completedStages.contains(stageId)
+            
+            // STRICT unlocking logic: ONLY stage 1 unlocked initially
+            stage.isUnlocked = when {
+                stageNumber == 1 -> true
+                else -> {
+                    val prevStageId = (stageNumber - 1).toString()
+                    progress.completedStages.contains(prevStageId)
+                }
+            }
+            
+            // Load stars from cloud progress
+            stage.starsEarned = if (stage.isCompleted) {
+                progress.stageStars[stageId] ?: 0
+            } else {
+                0
+            }
+            
+            Log.d("LearningPath", "Stage $stageId: completed=${stage.isCompleted}, stars=${stage.starsEarned}")
+        }
+        
+        // Update user stats display
+        updateUserStats(progress.totalXP, progress.currentStage, progress.streak)
+    }
+
+    // L2 fix: Empty setupUI() removed - was: "FAB help removed as per user request"
 
     /**
      * Initialize progress for first-time users with proper defaults
@@ -128,7 +229,10 @@ class LearningPathFragment : Fragment() {
 
             // Load stars for completed stages only
             if (stage.isCompleted) {
-                stage.starsEarned = prefs.getInt(KEY_STAGE_STARS + stageId, 3)
+                // Default to 0 if no stars saved yet (bug fix: was defaulting to 3)
+                val savedStars = prefs.getInt(KEY_STAGE_STARS + stageId, 0)
+                Log.d("LearningPath", "Loading stars for stage $stageId: $savedStars (key=${KEY_STAGE_STARS + stageId})")
+                stage.starsEarned = savedStars
             } else {
                 stage.starsEarned = 0
             }
@@ -139,7 +243,10 @@ class LearningPathFragment : Fragment() {
         val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
         val lastVisit = prefs.getString(KEY_LAST_VISIT_DATE, "")
         val currentStreak = prefs.getInt(KEY_STREAK, 1)
+        val bestStreak = prefs.getInt("best_streak", 1)
 
+        val wasStreakBroken = !lastVisit.isNullOrEmpty() && lastVisit != today && !isYesterday(lastVisit)
+        
         val newStreak = when {
             lastVisit.isNullOrEmpty() -> 1 // First visit
             lastVisit == today -> currentStreak // Same day, keep streak
@@ -147,11 +254,37 @@ class LearningPathFragment : Fragment() {
             else -> 1 // Streak broken, reset to 1
         }
 
+        // Update best streak if needed
+        val newBestStreak = maxOf(newStreak, bestStreak)
+
         // Save updated streak and visit date
         prefs.edit()
             .putInt(KEY_STREAK, newStreak)
+            .putInt("best_streak", newBestStreak)
             .putString(KEY_LAST_VISIT_DATE, today)
             .apply()
+
+        // Sync streak changes to cloud
+        syncProgressToCloud()
+
+        // Show streak notifications
+        if (wasStreakBroken && currentStreak > 1) {
+            // Streak was broken - show encouragement
+            Toast.makeText(requireContext(),
+                "🔥 Previous streak: ${currentStreak} days\nStarting fresh! Let's build a new streak!",
+                Toast.LENGTH_LONG).show()
+        } else if (newStreak > currentStreak) {
+            // Streak increased - check for milestones
+            val milestoneMessage = when (newStreak) {
+                7 -> "🔥 1 WEEK STREAK! Amazing dedication!"
+                14 -> "🔥 2 WEEK STREAK! You're unstoppable!"
+                30 -> "🔥 30 DAY STREAK! Legendary commitment!"
+                else -> if (newStreak % 10 == 0) "🔥 $newStreak DAY STREAK! Keep it up!" else null
+            }
+            milestoneMessage?.let {
+                Toast.makeText(requireContext(), it, Toast.LENGTH_LONG).show()
+            }
+        }
     }
 
     private fun isYesterday(dateString: String): Boolean {
@@ -385,29 +518,108 @@ class LearningPathFragment : Fragment() {
                     Toast.LENGTH_LONG).show()
             }
             stage.isCompleted -> {
-                Toast.makeText(requireContext(),
-                    "✅ Stage completed! You earned ${stage.starsEarned} stars and ${stage.xpReward} XP",
-                    Toast.LENGTH_SHORT).show()
-                // Could navigate to stage review or restart options
+                // Offer to retake quiz or view progress
+                showStageOptionsDialog(stage)
             }
             else -> {
-                Toast.makeText(requireContext(),
-                    "🚀 Starting \"${stage.title}\" - ${stage.estimatedDuration}",
-                    Toast.LENGTH_SHORT).show()
-                // For demo purposes, let's complete the stage automatically after a short delay
-                simulateStageCompletion(stage)
+                // Launch quiz for this stage
+                launchQuizForStage(stage)
             }
         }
     }
 
     /**
-     * Simulate stage completion for demonstration (remove in production)
+     * Show options dialog for completed stages
      */
-    private fun simulateStageCompletion(stage: LearningStage) {
-        // This is for demo purposes - in real app, completion would happen after actual learning
-        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-            completeStage(stage.id, 3) // Complete with 3 stars
-        }, 2000) // 2 second delay to simulate learning
+    private fun showStageOptionsDialog(stage: LearningStage) {
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext(), R.style.Theme_App_AlertDialog)
+            .setTitle("${stage.title}")
+            .setMessage("✅ Completed with ${stage.starsEarned}⭐ (+${stage.xpReward} XP)\n\nWould you like to retake the quiz to improve your stars?")
+            .setPositiveButton("📝 Retake Quiz") { _, _ ->
+                launchQuizForStage(stage)
+            }
+            .setNeutralButton("📊 View Progress") { _, _ ->
+                showProgressDetailsDialog(stage)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    /**
+     * Launch quiz activity for a stage
+     */
+    private fun launchQuizForStage(stage: LearningStage) {
+        Toast.makeText(requireContext(),
+            "🚀 Starting \"${stage.title}\" Quiz",
+            Toast.LENGTH_SHORT).show()
+
+        val intent = android.content.Intent(requireContext(), 
+            com.example.embeddedsystemscareerguide.ui.quiz.QuizActivity::class.java)
+        intent.putExtra(com.example.embeddedsystemscareerguide.ui.quiz.QuizActivity.EXTRA_STAGE_ID, stage.id.toIntOrNull() ?: 1)
+        intent.putExtra(com.example.embeddedsystemscareerguide.ui.quiz.QuizActivity.EXTRA_STAGE_TITLE, stage.title)
+        intent.putStringArrayListExtra(
+            com.example.embeddedsystemscareerguide.ui.quiz.QuizActivity.EXTRA_STAGE_TOPICS,
+            ArrayList(stage.topics)
+        )
+        
+        // Store current stage for completion after quiz
+        currentQuizStage = stage
+        
+        quizLauncher.launch(intent)
+    }
+
+    // Activity result launcher for quiz
+    private var currentQuizStage: LearningStage? = null
+    private val quizLauncher = registerForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            val data = result.data
+            val score = data?.getIntExtra(
+                com.example.embeddedsystemscareerguide.ui.quiz.QuizActivity.RESULT_QUIZ_SCORE, 0
+            ) ?: 0
+            val total = data?.getIntExtra(
+                com.example.embeddedsystemscareerguide.ui.quiz.QuizActivity.RESULT_TOTAL_QUESTIONS, 5
+            ) ?: 5
+            
+            // Calculate stars based on score
+            val percentage = (score * 100) / total
+            val stars = when {
+                percentage >= 80 -> 3
+                percentage >= 60 -> 2
+                percentage >= 40 -> 1
+                else -> 0
+            }
+            
+            // Handle quiz completion with star improvements
+            currentQuizStage?.let { stage ->
+                when {
+                    stars >= 1 && !stage.isCompleted -> {
+                        // First time completion - award XP and stars
+                        completeStage(stage.id, stars)
+                    }
+                    stars >= 1 && stage.isCompleted && stars > stage.starsEarned -> {
+                        // Improvement! Update stars only (no duplicate XP)
+                        updateStageStars(stage.id, stars, stage.starsEarned)
+                    }
+                    stars >= 1 && stage.isCompleted && stars <= stage.starsEarned -> {
+                        // Same or worse score - encourage but don't update
+                        val emoji = if (stars == stage.starsEarned) "🎯" else "💪"
+                        Toast.makeText(requireContext(),
+                            "$emoji Score: $score/$total (${stars}⭐)\nYour best: ${stage.starsEarned}⭐ - Keep practicing!",
+                            Toast.LENGTH_LONG).show()
+                    }
+                    else -> {
+                        // Failed (0 stars)
+                        Toast.makeText(requireContext(),
+                            "📚 Score: $score/$total (${percentage}%)\nYou need at least 40% to pass. Keep learning!",
+                            Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+            
+            currentQuizStage = null
+        }
     }
 
     private fun updateUserStats(totalXP: Int, currentStage: Int, streak: Int) {
@@ -433,52 +645,131 @@ class LearningPathFragment : Fragment() {
     }
 
     /**
-     * Complete a stage and update all related progress
+     * Complete a stage and update all related progress - CLOUD FIRST
+     * Writes directly to Firestore as the source of truth
      */
     fun completeStage(stageId: String, starsEarned: Int = 3) {
+        Log.d("LearningPath", "completeStage called: stageId=$stageId, starsEarned=$starsEarned")
         val stage = stages.find { it.id == stageId }
-        if (stage != null && !stage.isCompleted) {
-            // Mark stage as completed
-            stage.isCompleted = true
-            stage.starsEarned = starsEarned
-
-            // Update total XP
-            val currentXP = prefs.getInt(KEY_TOTAL_XP, 0)
-            val newXP = currentXP + stage.xpReward
-
-            // Update current stage to next available stage
-            val nextStageId = (stageId.toInt() + 1).toString()
-            val currentStageNumber = if (stages.any { it.id == nextStageId }) nextStageId.toInt() else stageId.toInt()
-
-            // Unlock next stage
-            val nextStage = stages.find { it.id == nextStageId }
-            nextStage?.isUnlocked = true
-
-            // Save to preferences
-            val completedStagesSet = prefs.getStringSet(KEY_COMPLETED_STAGES, mutableSetOf<String>())?.toMutableSet() ?: mutableSetOf()
-            completedStagesSet.add(stageId)
-
-            prefs.edit()
-                .putInt(KEY_TOTAL_XP, newXP)
-                .putInt(KEY_CURRENT_STAGE, currentStageNumber)
-                .putStringSet(KEY_COMPLETED_STAGES, completedStagesSet)
-                .putInt(KEY_STAGE_STARS + stageId, starsEarned)
-                .apply()
-
-            // Update UI
-            updateUserStats(newXP, currentStageNumber, prefs.getInt(KEY_STREAK, 1))
-
-            // Refresh the path
-            createGamePath()
-
-            // Update home page progress
-            updateHomePageProgress()
-
-            // Show completion message
-            Toast.makeText(requireContext(),
-                "🎉 Stage completed! +${stage.xpReward} XP earned! ⭐×$starsEarned",
-                Toast.LENGTH_LONG).show()
+        
+        if (stage == null) {
+            Log.e("LearningPath", "Stage $stageId not found")
+            return
         }
+        
+        if (stage.isCompleted) {
+            Log.d("LearningPath", "Stage $stageId already completed")
+            return
+        }
+        
+        // Immediately update UI state (optimistic update)
+        stage.isCompleted = true
+        stage.starsEarned = starsEarned
+        
+        // Unlock next stage
+        val nextStageId = (stageId.toInt() + 1).toString()
+        val nextStage = stages.find { it.id == nextStageId }
+        nextStage?.isUnlocked = true
+        
+        // Save to cloud (async)
+        lifecycleScope.launch {
+            try {
+                val updatedProgress = progressSyncService.completeStageInCloud(
+                    stageId = stageId,
+                    starsEarned = starsEarned,
+                    xpReward = stage.xpReward
+                )
+                
+                if (updatedProgress != null) {
+                    cloudProgress = updatedProgress
+                    Log.d("LearningPath", "Stage $stageId completed in cloud: XP=${updatedProgress.totalXP}, stars=$starsEarned")
+                    
+                    // Update UI with confirmed cloud data
+                    updateUserStats(updatedProgress.totalXP, updatedProgress.currentStage, updatedProgress.streak)
+                    createGamePath()
+                    updateHomePageProgress()
+                    
+                    Toast.makeText(requireContext(),
+                        "🎉 Stage completed! +${stage.xpReward} XP earned! ⭐×$starsEarned",
+                        Toast.LENGTH_LONG).show()
+                } else {
+                    Log.e("LearningPath", "Failed to save stage completion to cloud")
+                    Toast.makeText(requireContext(),
+                        "⚠️ Couldn't save progress to cloud. Please check your connection.",
+                        Toast.LENGTH_LONG).show()
+                }
+            } catch (e: Exception) {
+                Log.e("LearningPath", "Error completing stage in cloud", e)
+                Toast.makeText(requireContext(),
+                    "⚠️ Error saving progress. Please try again.",
+                    Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    /**
+     * Update stars for a completed stage (no duplicate XP award) - CLOUD FIRST
+     * Only called when user improves their score on a retake
+     */
+    private fun updateStageStars(stageId: String, newStars: Int, oldStars: Int) {
+        val stage = stages.find { it.id == stageId }
+        if (stage == null || !stage.isCompleted || newStars <= oldStars) {
+            return
+        }
+        
+        // Optimistic UI update
+        stage.starsEarned = newStars
+        
+        // Save to cloud (async)
+        lifecycleScope.launch {
+            try {
+                val updatedProgress = progressSyncService.updateStarsInCloud(stageId, newStars)
+                
+                if (updatedProgress != null) {
+                    cloudProgress = updatedProgress
+                    Log.d("LearningPath", "Stars updated in cloud for stage $stageId: $oldStars -> $newStars")
+                    
+                    // Refresh the path
+                    createGamePath()
+                    
+                    // Show improvement message
+                    Toast.makeText(requireContext(),
+                        "🌟 IMPROVED! ${oldStars}⭐ → ${newStars}⭐\nGreat progress!",
+                        Toast.LENGTH_LONG).show()
+                } else {
+                    Log.e("LearningPath", "Failed to update stars in cloud")
+                }
+            } catch (e: Exception) {
+                Log.e("LearningPath", "Error updating stars in cloud", e)
+            }
+        }
+    }
+
+    /**
+     * Show detailed progress dialog for a stage
+     */
+    private fun showProgressDetailsDialog(stage: LearningStage) {
+        val starsDisplay = "⭐".repeat(stage.starsEarned) + "☆".repeat(3 - stage.starsEarned)
+        val message = """
+            |📊 Stage Progress Details
+            |
+            |Stage: ${stage.title}
+            |Stars: $starsDisplay (${stage.starsEarned}/3)
+            |XP Earned: ${stage.xpReward}
+            |Duration: ${stage.estimatedDuration}
+            |
+            |Topics Covered:
+            |${stage.topics.joinToString("\n") { "• $it" }}
+        """.trimMargin()
+
+        MaterialAlertDialogBuilder(requireContext(), R.style.Theme_App_AlertDialog)
+            .setTitle("📈 ${stage.title}")
+            .setMessage(message)
+            .setPositiveButton("Retake Quiz") { _, _ ->
+                launchQuizForStage(stage)
+            }
+            .setNegativeButton("Close", null)
+            .show()
     }
 
     /**
@@ -589,6 +880,25 @@ class LearningPathFragment : Fragment() {
             14, 15 -> "iot"
             16 -> "assessment" // Type for final assessment
             else -> "foundation"
+        }
+    }
+
+    /**
+     * Sync progress to cloud asynchronously
+     * This is called after any local progress update to ensure cloud backup
+     */
+    private fun syncProgressToCloud() {
+        lifecycleScope.launch {
+            try {
+                val syncService = UserProgressSyncService(requireContext())
+                val success = syncService.saveProgressToCloud()
+                if (success) {
+                    android.util.Log.d("LearningPath", "Progress synced to cloud")
+                }
+            } catch (e: Exception) {
+                android.util.Log.w("LearningPath", "Cloud sync failed (offline?): ${e.message}")
+                // Silent failure - user can still work offline
+            }
         }
     }
 

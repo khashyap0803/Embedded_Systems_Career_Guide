@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.example.embeddedsystemscareerguide.databinding.FragmentPracticeBinding
@@ -41,32 +42,51 @@ class PracticeFragment : Fragment() {
 
     private fun setupUI() {
         val user = auth.currentUser
-        val userName = user?.displayName?.split(" ")?.firstOrNull() ?: "Developer"
+        
+        // Get username from SharedPreferences
+        val userPrefs = requireContext().getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+        val username = userPrefs.getString("current_username", null)
+        
+        // Display username, fallback to display name
+        val displayName = username ?: (user?.displayName?.split(" ")?.firstOrNull() ?: "Developer")
 
-        binding.textWelcomeMessage.text = "Practice Mode, $userName!"
+        binding.textWelcomeMessage.text = "Practice Mode, $displayName!"
         binding.textSubtitle.text = "Sharpen your embedded systems skills"
     }
 
     private fun setupPracticeOptions() {
+        // H5 fix: Show "Coming Soon" toast for unimplemented features
+        
         // Quick Practice Session
         binding.cardQuickPractice.setOnClickListener {
-            // TODO: Implement quick practice with random questions
+            showComingSoonToast("Quick Practice")
         }
 
         // Topic-Specific Practice
         binding.cardTopicPractice.setOnClickListener {
-            // TODO: Implement topic selection for focused practice
+            showComingSoonToast("Topic-Specific Practice")
         }
 
         // Challenge Mode
         binding.cardChallengePractice.setOnClickListener {
-            // TODO: Implement challenge mode with time limits
+            showComingSoonToast("Challenge Mode")
         }
 
         // Review Mistakes
         binding.cardReviewMistakes.setOnClickListener {
-            // TODO: Implement review of previously incorrect answers
+            showComingSoonToast("Review Mistakes")
         }
+    }
+    
+    /**
+     * H5 fix: Show coming soon message for unimplemented features
+     */
+    private fun showComingSoonToast(featureName: String) {
+        Toast.makeText(
+            requireContext(), 
+            "🚧 $featureName coming soon!\nUse the Learning Path to practice quizzes.", 
+            Toast.LENGTH_LONG
+        ).show()
     }
 
     private fun loadUserProgress() {

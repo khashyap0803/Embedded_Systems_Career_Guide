@@ -192,4 +192,8 @@
     <color name="colorError">#CF6679</color>
     <color name="colorOnError">@color/white</color>
 
+    <!-- Status Colors -->
+    <color name="success_color">#22C55E</color>
+    <color name="error_color">#EF4444</color>
+
 </resources>
