@@ -18,7 +18,11 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.example.embeddedsystemscareerguide.services.UserProgressSyncService
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.tasks.await
+import android.util.Log
+import com.example.embeddedsystemscareerguide.BuildConfig
 import com.example.embeddedsystemscareerguide.MainActivity
 import com.example.embeddedsystemscareerguide.R
 import com.example.embeddedsystemscareerguide.databinding.ActivityLoginBinding
@@ -111,6 +115,11 @@ class LoginActivity : AppCompatActivity() {
         binding.buttonSignInWithGoogle.setOnClickListener {
             signInWithGoogle()
         }
+        
+        // Forgot Password
+        binding.textViewForgotPassword.setOnClickListener {
+            showForgotPasswordDialog()
+        }
 
         // Sign Up navigation
         binding.textViewGoToRegister.setOnClickListener {
@@ -197,7 +206,7 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun validateInput(): Boolean {
-        val email = binding.editTextEmailLogin.text.toString().trim()
+        val emailOrUsername = binding.editTextEmailLogin.text.toString().trim()
         val password = binding.editTextPasswordLogin.text.toString()
 
         // Reset error states
@@ -206,13 +215,23 @@ class LoginActivity : AppCompatActivity() {
 
         var isValid = true
 
-        // Validate email
-        if (email.isEmpty()) {
-            binding.textFieldEmailLogin.error = "Email is required"
+        // Validate email or username
+        if (emailOrUsername.isEmpty()) {
+            binding.textFieldEmailLogin.error = "Email or username is required"
             isValid = false
-        } else if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-            binding.textFieldEmailLogin.error = "Please enter a valid email"
-            isValid = false
+        } else if (emailOrUsername.contains("@")) {
+            // Looks like an email - validate email format
+            if (!Patterns.EMAIL_ADDRESS.matcher(emailOrUsername).matches()) {
+                binding.textFieldEmailLogin.error = "Please enter a valid email"
+                isValid = false
+            }
+        } else {
+            // Looks like a username - validate username format
+            val usernamePattern = Regex("^[a-z0-9_]{3,20}$")
+            if (!usernamePattern.matches(emailOrUsername.lowercase())) {
+                binding.textFieldEmailLogin.error = "Invalid username format"
+                isValid = false
+            }
         }
 
         // Validate password
@@ -228,11 +247,22 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun performLogin() {
-        val email = binding.editTextEmailLogin.text.toString().trim()
+        val emailOrUsername = binding.editTextEmailLogin.text.toString().trim()
         val password = binding.editTextPasswordLogin.text.toString()
 
         showLoading()
 
+        // Check if input is email or username
+        if (emailOrUsername.contains("@")) {
+            // Direct email login
+            signInWithEmail(emailOrUsername, password)
+        } else {
+            // Username login - need to look up email first
+            loginWithUsername(emailOrUsername.lowercase(), password)
+        }
+    }
+
+    private fun signInWithEmail(email: String, password: String) {
         auth.signInWithEmailAndPassword(email, password)
             .addOnCompleteListener(this) { task ->
                 if (task.isSuccessful) {
@@ -243,6 +273,73 @@ class LoginActivity : AppCompatActivity() {
                     showError("Login failed: ${task.exception?.message}")
                 }
             }
+    }
+
+    private fun loginWithUsername(username: String, password: String) {
+        lifecycleScope.launch {
+            try {
+                // Look up email from username
+                val usernameDoc = withContext(Dispatchers.IO) {
+                    firestore.collection("usernames")
+                        .document(username)
+                        .get()
+                        .await()
+                }
+
+                if (!usernameDoc.exists()) {
+                    withContext(Dispatchers.Main) {
+                        hideLoading()
+                        showError("Username \"$username\" not found")
+                    }
+                    return@launch
+                }
+
+                // Get the email from the username document or user profile
+                val uid = usernameDoc.getString("uid")
+                if (uid == null) {
+                    withContext(Dispatchers.Main) {
+                        hideLoading()
+                        showError("Invalid username data")
+                    }
+                    return@launch
+                }
+
+                // Get email from user profile
+                val userDoc = withContext(Dispatchers.IO) {
+                    firestore.collection("users")
+                        .document(username)
+                        .get()
+                        .await()
+                }
+
+                val email = userDoc.getString("email")
+                Log.d("LoginActivity", "Username lookup - found email: $email for username: $username")
+                
+                if (email == null) {
+                    withContext(Dispatchers.Main) {
+                        hideLoading()
+                        showError("Could not find email for this username")
+                    }
+                    return@launch
+                }
+
+                // Now sign in with the email
+                // H1 fix: Removed debug Toast and logs in production
+                withContext(Dispatchers.Main) {
+                    if (BuildConfig.DEBUG) {
+                        Log.d("LoginActivity", "Attempting login with email: $email")
+                    }
+                    signInWithEmail(email, password)
+                }
+
+            } catch (e: Exception) {
+                Log.e("LoginActivity", "Error looking up username: ${e.message}", e)
+                withContext(Dispatchers.Main) {
+                    hideLoading()
+                    showError("Error: ${e.message}")
+                }
+            }
+        }
     }
 
     private fun signInWithGoogle() {
@@ -267,6 +364,7 @@ class LoginActivity : AppCompatActivity() {
 
     /**
      * Check if user has a profile with username, if not, create one
+     * FIXED: Improved detection for existing Google users
      */
     private fun checkUserProfileAndNavigate(user: FirebaseUser) {
         lifecycleScope.launch {
@@ -281,13 +379,42 @@ class LoginActivity : AppCompatActivity() {
                     // User has username, get it and save to SharedPreferences
                     val username = usernameQuery.documents.first().id
                     saveUsernameToPrefs(username)
+                    
+                    // Update last login time
+                    firestore.collection("users").document(username)
+                        .update("lastLogin", System.currentTimeMillis())
+                        .addOnFailureListener { /* Ignore errors */ }
+                    
                     hideLoading()
                     showSuccess("Welcome back, @$username!")
                     navigateToMainActivity(username)
                 } else {
-                    // No username found - need to create one
-                    hideLoading()
-                    promptForUsername(user)
+                    // No username found - check if user document exists by email
+                    // This handles cases where user data might be partially created
+                    val emailQuery = firestore.collection("users")
+                        .whereEqualTo("email", user.email)
+                        .get()
+                        .await()
+                    
+                    if (!emailQuery.isEmpty) {
+                        // Found by email, recover username
+                        val userDoc = emailQuery.documents.first()
+                        val username = userDoc.getString("username") ?: userDoc.id
+                        
+                        // Make sure usernames collection is in sync
+                        firestore.collection("usernames").document(username)
+                            .set(mapOf("uid" to user.uid, "createdAt" to System.currentTimeMillis()))
+                            .await()
+                        
+                        saveUsernameToPrefs(username)
+                        hideLoading()
+                        showSuccess("Welcome back, @$username!")
+                        navigateToMainActivity(username)
+                    } else {
+                        // Truly new user - need to create username
+                        hideLoading()
+                        promptForUsername(user)
+                    }
                 }
             } catch (e: Exception) {
                 hideLoading()
@@ -514,37 +641,41 @@ class LoginActivity : AppCompatActivity() {
 
     public override fun onStart() {
         super.onStart()
-        // Check if user is signed in and update UI accordingly
+        // Check if user is signed in AND has a saved username
+        // This prevents auto-redirect when user needs to set up username
         val currentUser = auth.currentUser
-        if (currentUser != null) {
+        val savedUsername = getSharedPreferences("user_prefs", MODE_PRIVATE)
+            .getString("current_username", null)
+        
+        if (currentUser != null && !savedUsername.isNullOrEmpty()) {
+            // User is logged in and has profile set up
             navigateToIntroduction()
         }
+        // If currentUser exists but no savedUsername, let them proceed to login
+        // so checkUserProfileAndNavigate can handle the profile setup
     }
 
     /**
-     * Sync progress from cloud and navigate to MainActivity
+     * CLOUD-ONLY: Sync progress from cloud and navigate to MainActivity
      */
     private fun syncProgressAndNavigate(username: String) {
         lifecycleScope.launch {
             try {
                 val syncService = UserProgressSyncService(this@LoginActivity)
                 
-                // Sync progress (merge local and cloud, take better values)
-                val syncSuccess = syncService.syncProgress()
+                // Load progress from cloud only (no local merge)
+                val progress = syncService.loadProgressFromCloud()
                 
-                if (syncSuccess) {
-                    android.util.Log.d("LoginActivity", "Progress synced for user: $username")
+                if (progress != null) {
+                    android.util.Log.d("LoginActivity", "Progress loaded from cloud for user: $username")
+                } else {
+                    android.util.Log.d("LoginActivity", "New user, no cloud progress yet: $username")
                 }
             } catch (e: Exception) {
-                android.util.Log.e("LoginActivity", "Error syncing progress: ${e.message}")
+                android.util.Log.e("LoginActivity", "Error loading progress: ${e.message}")
             }
             
-            // Update assessment completion flag
-            val user = auth.currentUser
-            if (user != null) {
-                val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
-                prefs.edit().putBoolean("assessment_completed_${user.uid}", true).apply()
-            }
+            // CLOUD-ONLY: No local flags - Firebase report existence is checked on HomeFragment
             
             // Navigate to MainActivity
             runOnUiThread {
@@ -554,6 +685,68 @@ class LoginActivity : AppCompatActivity() {
                 overridePendingTransition(R.anim.fade_in, R.anim.fade_out)
                 finish()
             }
+        }
+    }
+    
+    /**
+     * Show forgot password dialog
+     */
+    private fun showForgotPasswordDialog() {
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_forgot_password, null)
+        val emailInput = dialogView.findViewById<TextInputEditText>(R.id.editTextForgotEmail)
+        val emailLayout = dialogView.findViewById<TextInputLayout>(R.id.textFieldForgotEmail)
+        
+        // Pre-fill with current email if available
+        val currentEmail = binding.editTextEmailLogin.text.toString().trim()
+        if (currentEmail.isNotEmpty() && Patterns.EMAIL_ADDRESS.matcher(currentEmail).matches()) {
+            emailInput.setText(currentEmail)
+        }
+
+        val dialog = MaterialAlertDialogBuilder(this)
+            .setTitle("Reset Password")
+            .setMessage("Enter your email address and we'll send you a link to reset your password.")
+            .setView(dialogView)
+            .setCancelable(true)
+            .setPositiveButton("Send Reset Link", null)
+            .setNegativeButton("Cancel", null)
+            .create()
+
+        dialog.show()
+
+        // Override positive button to add validation
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+            val email = emailInput.text.toString().trim()
+            
+            if (email.isEmpty()) {
+                emailLayout.error = "Email is required"
+                return@setOnClickListener
+            }
+            
+            if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+                emailLayout.error = "Please enter a valid email"
+                return@setOnClickListener
+            }
+            
+            emailLayout.error = null
+            
+            // Send password reset email
+            auth.sendPasswordResetEmail(email)
+                .addOnCompleteListener { task ->
+                    dialog.dismiss()
+                    if (task.isSuccessful) {
+                        MaterialAlertDialogBuilder(this)
+                            .setTitle("Email Sent ✓")
+                            .setMessage("If an account exists with $email, you will receive a password reset link shortly.\n\nPlease check your inbox and spam folder.")
+                            .setPositiveButton("OK", null)
+                            .show()
+                    } else {
+                        MaterialAlertDialogBuilder(this)
+                            .setTitle("Error")
+                            .setMessage("Failed to send reset email: ${task.exception?.message}")
+                            .setPositiveButton("OK", null)
+                            .show()
+                    }
+                }
         }
     }
 }

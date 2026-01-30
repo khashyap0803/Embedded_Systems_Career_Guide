@@ -108,19 +108,18 @@ class LearningPathFragment : Fragment() {
     private fun loadProgressFromCloud() {
         lifecycleScope.launch {
             try {
-                // Try to load from cloud first
+                // CLOUD-ONLY: Load from cloud - no local fallback
                 val progress = progressSyncService.loadProgressFromCloud()
                 
                 if (progress != null) {
                     cloudProgress = progress
-                    Log.d("LearningPath", "Loaded progress from cloud: XP=${progress.totalXP}, completed=${progress.completedStages.size}, stars=${progress.stageStars}")
+                    Log.d("LearningPath", "Loaded progress from cloud: XP=${progress.totalXP}, completed=${progress.completedStages.size}, stars=${progress.stageStars}, streak=${progress.streak}")
                     applyProgressToStages(progress)
                 } else {
-                    // Fallback to local cache
-                    Log.d("LearningPath", "No cloud progress, using local cache")
-                    val localProgress = progressSyncService.getLocalProgress()
-                    cloudProgress = localProgress
-                    applyProgressToStages(localProgress)
+                    // No cloud progress - initialize with defaults for new user
+                    Log.d("LearningPath", "No cloud progress found, initializing new user")
+                    cloudProgress = UserProgressSyncService.UserProgress()
+                    applyProgressToStages(cloudProgress!!)
                 }
                 
                 updateStreakSystem()
@@ -129,12 +128,12 @@ class LearningPathFragment : Fragment() {
                 
             } catch (e: Exception) {
                 Log.e("LearningPath", "Error loading progress from cloud", e)
-                // Fallback to local cache on error
-                val localProgress = progressSyncService.getLocalProgress()
-                cloudProgress = localProgress
-                applyProgressToStages(localProgress)
+                // On cloud error, show default state - don't use stale local data
+                cloudProgress = UserProgressSyncService.UserProgress()
+                applyProgressToStages(cloudProgress!!)
                 createGamePath()
                 updateHomePageProgress()
+                Toast.makeText(context, "Could not load progress. Check internet connection.", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -176,79 +175,45 @@ class LearningPathFragment : Fragment() {
 
     /**
      * Initialize progress for first-time users with proper defaults
+     * CLOUD-ONLY: Only sets home page display values. Cloud is the source of truth.
      */
     private fun initializeProgressForNewUsers() {
         val isFirstLaunch = prefs.getBoolean(KEY_FIRST_LAUNCH, true)
 
         if (isFirstLaunch) {
-            // Clear any existing progress and set proper defaults
+            // Just mark first launch as done and set home page defaults for display
             prefs.edit()
-                .putInt(KEY_TOTAL_XP, 0)           // Start with 0 XP
-                .putInt(KEY_CURRENT_STAGE, 1)      // Start at stage 1
-                .putInt(KEY_STREAK, 1)             // Start with 1 day streak (today)
-                .putStringSet(KEY_COMPLETED_STAGES, emptySet()) // No completed stages
-                .putString(KEY_LAST_VISIT_DATE, SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date()))
                 .putBoolean(KEY_FIRST_LAUNCH, false)
-                // Also reset home page values to ensure consistency
+                // Reset home page display values only
                 .putInt("home_total_xp", 0)
                 .putInt("home_current_level", 1)
                 .putInt("home_streak", 1)
                 .putInt("home_progress_percentage", 0)
                 .putInt("home_completed_stages", 0)
-                .putInt("home_total_stages", 16)
+                .putInt("home_total_stages", com.example.embeddedsystemscareerguide.AppConstants.TOTAL_LEARNING_STAGES)
                 .apply()
         }
     }
 
-    private fun loadProgressFromPreferences() {
-        // Load saved progress with proper defaults
-        val totalXP = prefs.getInt(KEY_TOTAL_XP, 0)
-        val currentStage = prefs.getInt(KEY_CURRENT_STAGE, 1)
-        val streak = prefs.getInt(KEY_STREAK, 1)
-        val completedStagesSet = prefs.getStringSet(KEY_COMPLETED_STAGES, emptySet()) ?: emptySet()
+    // DEPRECATED: loadProgressFromPreferences removed - we now use cloud-only via loadProgressFromCloud()
 
-        // Update user progress display
-        updateUserStats(totalXP, currentStage, streak)
-
-        // Apply progress to stages with STRICT unlocking logic
-        stages.forEach { stage ->
-            val stageId = stage.id
-            val stageNumber = stageId.toIntOrNull() ?: 1
-
-            stage.isCompleted = completedStagesSet.contains(stageId)
-
-            // STRICT unlocking logic: ONLY stage 1 unlocked initially
-            stage.isUnlocked = when {
-                stageNumber == 1 -> true // ONLY Stage 1 is unlocked at start
-                else -> {
-                    // All other stages require previous stage to be completed
-                    val prevStageId = (stageNumber - 1).toString()
-                    completedStagesSet.contains(prevStageId)
-                }
-            }
-
-            // Load stars for completed stages only
-            if (stage.isCompleted) {
-                // Default to 0 if no stars saved yet (bug fix: was defaulting to 3)
-                val savedStars = prefs.getInt(KEY_STAGE_STARS + stageId, 0)
-                Log.d("LearningPath", "Loading stars for stage $stageId: $savedStars (key=${KEY_STAGE_STARS + stageId})")
-                stage.starsEarned = savedStars
-            } else {
-                stage.starsEarned = 0
-            }
-        }
-    }
-
+    /**
+     * CLOUD-ONLY: Update streak system using cloud data directly
+     * Reads from cloudProgress, calculates new streak, saves directly to cloud
+     */
     private fun updateStreakSystem() {
         val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
-        val lastVisit = prefs.getString(KEY_LAST_VISIT_DATE, "")
-        val currentStreak = prefs.getInt(KEY_STREAK, 1)
-        val bestStreak = prefs.getInt("best_streak", 1)
+        
+        // Use cloud progress directly - NO local SharedPreferences
+        val currentProgress = cloudProgress ?: return
+        val lastVisit = currentProgress.lastVisitDate
+        val currentStreak = currentProgress.streak
+        val bestStreak = currentProgress.bestStreak
 
-        val wasStreakBroken = !lastVisit.isNullOrEmpty() && lastVisit != today && !isYesterday(lastVisit)
+        val wasStreakBroken = lastVisit.isNotEmpty() && lastVisit != today && !isYesterday(lastVisit)
         
         val newStreak = when {
-            lastVisit.isNullOrEmpty() -> 1 // First visit
+            lastVisit.isEmpty() -> currentStreak.coerceAtLeast(1) // First visit, keep cloud streak or default to 1
             lastVisit == today -> currentStreak // Same day, keep streak
             isYesterday(lastVisit) -> currentStreak + 1 // Consecutive day, increase streak
             else -> 1 // Streak broken, reset to 1
@@ -257,24 +222,33 @@ class LearningPathFragment : Fragment() {
         // Update best streak if needed
         val newBestStreak = maxOf(newStreak, bestStreak)
 
-        // Save updated streak and visit date
-        prefs.edit()
-            .putInt(KEY_STREAK, newStreak)
-            .putInt("best_streak", newBestStreak)
-            .putString(KEY_LAST_VISIT_DATE, today)
-            .apply()
-
-        // Sync streak changes to cloud
-        syncProgressToCloud()
+        // Only update if something changed
+        if (newStreak != currentStreak || newBestStreak != bestStreak || lastVisit != today) {
+            // Update cloud progress object
+            cloudProgress = currentProgress.copy(
+                streak = newStreak,
+                bestStreak = newBestStreak,
+                lastVisitDate = today,
+                lastUpdated = System.currentTimeMillis()
+            )
+            
+            // Save directly to cloud - NO local storage
+            lifecycleScope.launch {
+                try {
+                    progressSyncService.saveProgress(cloudProgress!!)
+                    Log.d("LearningPath", "Streak updated in cloud: $currentStreak -> $newStreak")
+                } catch (e: Exception) {
+                    Log.e("LearningPath", "Failed to save streak to cloud", e)
+                }
+            }
+        }
 
         // Show streak notifications
         if (wasStreakBroken && currentStreak > 1) {
-            // Streak was broken - show encouragement
             Toast.makeText(requireContext(),
                 "🔥 Previous streak: ${currentStreak} days\nStarting fresh! Let's build a new streak!",
                 Toast.LENGTH_LONG).show()
         } else if (newStreak > currentStreak) {
-            // Streak increased - check for milestones
             val milestoneMessage = when (newStreak) {
                 7 -> "🔥 1 WEEK STREAK! Amazing dedication!"
                 14 -> "🔥 2 WEEK STREAK! You're unstoppable!"
@@ -285,6 +259,9 @@ class LearningPathFragment : Fragment() {
                 Toast.makeText(requireContext(), it, Toast.LENGTH_LONG).show()
             }
         }
+        
+        // Update UI with new streak
+        updateUserStats(currentProgress.totalXP, currentProgress.currentStage, newStreak)
     }
 
     private fun isYesterday(dateString: String): Boolean {
@@ -774,19 +751,18 @@ class LearningPathFragment : Fragment() {
 
     /**
      * Update home page progress to sync with learning path
+     * CLOUD-ONLY: Reads from cloudProgress, writes to home prefs for display
      */
     private fun updateHomePageProgress() {
-        val totalXP = prefs.getInt(KEY_TOTAL_XP, 0)
-        val currentStage = prefs.getInt(KEY_CURRENT_STAGE, 1)
-        val streak = prefs.getInt(KEY_STREAK, 1)
+        val progress = cloudProgress ?: return
         val completedStages = stages.count { it.isCompleted }
         val progressPercentage = if (stages.isNotEmpty()) (completedStages * 100) / stages.size else 0
 
-        // Store for home page to read
+        // Store for home page to read (home page display still uses prefs for simplicity)
         prefs.edit()
-            .putInt("home_total_xp", totalXP)
-            .putInt("home_current_level", currentStage)
-            .putInt("home_streak", streak)
+            .putInt("home_total_xp", progress.totalXP)
+            .putInt("home_current_level", progress.currentStage)
+            .putInt("home_streak", progress.streak)
             .putInt("home_progress_percentage", progressPercentage)
             .putInt("home_completed_stages", completedStages)
             .putInt("home_total_stages", stages.size)
@@ -884,20 +860,19 @@ class LearningPathFragment : Fragment() {
     }
 
     /**
-     * Sync progress to cloud asynchronously
-     * This is called after any local progress update to ensure cloud backup
+     * CLOUD-ONLY: Sync cloudProgress object directly to cloud
+     * Does not use local SharedPreferences
      */
     private fun syncProgressToCloud() {
+        val progress = cloudProgress ?: return
         lifecycleScope.launch {
             try {
-                val syncService = UserProgressSyncService(requireContext())
-                val success = syncService.saveProgressToCloud()
+                val success = progressSyncService.saveProgress(progress)
                 if (success) {
                     android.util.Log.d("LearningPath", "Progress synced to cloud")
                 }
             } catch (e: Exception) {
-                android.util.Log.w("LearningPath", "Cloud sync failed (offline?): ${e.message}")
-                // Silent failure - user can still work offline
+                android.util.Log.e("LearningPath", "Cloud sync failed: ${e.message}")
             }
         }
     }

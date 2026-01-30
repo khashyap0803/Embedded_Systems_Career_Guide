@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
@@ -71,7 +72,9 @@ class AssessmentActivity : AppCompatActivity() {
             val json = assets.open("initial_assessment_questions.json").bufferedReader().use { it.readText() }
             val type = object : TypeToken<List<Question>>() {}.type
             questions = Gson().fromJson(json, type)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            // M2 fix: Log asset loading errors for debugging
+            Log.e("AssessmentActivity", "Failed to load questions from assets", e)
             Toast.makeText(this, "Error loading questions", Toast.LENGTH_SHORT).show()
             finish()
         }
@@ -231,10 +234,8 @@ class AssessmentActivity : AppCompatActivity() {
                 val saveSuccess = saveReportToFirebaseSync(reportHtml, userId, userName, userEmail)
 
                 if (saveSuccess) {
-                    // Mark assessment as completed ONLY after Firebase save succeeds
-                    markAssessmentCompleted(userId)
-
-                    // Show completion state with Preview/Continue options
+                    // CLOUD-ONLY: Report saved to Firebase is the source of truth
+                    // No local flag needed - report existence is checked on other screens
                     showCompletionState()
                 } else {
                     throw Exception("Failed to save report to cloud")
@@ -331,10 +332,5 @@ class AssessmentActivity : AppCompatActivity() {
         }
     }
 
-    private fun markAssessmentCompleted(userId: String) {
-        val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
-        // H8 fix: Use apply() instead of commit() to avoid blocking main thread
-        // The flag will be set asynchronously and persisted before process exit
-        prefs.edit().putBoolean("assessment_completed_$userId", true).apply()
-    }
+    // REMOVED: markAssessmentCompleted - report existence in Firebase is the source of truth
 }

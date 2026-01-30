@@ -6,6 +6,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import com.example.embeddedsystemscareerguide.AppConstants
 import com.example.embeddedsystemscareerguide.R
 import com.example.embeddedsystemscareerguide.databinding.ActivityQuizBinding
 import com.example.embeddedsystemscareerguide.services.GeminiQuizService
@@ -97,10 +98,11 @@ class QuizActivity : AppCompatActivity() {
         
         lifecycleScope.launch {
             try {
+                // M1 fix: Use AppConstants for quiz question count
                 questions = quizService.generateQuiz(
                     stageTitle = stageTitle,
                     stageTopics = stageTopics,
-                    numberOfQuestions = 10,  // 10 questions per stage
+                    numberOfQuestions = AppConstants.QUESTIONS_PER_QUIZ,
                     difficulty = "medium"
                 )
                 
@@ -229,10 +231,11 @@ class QuizActivity : AppCompatActivity() {
         } else {
             0
         }
+        // L5 fix: Use AppConstants for star thresholds
         val stars = when {
-            percentage >= 80 -> 3
-            percentage >= 60 -> 2
-            percentage >= 40 -> 1
+            percentage >= AppConstants.STAR_3_THRESHOLD -> 3
+            percentage >= AppConstants.STAR_2_THRESHOLD -> 2
+            percentage >= AppConstants.STAR_1_THRESHOLD -> 1
             else -> 0
         }
 

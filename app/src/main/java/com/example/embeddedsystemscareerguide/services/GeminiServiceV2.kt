@@ -396,6 +396,99 @@ RESPOND WITH ONLY THIS JSON:
   "learningPoints": ["Key takeaways from this review"]
 }
 """
+
+        /**
+         * Analytics insights for learning progress
+         */
+        fun analytics(
+            progressPercentage: Int,
+            strongTopics: List<String>,
+            weakTopics: List<String>,
+            streakDays: Int,
+            avgQuizScore: Int
+        ): String = """
+Generate personalized learning recommendations for an embedded systems student.
+
+STUDENT PROGRESS:
+- Overall Progress: $progressPercentage%
+- Strong Topics: ${strongTopics.joinToString(", ").ifEmpty { "None yet" }}
+- Weak Topics: ${weakTopics.joinToString(", ").ifEmpty { "None identified" }}
+- Current Streak: $streakDays days
+- Average Quiz Score: $avgQuizScore%
+
+Generate 3-5 actionable recommendations to help them improve.
+
+RESPOND WITH ONLY THIS JSON:
+{
+  "recommendations": [
+    {
+      "type": "focus|practice|review|rest",
+      "title": "Short action title",
+      "description": "2-3 sentence actionable recommendation",
+      "priority": 1
+    }
+  ]
+}
+"""
+
+        /**
+         * Generate daily learning tips
+         */
+        fun dailyTips(
+            currentTopic: String,
+            completedTopics: List<String>,
+            count: Int = 7
+        ): String = """
+Generate $count daily learning tips for an embedded systems student.
+
+Current Focus: $currentTopic
+Completed Topics: ${completedTopics.joinToString(", ").ifEmpty { "Just starting" }}
+
+Each tip should be practical, actionable, and related to embedded systems.
+Include code snippets where relevant.
+
+RESPOND WITH ONLY THIS JSON:
+{
+  "tips": [
+    {
+      "title": "Tip title",
+      "content": "Detailed tip content (2-3 sentences)",
+      "category": "programming|debugging|hardware|best-practices|career",
+      "codeSnippet": "Optional C code example"
+    }
+  ]
+}
+"""
+
+        /**
+         * Interview preparation questions
+         */
+        fun interviewPrep(
+            topics: List<String>,
+            difficulty: String,
+            questionCount: Int = 5
+        ): String = """
+Generate $questionCount embedded systems interview questions for a candidate who has studied:
+${topics.joinToString(", ")}
+
+Difficulty level: $difficulty
+
+Include a mix of conceptual and practical questions.
+
+RESPOND WITH ONLY THIS JSON:
+{
+  "questions": [
+    {
+      "question": "Interview question text",
+      "category": "technical|behavioral|system-design",
+      "difficulty": "easy|medium|hard",
+      "idealAnswer": "Key points for a good answer",
+      "keyPoints": ["point1", "point2"],
+      "followUpQuestions": ["follow-up 1"]
+    }
+  ]
+}
+"""
     }
 
     /**

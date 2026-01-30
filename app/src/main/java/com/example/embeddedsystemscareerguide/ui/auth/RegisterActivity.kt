@@ -1,9 +1,13 @@
 package com.example.embeddedsystemscareerguide.ui.auth
 
+import android.content.Context
 import android.content.Intent
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.Log
 import android.util.Patterns
 import android.view.View
 import android.widget.Toast
@@ -77,11 +81,14 @@ class RegisterActivity : AppCompatActivity() {
                 }
                 
                 binding.textFieldUsernameRegister.error = null
-                binding.textFieldUsernameRegister.helperText = "Checking availability..."
+                binding.textFieldUsernameRegister.helperText = "⏳ Checking availability..."
+                binding.textFieldUsernameRegister.setHelperTextColor(
+                    ContextCompat.getColorStateList(this@RegisterActivity, R.color.text_secondary)
+                )
                 
-                // Debounce check - wait 500ms before checking
+                // Debounce check - wait 600ms before checking
                 usernameCheckJob = lifecycleScope.launch {
-                    delay(500)
+                    delay(600)
                     checkUsernameAvailability(username)
                 }
             }
@@ -89,32 +96,122 @@ class RegisterActivity : AppCompatActivity() {
     }
 
     private suspend fun checkUsernameAvailability(username: String) {
-        try {
-            val document = firestore.collection("usernames")
-                .document(username)
-                .get()
-                .await()
-            
-            if (document.exists()) {
-                // Username taken
-                binding.textFieldUsernameRegister.helperText = "❌ Username already taken"
+        // Check network connectivity first
+        if (!isNetworkAvailable()) {
+            withContext(Dispatchers.Main) {
+                binding.textFieldUsernameRegister.helperText = "⚠️ No internet connection"
                 binding.textFieldUsernameRegister.setHelperTextColor(
-                    ContextCompat.getColorStateList(this@RegisterActivity, R.color.error_color)
+                    ContextCompat.getColorStateList(this@RegisterActivity, R.color.warning_color)
                 )
                 isUsernameAvailable = false
-            } else {
-                // Username available
-                binding.textFieldUsernameRegister.helperText = "✓ Username available"
+            }
+            return
+        }
+        
+        try {
+            Log.d("RegisterActivity", "Checking username availability: $username")
+            
+            val document = withContext(Dispatchers.IO) {
+                firestore.collection("usernames")
+                    .document(username)
+                    .get()
+                    .await()
+            }
+            
+            withContext(Dispatchers.Main) {
+                if (document.exists()) {
+                    // Username taken
+                    binding.textFieldUsernameRegister.helperText = "❌ Username already taken"
+                    binding.textFieldUsernameRegister.setHelperTextColor(
+                        ContextCompat.getColorStateList(this@RegisterActivity, R.color.error_color)
+                    )
+                    isUsernameAvailable = false
+                    Log.d("RegisterActivity", "Username $username is taken")
+                } else {
+                    // Username available
+                    binding.textFieldUsernameRegister.helperText = "✅ Username available"
+                    binding.textFieldUsernameRegister.setHelperTextColor(
+                        ContextCompat.getColorStateList(this@RegisterActivity, R.color.success_color)
+                    )
+                    isUsernameAvailable = true
+                    lastCheckedUsername = username
+                    Log.d("RegisterActivity", "Username $username is available")
+                }
+            }
+        } catch (e: com.google.firebase.firestore.FirebaseFirestoreException) {
+            // Handle specific Firestore errors
+            val errorCode = e.code.name
+            Log.e("RegisterActivity", "Firestore error [$errorCode]: ${e.message}", e)
+            
+            withContext(Dispatchers.Main) {
+                val errorMessage = when (e.code) {
+                    com.google.firebase.firestore.FirebaseFirestoreException.Code.PERMISSION_DENIED -> {
+                        // Security rules issue - but we can still proceed with registration
+                        // as the username will be checked again during registration
+                        Log.w("RegisterActivity", "Permission denied - security rules may need updating")
+                        "⚠️ Cannot verify now - will check during registration"
+                    }
+                    com.google.firebase.firestore.FirebaseFirestoreException.Code.UNAVAILABLE -> {
+                        "⚠️ Firestore unavailable - tap to retry"
+                    }
+                    else -> {
+                        "⚠️ Error: $errorCode - tap to retry"
+                    }
+                }
+                
+                binding.textFieldUsernameRegister.helperText = errorMessage
                 binding.textFieldUsernameRegister.setHelperTextColor(
-                    ContextCompat.getColorStateList(this@RegisterActivity, R.color.success_color)
+                    ContextCompat.getColorStateList(this@RegisterActivity, R.color.warning_color)
                 )
-                isUsernameAvailable = true
-                lastCheckedUsername = username
+                
+                // For permission denied, allow registration to proceed (it will be checked server-side)
+                if (e.code == com.google.firebase.firestore.FirebaseFirestoreException.Code.PERMISSION_DENIED) {
+                    isUsernameAvailable = true // Allow to proceed, will be checked during registration
+                    lastCheckedUsername = username
+                } else {
+                    isUsernameAvailable = false
+                }
+                
+                // Allow tapping to retry
+                setupRetryClickListener()
             }
         } catch (e: Exception) {
-            binding.textFieldUsernameRegister.helperText = "Unable to check availability"
-            isUsernameAvailable = false
+            Log.e("RegisterActivity", "Error checking username: ${e.javaClass.simpleName} - ${e.message}", e)
+            withContext(Dispatchers.Main) {
+                // H1 fix: Removed debug Toast, only show user-friendly error message
+                
+                binding.textFieldUsernameRegister.helperText = "⚠️ Unable to check - tap to retry"
+                binding.textFieldUsernameRegister.setHelperTextColor(
+                    ContextCompat.getColorStateList(this@RegisterActivity, R.color.warning_color)
+                )
+                isUsernameAvailable = false
+                
+                // Allow tapping to retry
+                setupRetryClickListener()
+            }
         }
+    }
+    
+    private fun setupRetryClickListener() {
+        binding.textFieldUsernameRegister.setEndIconOnClickListener {
+            val currentUsername = binding.editTextUsernameRegister.text.toString().lowercase().trim()
+            if (USERNAME_PATTERN.matches(currentUsername)) {
+                binding.textFieldUsernameRegister.helperText = "⏳ Checking availability..."
+                binding.textFieldUsernameRegister.setHelperTextColor(
+                    ContextCompat.getColorStateList(this@RegisterActivity, R.color.text_secondary)
+                )
+                usernameCheckJob = lifecycleScope.launch {
+                    checkUsernameAvailability(currentUsername)
+                }
+            }
+        }
+    }
+    
+    private fun isNetworkAvailable(): Boolean {
+        val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val network = connectivityManager.activeNetwork ?: return false
+        val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
+        return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
     }
 
     private fun registerUser() {

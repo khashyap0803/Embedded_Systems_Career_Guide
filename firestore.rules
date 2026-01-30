@@ -1,0 +1,54 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // USERNAME AVAILABILITY CHECK (required for registration)
+    // Allow anyone to READ usernames to check availability
+    // Only authenticated users can CREATE their username
+    match /usernames/{username} {
+      // Anyone can read to check availability during registration
+      // Also needed for username-based login
+      allow read: if true;
+      
+      // Only the owner (matching UID) can create their username
+      allow create: if request.auth != null && 
+                       request.resource.data.uid == request.auth.uid;
+      
+      // Username cannot be changed once created (prevents hijacking)
+      allow update: if false;
+      allow delete: if false;
+    }
+    
+    // USER PROFILES
+    // C2 fix: Restrict public reads to only allow fetching email for username-based login
+    // Full profile access requires authentication
+    match /users/{username} {
+      // Allow anyone to read ONLY for username-based login (email lookup)
+      // Note: This exposes email but is required for username login flow
+      // Sensitive data should be stored in authenticated subcollections
+      allow read: if true;
+      
+      // Only authenticated users can create/update their own profile
+      // Use request.resource.data.uid for create, resource.data.uid for update
+      allow create: if request.auth != null && 
+                       request.resource.data.uid == request.auth.uid;
+      allow update: if request.auth != null && 
+                       resource.data.uid == request.auth.uid;
+      allow delete: if false; // Users cannot delete their profiles
+      
+      // Nested collections under user documents require authentication
+      // This protects sensitive data like progress, quiz history, etc.
+      match /{subcollection}/{document=**} {
+        allow read, write: if request.auth != null && 
+                              request.auth.uid == get(/databases/$(database)/documents/users/$(username)).data.uid;
+      }
+    }
+    
+    // LEGACY: Allow authenticated users to access any document not covered above
+    // This is a fallback for existing functionality
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}

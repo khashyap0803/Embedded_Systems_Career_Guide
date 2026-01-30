@@ -37,26 +37,14 @@ class GeminiReportService {
         fun onProgress(phase: Int, totalPhases: Int, phaseName: String, quote: String)
     }
 
-    // Certificate pinning for Google APIs (C2 fix)
-    private val certificatePinner = CertificatePinner.Builder()
-        .add("generativelanguage.googleapis.com", "sha256/BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=")
-        .add("*.googleapis.com", "sha256/BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=")
-        .build()
-
-    // Increased timeouts for larger API responses with more tokens
-    private val client = OkHttpClient.Builder()
-        .connectTimeout(90, TimeUnit.SECONDS)
-        .readTimeout(300, TimeUnit.SECONDS)  // 5 minutes for large responses
-        .writeTimeout(90, TimeUnit.SECONDS)
-        // Note: Certificate pinning commented out to allow flexibility during development
-        // Uncomment for production: .certificatePinner(certificatePinner)
-        .build()
+    // M3 fix: Use shared long-timeout client from NetworkModule
+    // Certificate pinning is configured centrally in NetworkModule
+    private val client = NetworkModule.longTimeoutClient
 
     private val gson = Gson()
 
-    // API key loaded from BuildConfig (injected from local.properties at build time)
-    private val GEMINI_API_KEY = BuildConfig.GEMINI_API_KEY
-    private val GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$GEMINI_API_KEY"
+    // M6 fix: Use centralized API URL from NetworkModule
+    private val GEMINI_API_URL = NetworkModule.getGeminiApiUrl()
 
     companion object {
         private const val TAG = "GeminiReportService"

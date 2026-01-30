@@ -18,17 +18,13 @@ import java.util.concurrent.TimeUnit
  */
 class GeminiChatService {
 
-    private val client = OkHttpClient.Builder()
-        .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(60, TimeUnit.SECONDS)
-        .writeTimeout(30, TimeUnit.SECONDS)
-        .build()
+    // M3 fix: Use shared client from NetworkModule
+    private val client = NetworkModule.standardClient
 
     private val gson = Gson()
 
-    // API key loaded from BuildConfig (injected from local.properties at build time)
-    private val GEMINI_API_KEY = BuildConfig.GEMINI_API_KEY
-    private val GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$GEMINI_API_KEY"
+    // M6 fix: Use centralized API URL from NetworkModule
+    private val GEMINI_API_URL = NetworkModule.getGeminiApiUrl()
 
     companion object {
         private const val TAG = "GeminiChatService"

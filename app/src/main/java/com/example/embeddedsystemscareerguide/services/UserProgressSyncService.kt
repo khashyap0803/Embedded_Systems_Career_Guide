@@ -3,6 +3,7 @@ package com.example.embeddedsystemscareerguide.services
 import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
+import com.example.embeddedsystemscareerguide.AppConstants
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
@@ -86,8 +87,11 @@ class UserProgressSyncService(private val context: Context) {
     }
 
     /**
+     * @Deprecated - Use loadProgressFromCloud() instead
      * Read current progress from local SharedPreferences
+     * KEPT FOR LEGACY COMPATIBILITY - Will be removed in future
      */
+    @Deprecated("Use loadProgressFromCloud() instead - cloud is the source of truth")
     fun getLocalProgress(): UserProgress {
         val totalXP = prefs.getInt(KEY_TOTAL_XP, 0)
         val currentStage = prefs.getInt(KEY_CURRENT_STAGE, 1)
@@ -148,7 +152,8 @@ class UserProgressSyncService(private val context: Context) {
      * Update home page progress values for consistency
      */
     private fun updateHomeProgress(editor: SharedPreferences.Editor, progress: UserProgress) {
-        val totalStages = 16 // Total stages in the app
+        // H4 fix: Use AppConstants instead of hardcoded value
+        val totalStages = AppConstants.TOTAL_LEARNING_STAGES
         val progressPercentage = ((progress.completedStages.size.toFloat() / totalStages) * 100).toInt()
         
         editor.putInt("home_total_xp", progress.totalXP)
@@ -174,6 +179,35 @@ class UserProgressSyncService(private val context: Context) {
         return try {
             val progress = getLocalProgress()
             
+            firestore.collection(COLLECTION_USERS)
+                .document(username)
+                .collection(COLLECTION_DATA)
+                .document(DOCUMENT_PROGRESS)
+                .set(progress.toMap(), SetOptions.merge())
+                .await()
+            
+            Log.d(TAG, "Successfully saved progress to cloud for user: $username")
+            true
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to save progress to cloud", e)
+            false
+        }
+    }
+    
+    /**
+     * CLOUD-ONLY: Save a specific progress object directly to cloud
+     * Does NOT read from local SharedPreferences
+     * @param progress The progress object to save
+     * @return true if successful, false otherwise
+     */
+    suspend fun saveProgress(progress: UserProgress): Boolean {
+        val username = getCurrentUsername()
+        if (username == null) {
+            Log.w(TAG, "Cannot save to cloud: Username not found")
+            return false
+        }
+
+        return try {
             firestore.collection(COLLECTION_USERS)
                 .document(username)
                 .collection(COLLECTION_DATA)

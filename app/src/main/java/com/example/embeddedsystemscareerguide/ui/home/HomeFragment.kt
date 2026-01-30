@@ -4,35 +4,35 @@ import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
 import android.content.Context
 import android.content.Intent
-import android.content.SharedPreferences
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.example.embeddedsystemscareerguide.PrefsKeys
 import com.example.embeddedsystemscareerguide.R
 import com.example.embeddedsystemscareerguide.databinding.FragmentHomeBinding
+import com.example.embeddedsystemscareerguide.services.UserProgressSyncService
 import com.example.embeddedsystemscareerguide.ui.assessment.AssessmentActivity
 import com.example.embeddedsystemscareerguide.ui.assessment.ReportViewerActivity
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
 import java.util.*
 
 /**
  * Home Fragment - Main dashboard and app entry point
- *
- * Displays user progress, daily insights, and quick navigation actions.
- * Features include:
- * - Personalized welcome message with username
- * - Progress dashboard (XP, level, completed stages)
- * - Daily streak tracking and motivational insights
- * - Quick action buttons for learning, assessment, AI chat
- * - Achievement badges display
- *
- * @see HomeViewModel for state management
+ * 
+ * CLOUD-ONLY: All progress data is loaded from Firebase Firestore.
+ * Includes pull-to-refresh for manual data sync.
  */
 class HomeFragment : Fragment() {
 
@@ -40,7 +40,11 @@ class HomeFragment : Fragment() {
     private val binding get() = _binding!!
     private lateinit var viewModel: HomeViewModel
     private lateinit var auth: FirebaseAuth
-    private lateinit var prefs: SharedPreferences
+    private lateinit var firestore: FirebaseFirestore
+    private lateinit var progressSyncService: UserProgressSyncService
+    
+    // Cached cloud progress
+    private var cloudProgress: UserProgressSyncService.UserProgress? = null
 
     // Daily insights array for variety
     private val dailyInsights = arrayOf(
@@ -61,38 +65,84 @@ class HomeFragment : Fragment() {
         viewModel = ViewModelProvider(this)[HomeViewModel::class.java]
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
         auth = FirebaseAuth.getInstance()
-        prefs = requireContext().getSharedPreferences(PrefsKeys.PREFS_LEARNING, Context.MODE_PRIVATE)
+        firestore = FirebaseFirestore.getInstance()
+        progressSyncService = UserProgressSyncService(requireContext())
         return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        setupSwipeRefresh()
         setupUserWelcome()
-        setupProgressDashboard()
+        loadProgressFromCloud() // CLOUD-ONLY: Load all data from cloud
         setupQuickActions()
-        setupStudyStreak()
-        setupAchievements()  // Fix RecyclerView warning
+        setupAchievements()
         startAnimations()
     }
 
     override fun onResume() {
         super.onResume()
-        // Refresh progress when returning to home page
-        setupProgressDashboard()
+        // Refresh progress from cloud when returning to home page
+        loadProgressFromCloud()
+    }
+
+    /**
+     * Setup pull-to-refresh functionality
+     */
+    private fun setupSwipeRefresh() {
+        binding.swipeRefreshLayout.setColorSchemeResources(
+            R.color.cyan_400,
+            R.color.purple_400,
+            R.color.emerald_400
+        )
+        
+        binding.swipeRefreshLayout.setOnRefreshListener {
+            Log.d("HomeFragment", "Pull-to-refresh triggered")
+            loadProgressFromCloud()
+        }
+    }
+
+    /**
+     * CLOUD-ONLY: Load all progress data from cloud
+     */
+    private fun loadProgressFromCloud() {
+        lifecycleScope.launch {
+            try {
+                val progress = progressSyncService.loadProgressFromCloud()
+                
+                if (progress != null) {
+                    cloudProgress = progress
+                    Log.d("HomeFragment", "Loaded from cloud: XP=${progress.totalXP}, streak=${progress.streak}")
+                    updateProgressDashboard(progress)
+                    updateStudyStreak(progress.streak)
+                } else {
+                    // New user - use defaults
+                    cloudProgress = UserProgressSyncService.UserProgress()
+                    updateProgressDashboard(cloudProgress!!)
+                    updateStudyStreak(1)
+                    Log.d("HomeFragment", "No cloud progress, using defaults")
+                }
+                
+            } catch (e: Exception) {
+                Log.e("HomeFragment", "Error loading from cloud", e)
+                Toast.makeText(context, "Could not load data. Check connection.", Toast.LENGTH_SHORT).show()
+            } finally {
+                binding.swipeRefreshLayout.isRefreshing = false
+            }
+        }
     }
 
     private fun setupUserWelcome() {
         val user = auth.currentUser
         
-        // Get username from SharedPreferences (unique identifier)
+        // Get username from SharedPreferences (login session only)
         val userPrefs = requireContext().getSharedPreferences(PrefsKeys.PREFS_USER, Context.MODE_PRIVATE)
         val username = userPrefs.getString(PrefsKeys.CURRENT_USERNAME, null)
         
         // Display username with @ prefix, fallback to first name or "Developer"
         val displayName = username ?: (user?.displayName?.split(" ")?.firstOrNull() ?: "Developer")
 
-        // Animate welcome message
         binding.textWelcomeMessage.text = "Welcome back, $displayName!"
 
         // Set greeting based on time of day
@@ -110,20 +160,21 @@ class HomeFragment : Fragment() {
         binding.textDailyInsight.text = randomInsight
     }
 
-    private fun setupProgressDashboard() {
-        // Load real progress from shared preferences (synced with learning path)
-        // M8 fix: Using PrefsKeys constants instead of hardcoded strings
-        val totalXP = prefs.getInt(PrefsKeys.TOTAL_XP, 0)
-        val currentLevel = prefs.getInt(PrefsKeys.CURRENT_LEVEL, 1)
-        val currentStreak = prefs.getInt(PrefsKeys.STREAK, 1)
-        val overallProgress = prefs.getInt("home_progress_percentage", 0)
-        val completedStages = prefs.getInt(PrefsKeys.COMPLETED_STAGES, 0)
-        val totalStages = prefs.getInt("home_total_stages", 16)
+    /**
+     * CLOUD-ONLY: Update progress dashboard from cloud data
+     */
+    private fun updateProgressDashboard(progress: UserProgressSyncService.UserProgress) {
+        val totalXP = progress.totalXP
+        val currentLevel = progress.currentStage
+        val currentStreak = progress.streak
+        val completedStages = progress.completedStages.size
+        val totalStages = 16 // AppConstants.TOTAL_LEARNING_STAGES
+        val overallProgress = if (totalStages > 0) (completedStages * 100) / totalStages else 0
 
         // Update progress percentage display
         binding.textProgressPercentage.text = "$overallProgress%"
 
-        // Animate progress statistics with real data
+        // Animate progress statistics with real cloud data
         animateCounter(binding.textTotalXp, totalXP, " XP", 1000)
         animateCounter(binding.textCurrentStreak, currentStreak, " Days", 1200)
         animateCounter(binding.textCurrentLevel, currentLevel, "", 800) { value ->
@@ -135,11 +186,8 @@ class HomeFragment : Fragment() {
         animateProgressBar(binding.progressStages, (completedStages * 100) / totalStages, 1500)
 
         // Update progress text
-        val overallProgressText = "$overallProgress% Complete"
-        binding.textOverallProgress.text = overallProgressText
-
-        val stagesProgressText = "$completedStages / $totalStages Stages"
-        binding.textStagesProgress.text = stagesProgressText
+        binding.textOverallProgress.text = "$overallProgress% Complete"
+        binding.textStagesProgress.text = "$completedStages / $totalStages Stages"
     }
 
     private fun setupQuickActions() {
@@ -150,7 +198,7 @@ class HomeFragment : Fragment() {
 
         // Assessment card - now shows options for View Report or Retake
         binding.cardAssessment.setOnClickListener {
-            showAssessmentOptions()
+            checkAssessmentStatusFromCloud()
         }
 
         // Practice card - now properly navigates to practice fragment
@@ -169,54 +217,77 @@ class HomeFragment : Fragment() {
         }
     }
 
-    private fun showAssessmentOptions() {
-        val user = auth.currentUser
-        if (user == null) return
+    /**
+     * CLOUD-ONLY: Check if assessment report exists in cloud
+     */
+    private fun checkAssessmentStatusFromCloud() {
+        val userPrefs = requireContext().getSharedPreferences(PrefsKeys.PREFS_USER, Context.MODE_PRIVATE)
+        val username = userPrefs.getString(PrefsKeys.CURRENT_USERNAME, null)
+        
+        if (username == null) {
+            Toast.makeText(context, "Please log in first", Toast.LENGTH_SHORT).show()
+            return
+        }
 
-        val prefs = requireContext().getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
-        // Use user-specific key to check assessment completion
-        val assessmentCompleted = prefs.getBoolean("assessment_completed_${user.uid}", false)
-
-        if (assessmentCompleted) {
-            // Show dialog with View Report and Retake options
-            val options = arrayOf("📊 View Report", "🔄 Retake Assessment")
-            com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext(), R.style.Theme_App_AlertDialog)
-                .setTitle("📋 Assessment Options")
-                .setItems(options) { _, which ->
-                    when (which) {
-                        0 -> {
-                            // View Report
-                            val intent = Intent(requireContext(), ReportViewerActivity::class.java)
-                            startActivity(intent)
-                        }
-                        1 -> {
-                            // Retake Assessment
-                            showRetakeConfirmationDialog()
-                        }
-                    }
+        lifecycleScope.launch {
+            try {
+                // Check if report exists in cloud
+                val reportDoc = withContext(Dispatchers.IO) {
+                    firestore.collection("users")
+                        .document(username)
+                        .collection("data")
+                        .document("report")
+                        .get()
+                        .await()
                 }
-                .setNegativeButton("Cancel", null)
-                .show()
-        } else {
-            // First time - directly start assessment
-            val intent = Intent(requireContext(), AssessmentActivity::class.java)
-            startActivity(intent)
+
+                if (reportDoc.exists()) {
+                    // Report exists - show options
+                    showAssessmentOptions(hasReport = true)
+                } else {
+                    // No report - start assessment directly
+                    val intent = Intent(requireContext(), AssessmentActivity::class.java)
+                    startActivity(intent)
+                }
+            } catch (e: Exception) {
+                Log.e("HomeFragment", "Error checking assessment status", e)
+                // On error, let user try to start assessment
+                val intent = Intent(requireContext(), AssessmentActivity::class.java)
+                startActivity(intent)
+            }
         }
     }
 
-    private fun showRetakeConfirmationDialog() {
-        val user = auth.currentUser
-        if (user == null) return
+    private fun showAssessmentOptions(hasReport: Boolean) {
+        if (!hasReport) {
+            val intent = Intent(requireContext(), AssessmentActivity::class.java)
+            startActivity(intent)
+            return
+        }
 
+        val options = arrayOf("📊 View Report", "🔄 Retake Assessment")
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext(), R.style.Theme_App_AlertDialog)
+            .setTitle("📋 Assessment Options")
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> {
+                        val intent = Intent(requireContext(), ReportViewerActivity::class.java)
+                        startActivity(intent)
+                    }
+                    1 -> {
+                        showRetakeConfirmationDialog()
+                    }
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun showRetakeConfirmationDialog() {
         com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext(), R.style.Theme_App_AlertDialog)
             .setTitle("⚠️ Retake Assessment")
             .setMessage("Are you sure you want to retake the assessment? Your previous report will be replaced with a new one.")
             .setPositiveButton("Yes, Retake") { _, _ ->
-                // Clear user-specific assessment completion flag
-                val prefs = requireContext().getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
-                prefs.edit().putBoolean("assessment_completed_${user.uid}", false).apply()
-
-                // Start assessment
                 val intent = Intent(requireContext(), AssessmentActivity::class.java)
                 startActivity(intent)
             }
@@ -224,16 +295,11 @@ class HomeFragment : Fragment() {
             .show()
     }
 
-    private fun setupStudyStreak() {
-        // Load real streak data from SharedPreferences (synced with learning path)
-        val streak = prefs.getInt(PrefsKeys.STREAK, 1)
-        val lastVisitDate = prefs.getString(PrefsKeys.LAST_ACTIVE_DATE, "")
-        val today = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())
-
+    /**
+     * CLOUD-ONLY: Update study streak from cloud data
+     */
+    private fun updateStudyStreak(streak: Int) {
         // Update streak display with real data
-        binding.textStreakMessage.text = "$streak-day streak! Keep it up! 🔥"
-
-        // Update streak motivation message based on actual streak length
         val streakMessage = when {
             streak >= 30 -> "🔥 Amazing! You're on fire! $streak days straight!"
             streak >= 14 -> "🚀 Great consistency! $streak days strong!"
@@ -244,27 +310,22 @@ class HomeFragment : Fragment() {
         }
         binding.textStreakMessage.text = streakMessage
 
-        // Update visual streak indicators based on real data
+        // Update visual streak indicators
         updateStreakVisualIndicators(streak)
     }
 
     /**
      * Setup achievements section - hide RecyclerView and show empty state
-     * This fixes the "No adapter attached" warning
      */
     private fun setupAchievements() {
-        // Hide the RecyclerView since we're not using it yet
-        // Show the empty state instead
-        binding.recyclerAchievements.visibility = android.view.View.GONE
-        binding.layoutEmptyAchievements.visibility = android.view.View.VISIBLE
+        binding.recyclerAchievements.visibility = View.GONE
+        binding.layoutEmptyAchievements.visibility = View.VISIBLE
     }
 
     private fun updateStreakVisualIndicators(streak: Int) {
-        // Get current day of the week (1 = Sunday, 2 = Monday, ..., 7 = Saturday)
         val calendar = Calendar.getInstance()
         val currentDayOfWeek = calendar.get(Calendar.DAY_OF_WEEK)
 
-        // Convert to Monday-first format (0 = Monday, 1 = Tuesday, ..., 6 = Sunday)
         val mondayFirstDay = when (currentDayOfWeek) {
             Calendar.MONDAY -> 0
             Calendar.TUESDAY -> 1
@@ -276,7 +337,6 @@ class HomeFragment : Fragment() {
             else -> 0
         }
 
-        // Get all streak day views
         val streakDays = listOf(
             binding.streakDayMonday,
             binding.streakDayTuesday,
@@ -287,15 +347,12 @@ class HomeFragment : Fragment() {
             binding.streakDaySunday
         )
 
-        // Reset all days to inactive first
         streakDays.forEach { dayView ->
             dayView.setBackgroundResource(R.drawable.bg_streak_day_inactive)
         }
 
-        // Calculate which days should be active based on current streak
-        val daysToHighlight = minOf(streak, 7) // Cap at 7 days for the week view
+        val daysToHighlight = minOf(streak, 7)
 
-        // Highlight days leading up to and including today
         for (i in 0 until daysToHighlight) {
             val dayIndex = (mondayFirstDay - i + 7) % 7
             if (dayIndex >= 0 && dayIndex < streakDays.size) {
@@ -303,14 +360,12 @@ class HomeFragment : Fragment() {
             }
         }
 
-        // Highlight today with special emphasis if it's part of the streak
         if (streak > 0) {
             streakDays[mondayFirstDay].setBackgroundResource(R.drawable.bg_streak_day_active)
         }
     }
 
     private fun startAnimations() {
-        // Animate cards with staggered entrance
         val cards = listOf(
             binding.cardWelcome,
             binding.cardProgress,
@@ -329,7 +384,6 @@ class HomeFragment : Fragment() {
                 .start()
         }
 
-        // Floating animation for progress card
         val floatingAnimation = ObjectAnimator.ofFloat(binding.cardProgress, "translationY", 0f, -20f, 0f)
         floatingAnimation.duration = 3000
         floatingAnimation.repeatCount = ValueAnimator.INFINITE

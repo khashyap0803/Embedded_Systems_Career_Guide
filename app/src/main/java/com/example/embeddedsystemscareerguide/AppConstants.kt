@@ -11,8 +11,11 @@ object AppConstants {
     /** Total number of learning stages in the curriculum */
     const val TOTAL_LEARNING_STAGES = 16
     
-    /** Number of questions per quiz */
-    const val QUESTIONS_PER_QUIZ = 5
+    /** M1 fix: Number of questions per quiz (updated to match actual usage) */
+    const val QUESTIONS_PER_QUIZ = 10
+    
+    /** Number of questions requested per API call (to avoid truncation) */
+    const val QUESTIONS_PER_API_BATCH = 5
     
     /** Chunk size for processing questions in report generation */
     const val REPORT_CHUNK_SIZE = 15

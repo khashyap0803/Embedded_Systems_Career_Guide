@@ -25,24 +25,25 @@ class IntroductionActivity : AppCompatActivity() {
         checkExistingReportInFirebase()
     }
 
+    /**
+     * CLOUD-ONLY: Check Firebase for existing report
+     */
     private fun checkExistingReportInFirebase() {
         val user = auth.currentUser
         if (user == null) {
-            // User not logged in, show introduction
             setupUI()
             return
         }
 
-        // Show loading state
         binding.buttonStartAssessment.isEnabled = false
         binding.buttonStartAssessment.text = "Checking..."
 
-        // Get username from SharedPreferences
+        // Get username from SharedPreferences (login session only)
         val userPrefs = getSharedPreferences("user_prefs", MODE_PRIVATE)
         val username = userPrefs.getString("current_username", null)
 
         if (username != null) {
-            // Check new path: users/{username}/data/report
+            // Check path: users/{username}/data/report
             firestore.collection("users")
                 .document(username)
                 .collection("data")
@@ -50,9 +51,7 @@ class IntroductionActivity : AppCompatActivity() {
                 .get()
                 .addOnSuccessListener { document ->
                     if (document.exists()) {
-                        // Report exists - update SharedPreferences flag
-                        val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
-                        prefs.edit().putBoolean("assessment_completed_${user.uid}", true).apply()
+                        // Report exists in cloud - navigate to home
                         navigateToHome()
                     } else {
                         // Check legacy path
@@ -63,7 +62,6 @@ class IntroductionActivity : AppCompatActivity() {
                     checkLegacyReport(user.uid)
                 }
         } else {
-            // No username, check legacy path
             checkLegacyReport(user.uid)
         }
     }
@@ -74,22 +72,15 @@ class IntroductionActivity : AppCompatActivity() {
             .get()
             .addOnSuccessListener { document ->
                 if (document.exists()) {
-                    val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
-                    prefs.edit().putBoolean("assessment_completed_$userId", true).apply()
+                    // Legacy report exists - navigate to home
                     navigateToHome()
                 } else {
                     setupUI()
                 }
             }
             .addOnFailureListener {
-                // On error, check SharedPreferences as fallback
-                val prefs = getSharedPreferences("app_prefs", MODE_PRIVATE)
-                val assessmentCompleted = prefs.getBoolean("assessment_completed_$userId", false)
-                if (assessmentCompleted) {
-                    navigateToHome()
-                } else {
-                    setupUI()
-                }
+                // On error, show UI to start assessment
+                setupUI()
             }
     }
 

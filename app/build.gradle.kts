@@ -34,7 +34,9 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            // C3 fix: Enable code shrinking and obfuscation for release builds
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -74,6 +76,8 @@ dependencies {
     implementation(libs.androidx.navigation.ui.ktx)
     implementation("com.google.code.gson:gson:2.10.1")
     implementation("androidx.cardview:cardview:1.0.0")
+    // SwipeRefreshLayout for pull-to-refresh
+    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
     // OkHttp for API calls
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     // Coroutines for async operations

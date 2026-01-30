@@ -195,5 +195,7 @@
     <!-- Status Colors -->
     <color name="success_color">#22C55E</color>
     <color name="error_color">#EF4444</color>
+    <color name="warning_color">#FBBF24</color>
+    <color name="info_color">#60A5FA</color>
 
 </resources>
