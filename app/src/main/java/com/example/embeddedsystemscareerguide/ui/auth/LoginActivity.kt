@@ -31,6 +31,8 @@ import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.ConnectionResult
+import com.google.android.gms.common.GoogleApiAvailability
 import com.google.android.gms.common.api.ApiException
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
@@ -61,11 +63,24 @@ class LoginActivity : AppCompatActivity() {
                 firebaseAuthWithGoogle(account)
             } catch (e: ApiException) {
                 hideLoading()
-                showError("Google sign in failed: ${e.message}")
+                // Handle specific error codes
+                val errorMessage = when (e.statusCode) {
+                    12500 -> "Google Sign-In failed. Please check your internet connection."
+                    12501 -> "Sign-in was cancelled"
+                    12502 -> "Sign-in is currently in progress"
+                    10 -> "Developer error. Please contact support." // DEVELOPER_ERROR
+                    7 -> "Network error. Please check your connection."
+                    else -> "Google sign in failed (${e.statusCode}): ${e.message}"
+                }
+                Log.e("LoginActivity", "Google Sign-In failed with code: ${e.statusCode}", e)
+                showError(errorMessage)
             }
         } else {
             hideLoading()
-            showError("Google sign in cancelled")
+            // Don't show error for user cancellation (resultCode == 0)
+            if (result.resultCode != Activity.RESULT_CANCELED) {
+                showError("Google sign in cancelled")
+            }
         }
     }
 
@@ -343,9 +358,26 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun signInWithGoogle() {
+        // Check Google Play Services availability first
+        val googleApiAvailability = GoogleApiAvailability.getInstance()
+        val resultCode = googleApiAvailability.isGooglePlayServicesAvailable(this)
+
+        if (resultCode != ConnectionResult.SUCCESS) {
+            if (googleApiAvailability.isUserResolvableError(resultCode)) {
+                // Show dialog to resolve the issue
+                googleApiAvailability.getErrorDialog(this, resultCode, 9001)?.show()
+            } else {
+                showError("This device doesn't support Google Play Services")
+            }
+            return
+        }
+
         showLoading()
-        val signInIntent = googleSignInClient.signInIntent
-        googleSignInLauncher.launch(signInIntent)
+        // Sign out first to ensure account picker is shown
+        googleSignInClient.signOut().addOnCompleteListener {
+            val signInIntent = googleSignInClient.signInIntent
+            googleSignInLauncher.launch(signInIntent)
+        }
     }
 
     private fun firebaseAuthWithGoogle(acct: GoogleSignInAccount) {
