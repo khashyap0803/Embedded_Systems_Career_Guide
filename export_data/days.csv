@@ -1,0 +1,505 @@
+ID,Number,Week,Focus,Status,Scheduled Date
+372,1,0,"C Programming – Variables, loops, functions",Pending,2026-01-07
+373,2,0,C Programming – Pointers and memory,Pending,2026-01-08
+374,3,0,"Electronics 101 – Voltage, current, Ohm's law",Pending,2026-01-09
+375,4,0,"Electronics 101 – Components (resistors, capacitors, LEDs)",Pending,2026-01-12
+376,5,0,"Linux Terminal – Navigation, file operations",Pending,2026-01-13
+377,6,0,"Linux Terminal – GCC compilation, Makefiles",Pending,2026-01-14
+378,7,0,"Number Systems – Binary, hexadecimal, 2's complement",Pending,2026-01-15
+1,1,1,Decode Ohm's/Kirchhoff laws with AI co-pilots,Pending,2026-01-15
+2,2,1,Kirchhoff Laws and Circuit Analysis,Pending,2026-01-16
+3,3,1,Component Characterization Lab,Pending,2026-01-19
+4,4,1,Instrumentation Setup and Lab Hygiene,Pending,2026-01-20
+5,5,1,Deep work,Pending,2026-01-21
+6,6,1,"Integration, reflection, portfolio updates",Pending,2026-01-22
+7,7,1,Rest and Review,Pending,2026-01-23
+8,1,2,Wokwi simulation marathon,Pending,2026-01-23
+9,2,2,Advanced Wokwi Simulation,Pending,2026-01-26
+10,3,2,Power-supply troubleshooting drills,Pending,2026-01-27
+11,4,2,Weekly review & debugging retro,Pending,2026-01-28
+12,5,2,Deep work,Pending,2026-01-29
+13,6,2,"Integration, reflection, portfolio updates",Pending,2026-01-30
+14,7,2,Week 2 Review and Preparation,Pending,2026-02-02
+15,1,3,Truth tables → Logisim simulations,Pending,2026-02-02
+16,2,3,Karnaugh Maps and Logic Minimization,Pending,2026-02-03
+17,3,3,FSM practice in C,Pending,2026-02-04
+18,4,3,FSM State Diagram Design,Pending,2026-02-05
+19,5,3,Deep work,Pending,2026-02-06
+20,6,3,"Integration, reflection, portfolio updates",Pending,2026-02-09
+21,7,3,Week 3 Review and Preparation,Pending,2026-02-10
+22,1,4,Pipeline & memory map explorations,Pending,2026-02-10
+23,2,4,Cortex-M Register Model,Pending,2026-02-11
+24,3,4,Toolchain and debugger drills,Pending,2026-02-12
+25,4,4,Dual-boot workstation optimization,Pending,2026-02-13
+26,5,4,Deep work,Pending,2026-02-16
+27,6,4,"Integration, reflection, portfolio updates",Pending,2026-02-17
+28,7,4,Week 4 Review and Preparation,Pending,2026-02-18
+29,1,5,Daily syntax/code-drill block,Pending,2026-02-18
+30,2,5,Daily syntax/code-drill block,Pending,2026-02-19
+31,3,5,HackerRank C streak,Pending,2026-02-20
+32,4,5,Notion knowledge template build-out,Pending,2026-02-23
+33,5,5,Deep work,Pending,2026-02-24
+34,6,5,"Integration, reflection, portfolio updates",Pending,2026-02-25
+35,7,5,Week 5 Review and Preparation,Pending,2026-02-26
+36,1,6,Pointer gym & allocator simulator,Pending,2026-02-26
+37,2,6,Dynamic Memory Allocation,Pending,2026-02-27
+38,3,6,Bit Manipulation Techniques,Pending,2026-03-02
+39,4,6,ISR Design Patterns,Pending,2026-03-03
+40,5,6,Deep work,Pending,2026-03-04
+41,6,6,"Integration, reflection, portfolio updates",Pending,2026-03-05
+42,7,6,Week 6 Review and Preparation,Pending,2026-03-06
+407,1,7,ARM Assembly Syntax and Instruction Format,Pending,2026-03-06
+408,2,7,ARM Register Model and Special Registers,Pending,2026-03-09
+409,3,7,Data Processing and Arithmetic Instructions,Pending,2026-03-10
+410,4,7,Load/Store Instructions and Memory Access,Pending,2026-03-11
+411,5,7,Branch Instructions and Control Flow,Pending,2026-03-12
+412,6,7,Assembly Debugging with GDB and Disassembly,Pending,2026-03-13
+413,7,7,ARM Assembly Integration Project,Pending,2026-03-16
+512,1,8,TIMx Peripheral Architecture & Clock Configuration,Pending,2026-03-16
+513,2,8,"Timer Interrupt Modes (Update, Compare, Capture)",Pending,2026-03-17
+514,3,8,Hardware PWM Generation & LED Dimming,Pending,2026-03-18
+515,4,8,Input Capture for Signal Measurement,Pending,2026-03-19
+516,5,8,Output Compare & Precise Pulse Generation,Pending,2026-03-20
+517,6,8,Integration: Servo & Motor Control,Pending,2026-03-23
+518,7,8,Timer Review & Practice,Pending,2026-03-24
+449,1,9,UART Protocol Internals,Pending,2026-03-24
+450,2,9,I2C Protocol Mastery,Pending,2026-03-25
+451,3,9,SPI Protocol Deep Dive,Pending,2026-03-26
+452,4,9,Protocol Debugging,Pending,2026-03-27
+453,5,9,Protocol Performance,Pending,2026-03-30
+454,6,9,DMA Error Handling,Pending,2026-03-31
+455,7,9,Integration Project,Pending,2026-04-01
+43,1,10,Bit-banged UART and baud calculators,Pending,2026-04-01
+44,2,10,I2C Advanced Topics,Pending,2026-04-02
+45,3,10,I2C/SPI Advanced Lab Exercises,Pending,2026-04-03
+46,4,10,Protocol troubleshooting checklist,Pending,2026-04-06
+47,5,10,Deep work,Pending,2026-04-07
+48,6,10,"Integration, reflection, portfolio updates",Pending,2026-04-08
+49,7,10,Week 10 Review and Preparation,Pending,2026-04-09
+50,1,11,STM32 Low Power Mode Overview,Pending,2026-04-09
+51,2,11,UART Sleep Mode Handling,Pending,2026-04-10
+52,3,11,Wake-up Source Configuration,Pending,2026-04-13
+53,4,11,Deep work,Pending,2026-04-14
+54,5,11,Power Consumption Measurement,Pending,2026-04-15
+55,6,11,Low Power Integration & Battery Life,Pending,2026-04-16
+56,7,11,Week 11 Review and Preparation,Pending,2026-04-17
+57,1,12,Sleep state orchestration,Pending,2026-04-17
+58,2,12,Peripheral Clock Gating Optimization,Pending,2026-04-20
+59,3,12,Dynamic frequency scaling experiments,Pending,2026-04-21
+60,4,12,Energy profiling automation,Pending,2026-04-22
+61,5,12,Deep work,Pending,2026-04-23
+62,6,12,"Integration, reflection, portfolio updates",Pending,2026-04-24
+63,7,12,Rest & recharge,Pending,2026-04-27
+64,1,13,Blueprint dual-bank bootloader,Pending,2026-04-27
+65,2,13,Secure Boot Chain Implementation,Pending,2026-04-28
+66,3,13,Cryptographic primitives integration,Pending,2026-04-29
+67,4,13,FOTA staging pipeline,Pending,2026-04-30
+68,5,13,Deep work,Pending,2026-05-01
+69,6,13,"Integration, reflection, portfolio updates",Pending,2026-05-04
+70,7,13,Rest & recharge,Pending,2026-05-05
+71,1,14,Docker firmware build environment setup,Pending,2026-05-05
+72,2,14,Docker firmware build environment setup,Pending,2026-05-06
+73,3,14,Multi-stage Docker builds for firmware,Pending,2026-05-07
+74,4,14,Host-based simulation harness,Pending,2026-05-08
+75,5,14,GitHub Actions CI with containerized builds,Pending,2026-05-11
+76,6,14,"Integration, reflection, portfolio updates",Pending,2026-05-12
+77,7,14,Rest & recharge,Pending,2026-05-13
+78,1,15,Failure Mode and Effects Analysis (FMEA),Pending,2026-05-13
+79,2,15,Fault Tree Analysis (FTA) Techniques,Pending,2026-05-14
+80,3,15,Watchdog strategy consolidation,Pending,2026-05-15
+81,4,15,Brownout & EMI resilience,Pending,2026-05-18
+82,5,15,Deep work,Pending,2026-05-19
+83,6,15,"Integration, reflection, portfolio updates",Pending,2026-05-20
+84,7,15,Rest & recharge,Pending,2026-05-21
+85,1,16,Refactor showcase firmware,Pending,2026-05-21
+86,2,16,Refactor showcase firmware,Pending,2026-05-22
+87,3,16,Case study write-up,Pending,2026-05-25
+88,4,16,Phase retrospective & backlog grooming,Pending,2026-05-26
+89,5,16,Deep work,Pending,2026-05-27
+90,6,16,"Integration, reflection, portfolio updates",Pending,2026-05-28
+91,7,16,Rest & recharge,Pending,2026-05-29
+92,1,17,Custom Zephyr board definition,Pending,2026-05-29
+93,2,17,Zephyr Build System with West,Pending,2026-06-01
+94,3,17,Kernel services tour,Pending,2026-06-02
+95,4,17,West build automation,Pending,2026-06-03
+96,5,17,Deep work,Pending,2026-06-04
+97,6,17,"Integration, reflection, portfolio updates",Pending,2026-06-05
+98,7,17,Rest & recharge,Pending,2026-06-08
+456,1,18,Mutex Deep Dive,Pending,2026-06-08
+457,2,18,Semaphore Patterns,Pending,2026-06-09
+458,3,18,Queue Deep Dive,Pending,2026-06-10
+459,4,18,Event Groups,Pending,2026-06-11
+460,5,18,Task Notifications,Pending,2026-06-12
+461,6,18,Deadlock Prevention,Pending,2026-06-15
+462,7,18,Integration Project,Pending,2026-06-16
+99,1,19,Rate Monotonic Scheduling (RMS) Fundamentals,Pending,2026-06-16
+100,2,19,Deadline Monotonic Scheduling (DMS),Pending,2026-06-17
+101,3,19,WCET Analysis and Measurement Techniques,Pending,2026-06-18
+102,4,19,Time Partitioning and Slot-Based Scheduling,Pending,2026-06-19
+103,5,19,Scheduling Visualization and Tracing,Pending,2026-06-22
+104,6,19,Integration and Jitter Analysis,Pending,2026-06-23
+105,7,19,Deterministic Scheduling Review and Project,Pending,2026-06-24
+106,1,20,Chained DMA transfers,Pending,2026-06-24
+107,2,20,Linked DMA and Double Buffering,Pending,2026-06-25
+108,3,20,Zero-copy sensor framework,Pending,2026-06-26
+109,4,20,DMA Stress Testing and Fatigue Analysis,Pending,2026-06-29
+110,5,20,Deep work,Pending,2026-06-30
+111,6,20,"Integration, reflection, portfolio updates",Pending,2026-07-01
+112,7,20,Rest & recharge,Pending,2026-07-02
+113,1,21,CAN physical layer deep-dive,Pending,2026-07-02
+114,2,21,CAN-FD Extended Frame Format,Pending,2026-07-03
+115,3,21,LIN slave implementation,Pending,2026-07-06
+116,4,21,LIN schedule table manager,Pending,2026-07-07
+117,5,21,CAN/LIN gateway prototype,Pending,2026-07-08
+118,6,21,"Integration, reflection, portfolio updates",Pending,2026-07-09
+119,7,21,Rest & recharge,Pending,2026-07-10
+120,1,22,ISO-TP (ISO 15765-2) implementation,Pending,2026-07-10
+121,2,22,ISO-TP (ISO 15765-2) implementation,Pending,2026-07-13
+122,3,22,UDS (ISO 14229) diagnostics server,Pending,2026-07-14
+123,4,22,UDS diagnostics client/CLI tool,Pending,2026-07-15
+124,5,22,CAN/UDS network simulation,Pending,2026-07-16
+125,6,22,"Integration, reflection, portfolio updates",Pending,2026-07-17
+126,7,22,Rest & recharge,Pending,2026-07-20
+127,1,23,BLE Stack Architecture and Connection,Pending,2026-07-20
+128,2,23,BLE GATT Profile Development,Pending,2026-07-21
+129,3,23,Open toolchain & debug pipeline,Pending,2026-07-22
+130,4,23,Performance counters & tracing,Pending,2026-07-23
+131,5,23,Deep work,Pending,2026-07-24
+132,6,23,"Integration, reflection, portfolio updates",Pending,2026-07-27
+133,7,23,Rest & recharge,Pending,2026-07-28
+134,1,24,ESP32-C3 dual-stack firmware,Pending,2026-07-28
+135,2,24,ESP32-C3 dual-stack firmware,Pending,2026-07-29
+136,3,24,lwIP TCP/IP stack deep-dive,Pending,2026-07-30
+137,4,24,Wireshark packet capture & analysis,Pending,2026-07-31
+138,5,24,Wireshark packet capture & analysis,Pending,2026-08-03
+139,6,24,"Integration, reflection, portfolio updates",Pending,2026-08-04
+140,7,24,Rest & recharge,Pending,2026-08-05
+141,1,25,TLS stack integration,Pending,2026-08-05
+142,2,25,TLS stack integration,Pending,2026-08-06
+143,3,25,Secure credential provisioning,Pending,2026-08-07
+144,4,25,Pen test & threat modeling,Pending,2026-08-10
+145,5,25,Pen test & threat modeling,Pending,2026-08-11
+146,6,25,"Integration, reflection, portfolio updates",Pending,2026-08-12
+147,7,25,Rest & recharge,Pending,2026-08-13
+148,1,26,Update orchestration server,Pending,2026-08-13
+149,2,26,Update orchestration server,Pending,2026-08-14
+150,3,26,Progressive rollout automation,Pending,2026-08-17
+151,4,26,Device health telemetry,Pending,2026-08-18
+152,5,26,Deep work,Pending,2026-08-19
+153,6,26,"Integration, reflection, portfolio updates",Pending,2026-08-20
+154,7,26,Rest & recharge,Pending,2026-08-21
+463,1,27,BLE Fundamentals,Pending,2026-08-21
+464,2,27,GATT Programming,Pending,2026-08-24
+465,3,27,BLE Implementation,Pending,2026-08-25
+466,4,27,WiFi Fundamentals,Pending,2026-08-26
+467,5,27,MQTT Protocol,Pending,2026-08-27
+468,6,27,Wireless Security,Pending,2026-08-28
+469,7,27,Integration Project,Pending,2026-08-31
+155,1,28,Filesystem resilience,Pending,2026-08-31
+156,2,28,Filesystem resilience,Pending,2026-09-01
+157,3,28,Structured telemetry encoding,Pending,2026-09-02
+158,4,28,Edge analytics groundwork,Pending,2026-09-03
+159,5,28,Deep work,Pending,2026-09-04
+160,6,28,"Integration, reflection, portfolio updates",Pending,2026-09-07
+161,7,28,Rest & recharge,Pending,2026-09-08
+162,1,29,Unified logging schema,Pending,2026-09-08
+163,2,29,Unified logging schema,Pending,2026-09-09
+164,3,29,Crash dump & corefile export,Pending,2026-09-10
+165,4,29,Remote debug toolkit,Pending,2026-09-11
+166,5,29,Deep work,Pending,2026-09-14
+167,6,29,"Integration, reflection, portfolio updates",Pending,2026-09-15
+168,7,29,Rest & recharge,Pending,2026-09-16
+169,1,30,Linux gateway handshake,Pending,2026-09-16
+170,2,30,Linux gateway handshake,Pending,2026-09-17
+171,3,30,Edge containerization,Pending,2026-09-18
+172,4,30,Secure gateway firmware channel,Pending,2026-09-21
+173,5,30,Deep work,Pending,2026-09-22
+174,6,30,"Integration, reflection, portfolio updates",Pending,2026-09-23
+175,7,30,Rest & recharge,Pending,2026-09-24
+176,1,31,Static partitioning prototype,Pending,2026-09-24
+177,2,31,Static partitioning prototype,Pending,2026-09-25
+178,3,31,Hypervisor evaluation,Pending,2026-09-28
+179,4,31,Safety case scaffolding,Pending,2026-09-29
+180,5,31,Deep work,Pending,2026-09-30
+181,6,31,"Integration, reflection, portfolio updates",Pending,2026-10-01
+182,7,31,Rest & recharge,Pending,2026-10-02
+183,1,32,End-to-end integration demo,Pending,2026-10-02
+184,2,32,End-to-end integration demo,Pending,2026-10-05
+185,3,32,Documentation sprint,Pending,2026-10-06
+186,4,32,Midterm skills assessment,Pending,2026-10-07
+187,5,32,Deep work,Pending,2026-10-08
+188,6,32,"Integration, reflection, portfolio updates",Pending,2026-10-09
+189,7,32,Rest & recharge,Pending,2026-10-12
+190,1,33,Dataset curation & labeling,Pending,2026-10-12
+191,2,33,Dataset curation & labeling,Pending,2026-10-13
+192,3,33,Model prototyping,Pending,2026-10-14
+193,4,33,TFLite Micro deployment,Pending,2026-10-15
+194,5,33,Deep work,Pending,2026-10-16
+195,6,33,"Integration, reflection, portfolio updates",Pending,2026-10-19
+196,7,33,Rest & recharge,Pending,2026-10-20
+197,1,34,Quantization-aware training,Pending,2026-10-20
+198,2,34,Quantization-aware training,Pending,2026-10-21
+199,3,34,Operator fusion & optimization,Pending,2026-10-22
+200,4,34,Benchmark harness,Pending,2026-10-23
+201,5,34,Deep work,Pending,2026-10-26
+202,6,34,"Integration, reflection, portfolio updates",Pending,2026-10-27
+203,7,34,Rest & recharge,Pending,2026-10-28
+204,1,35,Feature engineering,Pending,2026-10-28
+205,2,35,Feature engineering,Pending,2026-10-29
+206,3,35,Adaptive filtering,Pending,2026-10-30
+207,4,35,On-device learning experiments,Pending,2026-11-02
+208,5,35,Deep work,Pending,2026-11-03
+209,6,35,"Integration, reflection, portfolio updates",Pending,2026-11-04
+210,7,35,Rest & recharge,Pending,2026-11-05
+470,1,36,USB Fundamentals,Pending,2026-11-05
+471,2,36,USB Device Classes,Pending,2026-11-06
+472,3,36,USB Low-Level,Pending,2026-11-09
+473,4,36,USB Host Mode,Pending,2026-11-10
+474,5,36,USB Debugging,Pending,2026-11-11
+475,6,36,USB Performance,Pending,2026-11-12
+476,7,36,Integration Project,Pending,2026-11-13
+498,1,37,ISO 26262 Overview and ASIL Classification,Pending,2026-11-13
+499,2,37,Hazard Analysis and Risk Assessment (HARA),Pending,2026-11-16
+500,3,37,Functional Safety Concept,Pending,2026-11-17
+501,4,37,Technical Safety Concept,Pending,2026-11-18
+502,5,37,Safety Analysis Methods,Pending,2026-11-19
+503,6,37,Safety Verification and Validation,Pending,2026-11-20
+504,7,37,Week 36 Integration and Review,Pending,2026-11-23
+379,1,38,"USB Physics (D+/D-, NRZI)",Pending,2026-11-23
+380,2,38,"USB Descriptors (Device, Config, Interface)",Pending,2026-11-24
+381,3,38,Enumeration Process,Pending,2026-11-25
+382,4,38,CDC (Serial) Class Implementation,Pending,2026-11-26
+383,5,38,HID (Keyboard/Mouse) Class,Pending,2026-11-27
+384,6,38,USB Debugging with Wireshark/Logic Analyzer,Pending,2026-11-30
+385,7,38,Mini-Project: USB Composite Device,Pending,2026-12-01
+211,1,39,Camera interface bring-up,Pending,2026-12-01
+212,2,39,Camera interface bring-up,Pending,2026-12-02
+213,3,39,Model selection,Pending,2026-12-03
+214,4,39,Pipeline optimization,Pending,2026-12-04
+215,5,39,Deep work,Pending,2026-12-07
+216,6,39,"Integration, reflection, portfolio updates",Pending,2026-12-08
+217,7,39,Rest & recharge,Pending,2026-12-09
+218,1,40,Safety plan creation,Pending,2026-12-09
+219,2,40,Safety plan creation,Pending,2026-12-10
+220,3,40,Software safety requirements,Pending,2026-12-11
+221,4,40,Verification planning,Pending,2026-12-14
+222,5,40,Deep work,Pending,2026-12-15
+223,6,40,"Integration, reflection, portfolio updates",Pending,2026-12-16
+224,7,40,Rest & recharge,Pending,2026-12-17
+225,1,41,Diagnostic coverage calculations,Pending,2026-12-17
+226,2,41,Diagnostic coverage calculations,Pending,2026-12-18
+227,3,41,Redundant monitoring,Pending,2026-12-21
+228,4,41,Fault injection campaign,Pending,2026-12-22
+229,5,41,Deep work,Pending,2026-12-23
+230,6,41,"Integration, reflection, portfolio updates",Pending,2026-12-24
+231,7,41,Rest & recharge,Pending,2026-12-25
+232,1,42,AOSP vehicle HAL customization,Pending,2026-12-25
+233,2,42,AOSP vehicle HAL customization,Pending,2026-12-28
+234,3,42,Android/MCU integration harness,Pending,2026-12-29
+235,4,42,SBOM & vulnerability automation,Pending,2026-12-30
+236,5,42,Deep work,Pending,2026-12-31
+237,6,42,"Integration, reflection, portfolio updates",Pending,2027-01-01
+238,7,42,Rest & recharge,Pending,2027-01-04
+239,1,43,Test fixture design,Pending,2027-01-04
+240,2,43,Test fixture design,Pending,2027-01-05
+241,3,43,Manufacturing test scripts,Pending,2027-01-06
+242,4,43,DFM review,Pending,2027-01-07
+243,5,43,Deep work,Pending,2027-01-08
+244,6,43,"Integration, reflection, portfolio updates",Pending,2027-01-11
+245,7,43,Rest & recharge,Pending,2027-01-12
+246,1,44,Schematic review blitz,Pending,2027-01-12
+247,2,44,Schematic review blitz,Pending,2027-01-13
+248,3,44,PCB layout validation,Pending,2027-01-14
+249,4,44,Compliance gap analysis,Pending,2027-01-15
+250,5,44,Deep work,Pending,2027-01-18
+251,6,44,"Integration, reflection, portfolio updates",Pending,2027-01-19
+252,7,44,Rest & recharge,Pending,2027-01-20
+253,1,45,HALT/HASS planning,Pending,2027-01-20
+254,2,45,HALT/HASS planning,Pending,2027-01-21
+255,3,45,Environmental testing,Pending,2027-01-22
+256,4,45,Reliability statistics,Pending,2027-01-25
+257,5,45,Deep work,Pending,2027-01-26
+258,6,45,"Integration, reflection, portfolio updates",Pending,2027-01-27
+259,7,45,Rest & recharge,Pending,2027-01-28
+400,1,46,AUTOSAR Architecture and Build Configuration,Pending,2027-01-28
+401,2,46,AUTOSAR Software Component Development,Pending,2027-01-29
+402,3,46,AUTOSAR BSW Layer Configuration,Pending,2027-02-01
+403,4,46,AUTOSAR Application Layer Development,Pending,2027-02-02
+404,5,46,AUTOSAR Communication Stack Integration,Pending,2027-02-03
+405,6,46,AUTOSAR Memory and Diagnostic Services,Pending,2027-02-04
+406,7,46,AUTOSAR Integration and Testing,Pending,2027-02-05
+260,1,47,Component Lifecycle Management,Pending,2027-02-05
+261,2,47,Supply Chain Risk Assessment,Pending,2027-02-08
+262,3,47,Inventory Management,Pending,2027-02-09
+263,4,47,Supplier Relationship,Pending,2027-02-10
+264,5,47,Deep work,Pending,2027-02-11
+265,6,47,"Integration, reflection, portfolio updates",Pending,2027-02-12
+266,7,47,Rest & recharge,Pending,2027-02-15
+477,1,48,Kernel Build System,Pending,2027-02-15
+478,2,48,Kernel Modules,Pending,2027-02-16
+479,3,48,Character Drivers,Pending,2027-02-17
+480,4,48,Kernel Synchronization,Pending,2027-02-18
+481,5,48,Memory Management,Pending,2027-02-19
+482,6,48,Interrupt Handling,Pending,2027-02-22
+483,7,48,Integration Project,Pending,2027-02-23
+267,1,49,Regulatory Compliance Overview,Pending,2027-02-23
+268,2,49,Technical Documentation,Pending,2027-02-24
+269,3,49,Technical File Completion,Pending,2027-02-25
+270,4,49,Pre-Certification Preparation,Pending,2027-02-26
+271,5,49,Deep work,Pending,2027-03-01
+272,6,49,"Integration, reflection, portfolio updates",Pending,2027-03-02
+273,7,49,Rest & recharge,Pending,2027-03-03
+386,1,50,Kernel Module Architecture and Lifecycle,Pending,2027-03-03
+387,2,50,Kbuild System and Module Makefiles,Pending,2027-03-04
+388,3,50,Module Parameters and Symbol Export,Pending,2027-03-05
+389,4,50,MQTT Integration with Kernel Driver,Pending,2027-03-08
+390,5,50,Memory Management in Kernel Modules,Pending,2027-03-09
+391,6,50,Kernel Debugging and Tracing,Pending,2027-03-10
+392,7,50,Kernel Module Integration Project,Pending,2027-03-11
+393,1,51,Linux Kernel Architecture,Pending,2027-03-11
+394,2,51,Loadable Kernel Modules (LKM),Pending,2027-03-12
+395,3,51,Kbuild & Makefiles,Pending,2027-03-15
+396,4,51,Module Parameters & Exports,Pending,2027-03-16
+397,5,51,Kernel Symbols & System Map,Pending,2027-03-17
+398,6,51,Cross-Compilation for ARM,Pending,2027-03-18
+399,7,51,Hello World Module,Pending,2027-03-19
+484,1,52,Yocto Architecture,Pending,2027-03-19
+485,2,52,Custom Layers,Pending,2027-03-22
+486,3,52,BSP Development,Pending,2027-03-23
+487,4,52,Package Management,Pending,2027-03-24
+488,5,52,Image Customization,Pending,2027-03-25
+489,6,52,SDK Generation,Pending,2027-03-26
+490,7,52,Integration Project,Pending,2027-03-29
+505,1,53,Build System Deep Dive,Pending,2027-03-29
+506,2,53,Static Analysis Integration,Pending,2027-03-30
+507,3,53,Testing Strategy and Quality,Pending,2027-03-31
+508,4,53,CI/CD Pipeline Development,Pending,2027-04-01
+509,5,53,Release Management Process,Pending,2027-04-02
+510,6,53,Field Debugging Techniques,Pending,2027-04-05
+511,7,53,Consolidation and Review,Pending,2027-04-06
+274,1,54,Intelligent firmware showcase,Pending,2027-04-06
+275,2,54,Intelligent firmware showcase,Pending,2027-04-07
+276,3,54,Certification dossier review,Pending,2027-04-08
+277,4,54,Phase retrospective & backlog refresh,Pending,2027-04-09
+278,5,54,Deep work,Pending,2027-04-12
+279,6,54,"Integration, reflection, portfolio updates",Pending,2027-04-13
+280,7,54,Rest & recharge,Pending,2027-04-14
+281,1,55,Voice-of-customer synthesis,Pending,2027-04-14
+282,2,55,Voice-of-customer synthesis,Pending,2027-04-15
+283,3,55,Productization backlog grooming,Pending,2027-04-16
+284,4,55,Experience journey mapping,Pending,2027-04-19
+285,5,55,Deep work,Pending,2027-04-20
+286,6,55,"Integration, reflection, portfolio updates",Pending,2027-04-21
+287,7,55,Rest & recharge,Pending,2027-04-22
+288,1,56,Qt/Qt Quick HMI enhancements,Pending,2027-04-22
+289,2,56,Qt/Qt Quick HMI enhancements,Pending,2027-04-23
+290,3,56,UX validation,Pending,2027-04-26
+291,4,56,UI performance optimization,Pending,2027-04-27
+292,5,56,Deep work,Pending,2027-04-28
+293,6,56,"Integration, reflection, portfolio updates",Pending,2027-04-29
+294,7,56,Rest & recharge,Pending,2027-04-30
+295,1,57,Model performance & drift monitoring,Pending,2027-04-30
+296,2,57,AI ops dashboards & alerts,Pending,2027-05-03
+297,3,57,Insight storytelling & incident playbooks,Pending,2027-05-04
+298,4,57,Deep work,Pending,2027-05-05
+299,5,57,Deep work,Pending,2027-05-06
+300,6,57,"Integration, reflection, portfolio updates",Pending,2027-05-07
+301,7,57,Rest & recharge,Pending,2027-05-10
+302,1,58,Operations runbook,Pending,2027-05-10
+303,2,58,Fulfillment & logistics mapping,Pending,2027-05-11
+304,3,58,Support tooling setup,Pending,2027-05-12
+305,4,58,Deep work,Pending,2027-05-13
+306,5,58,Deep work,Pending,2027-05-14
+307,6,58,"Integration, reflection, portfolio updates",Pending,2027-05-17
+308,7,58,Rest & recharge,Pending,2027-05-18
+309,1,59,Performance budget enforcement,Pending,2027-05-18
+310,2,59,Cost modeling,Pending,2027-05-19
+311,3,59,Performance tuning sprint,Pending,2027-05-20
+312,4,59,Deep work,Pending,2027-05-21
+313,5,59,Deep work,Pending,2027-05-24
+314,6,59,"Integration, reflection, portfolio updates",Pending,2027-05-25
+315,7,59,Rest & recharge,Pending,2027-05-26
+316,1,60,Security audit walkthrough,Pending,2027-05-26
+317,2,60,Security audit walkthrough,Pending,2027-05-27
+318,3,60,Red team exercise,Pending,2027-05-28
+319,4,60,Update security training,Pending,2027-05-31
+320,5,60,Deep work,Pending,2027-06-01
+321,6,60,"Integration, reflection, portfolio updates",Pending,2027-06-02
+322,7,60,Rest & recharge,Pending,2027-06-03
+491,1,61,Build System,Pending,2027-06-03
+492,2,61,Static Analysis,Pending,2027-06-04
+493,3,61,Testing Strategy,Pending,2027-06-07
+494,4,61,CI/CD Pipeline,Pending,2027-06-08
+495,5,61,Release Management,Pending,2027-06-09
+496,6,61,Field Debugging,Pending,2027-06-10
+497,7,61,Integration Project,Pending,2027-06-11
+323,1,62,Release checklist completion,Pending,2027-06-11
+324,2,62,Documentation freeze,Pending,2027-06-14
+325,3,62,Training & enablement,Pending,2027-06-15
+326,4,62,Deep work,Pending,2027-06-16
+327,5,62,Deep work,Pending,2027-06-17
+328,6,62,"Integration, reflection, portfolio updates",Pending,2027-06-18
+329,7,62,Rest & recharge,Pending,2027-06-21
+330,1,63,Game day exercise,Pending,2027-06-21
+331,2,63,Incident command training,Pending,2027-06-22
+332,3,63,Post-launch metrics,Pending,2027-06-23
+333,4,63,Deep work,Pending,2027-06-24
+334,5,63,Deep work,Pending,2027-06-25
+335,6,63,"Integration, reflection, portfolio updates",Pending,2027-06-28
+336,7,63,Rest & recharge,Pending,2027-06-29
+337,1,64,Portfolio rebuild,Pending,2027-06-29
+338,2,64,Highlight reel production,Pending,2027-06-30
+339,3,64,Reference packet,Pending,2027-07-01
+340,4,64,Deep work,Pending,2027-07-02
+341,5,64,Deep work,Pending,2027-07-05
+342,6,64,"Integration, reflection, portfolio updates",Pending,2027-07-06
+343,7,64,Rest & recharge,Pending,2027-07-07
+344,1,65,Systems design interview prep,Pending,2027-07-07
+345,2,65,Firmware coding kata,Pending,2027-07-08
+346,3,65,Behavioral interview stories,Pending,2027-07-09
+347,4,65,Deep work,Pending,2027-07-12
+348,5,65,Deep work,Pending,2027-07-13
+349,6,65,"Integration, reflection, portfolio updates",Pending,2027-07-14
+350,7,65,Rest & recharge,Pending,2027-07-15
+351,1,66,Open-source contribution sprint,Pending,2027-07-15
+352,2,66,Community talk or blog,Pending,2027-07-16
+353,3,66,Mentorship & outreach,Pending,2027-07-19
+354,4,66,Deep work,Pending,2027-07-20
+355,5,66,Deep work,Pending,2027-07-21
+356,6,66,"Integration, reflection, portfolio updates",Pending,2027-07-22
+357,7,66,Rest & recharge,Pending,2027-07-23
+358,1,67,Capstone polish sprint,Pending,2027-07-23
+359,2,67,Final live demo rehearsal,Pending,2027-07-26
+360,3,67,Celebration & gratitude,Pending,2027-07-27
+361,4,67,Deep work,Pending,2027-07-28
+362,5,67,Deep work,Pending,2027-07-29
+363,6,67,"Integration, reflection, portfolio updates",Pending,2027-07-30
+364,7,67,Rest & recharge,Pending,2027-08-02
+365,1,68,Launch retrospective,Pending,2027-08-02
+366,2,68,Career outreach campaign,Pending,2027-08-03
+367,3,68,Roadmap transition plan,Pending,2027-08-04
+368,4,68,Deep work,Pending,2027-08-05
+369,5,68,Deep work,Pending,2027-08-06
+370,6,68,"Integration, reflection, portfolio updates",Pending,2027-08-09
+371,7,68,Rest & recharge,Pending,2027-08-10
+414,1,69,AUTOSAR Architecture Overview,Pending,2027-08-10
+415,2,69,Basic Software (BSW) Layers,Pending,2027-08-11
+416,3,69,Application Software Components (SWC),Pending,2027-08-12
+417,4,69,Runtime Environment (RTE),Pending,2027-08-13
+418,5,69,AUTOSAR Configurator Tools,Pending,2027-08-16
+419,6,69,Classic vs Adaptive AUTOSAR,Pending,2027-08-17
+420,7,69,AUTOSAR Hands-on with EB Tresos Demo,Pending,2027-08-18
+421,1,70,ARM Instruction Set Architecture (ISA) Overview,Pending,2027-08-18
+422,2,70,"ARM Registers (R0-R15, CPSR, SPSR)",Pending,2027-08-19
+423,3,70,ARM Assembly Syntax and Common Instructions,Pending,2027-08-20
+424,4,70,Inline Assembly in C for Performance,Pending,2027-08-23
+435,5,70,Rust Ownership and Borrowing Basics,Pending,2027-08-24
+436,6,70,no_std Rust for Bare-Metal,Pending,2027-08-25
+437,7,70,embedded-hal and PAC Crates,Pending,2027-08-26
+428,1,71,"Digital Logic Refresher (Gates, Flip-Flops)",Pending,2027-08-26
+429,2,71,Verilog Basics: Modules and Ports,Pending,2027-08-27
+430,3,71,SystemVerilog: Always Blocks and FSMs,Pending,2027-08-30
+431,4,71,Testbench Writing for Verification,Pending,2027-08-31
+442,5,71,Fixed-Point Arithmetic (Q15/Q31 formats),Pending,2027-09-01
+443,6,71,"Implementing a Q15 Math Library (multiply, divide, sqrt)",Pending,2027-09-02
+444,7,71,Digital Filters: Moving Average and IIR/FIR basics,Pending,2027-09-03

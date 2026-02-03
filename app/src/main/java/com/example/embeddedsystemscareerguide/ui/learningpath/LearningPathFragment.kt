@@ -18,6 +18,8 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.example.embeddedsystemscareerguide.services.UserProgressSyncService
+import com.example.embeddedsystemscareerguide.services.PersonalizedStage
+import com.example.embeddedsystemscareerguide.ui.content.ContentReadingActivity
 import kotlinx.coroutines.launch
 import com.example.embeddedsystemscareerguide.PrefsKeys
 import com.example.embeddedsystemscareerguide.R
@@ -25,9 +27,6 @@ import com.example.embeddedsystemscareerguide.databinding.FragmentLearningPathBi
 import com.example.embeddedsystemscareerguide.models.LearningStage
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
-import java.io.InputStreamReader
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -53,6 +52,9 @@ class LearningPathFragment : Fragment() {
     private lateinit var prefs: SharedPreferences
     private lateinit var progressSyncService: UserProgressSyncService
     private var cloudProgress: UserProgressSyncService.UserProgress? = null
+    
+    // Flag to prevent onResume from overwriting optimistic UI updates during stage completion
+    private var stageCompletionInProgress = false
 
 
     // M4 fix: Constants delegate to PrefsKeys for centralization
@@ -87,18 +89,258 @@ class LearningPathFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         // L2 fix: Removed empty setupUI() call
-        loadStagesFromAssets()
-        
-        // Load progress from cloud first (async)
-        loadProgressFromCloud()
+        // V2: Try to load personalized stages from Firestore first
+        loadStagesFromFirestore()
         
         startBackgroundAnimation()
     }
 
     override fun onResume() {
         super.onResume()
-        // Refresh progress from cloud when returning to this fragment
-        loadProgressFromCloud()
+        // Force refresh progress from cloud when returning to this fragment
+        // This ensures stage unlock status is always up-to-date after quiz completion
+        Log.d("LearningPath", "onResume called, stages count=${stages.size}, completionInProgress=$stageCompletionInProgress")
+        
+        // Skip refresh if stage completion is in progress (let completeStage handle the refresh)
+        if (stageCompletionInProgress) {
+            Log.d("LearningPath", "Skipping cloud refresh - stage completion in progress")
+            return
+        }
+        
+        if (stages.isEmpty()) {
+            // First time or after rotation - load stages first
+            loadStagesFromFirestore()
+        } else {
+            // Returning from quiz/content - refresh progress and rebuild UI
+            loadProgressFromCloud()
+        }
+    }
+    
+    /**
+     * V2: Load stages from Firestore (personalized AI-generated stages)
+     * If no personalized stages exist:
+     * - Check if assessment report exists → regenerate stages from it
+     * - If no report → redirect to assessment page
+     * 
+     * NO FALLBACK TO 16 HARDCODED STAGES
+     */
+    private fun loadStagesFromFirestore() {
+        lifecycleScope.launch {
+            try {
+                Log.d("LearningPath", "Checking for personalized stages in Firestore...")
+                
+                val firestoreManager = com.example.embeddedsystemscareerguide.services.FirestoreManager.getInstance(requireContext())
+                
+                // Check if user has personalized stages  
+                if (firestoreManager.hasPersonalizedStages()) {
+                    val result = firestoreManager.getPersonalizedStages()
+                    
+                    if (result.isSuccess) {
+                        val personalizedStages = result.getOrNull() ?: emptyList()
+                        
+                        if (personalizedStages.isNotEmpty()) {
+                            Log.d("LearningPath", "Loaded ${personalizedStages.size} personalized stages from Firestore")
+                            
+                            // Convert PersonalizedStage to LearningStage for UI compatibility
+                            stages.clear()
+                            personalizedStages.forEach { pStage ->
+                                val stageId = pStage.id
+                                stages.add(LearningStage(
+                                    id = stageId.toString(),
+                                    title = pStage.title,
+                                    subtitle = pStage.subtitle,
+                                    description = pStage.description,
+                                    iconRes = getIconResourceForStage(stageId),
+                                    color = getColorForDifficulty(pStage.difficulty),
+                                    xpReward = pStage.xpReward,
+                                    topics = pStage.topics,
+                                    estimatedDuration = "${pStage.estimatedMinutes} mins",
+                                    order = stageId,
+                                    type = pStage.type,
+                                    isUnlocked = pStage.isUnlocked,
+                                    isCompleted = pStage.isCompleted,
+                                    starsEarned = pStage.starsEarned,
+                                    progress = 0
+                                ))
+                            }
+                            
+                            // Now load progress and render
+                            loadProgressFromCloud()
+                            return@launch
+                        }
+                    }
+                }
+                
+                // NO PERSONALIZED STAGES - Check if report exists to regenerate
+                Log.d("LearningPath", "No personalized stages found, checking for assessment report...")
+                
+                if (firestoreManager.hasAssessmentReport()) {
+                    // Report exists - regenerate stages from it
+                    Log.d("LearningPath", "Assessment report found, regenerating stages...")
+                    regenerateStagesFromReport(firestoreManager)
+                } else {
+                    // No report - redirect to assessment
+                    Log.d("LearningPath", "No assessment report found, redirecting to assessment...")
+                    redirectToAssessment()
+                }
+                
+            } catch (e: Exception) {
+                Log.e("LearningPath", "Error loading from Firestore", e)
+                // On error, check for report
+                try {
+                    val firestoreManager = com.example.embeddedsystemscareerguide.services.FirestoreManager.getInstance(requireContext())
+                    if (firestoreManager.hasAssessmentReport()) {
+                        regenerateStagesFromReport(firestoreManager)
+                    } else {
+                        redirectToAssessment()
+                    }
+                } catch (e2: Exception) {
+                    Log.e("LearningPath", "Critical error, redirecting to assessment", e2)
+                    redirectToAssessment()
+                }
+            }
+        }
+    }
+
+    /**
+     * Regenerate personalized stages from the saved assessment report
+     */
+    private fun regenerateStagesFromReport(firestoreManager: com.example.embeddedsystemscareerguide.services.FirestoreManager) {
+        lifecycleScope.launch {
+            try {
+                val reportData = firestoreManager.getAssessmentReport()
+                
+                if (reportData != null) {
+                    Log.d("LearningPath", "Got assessment report, generating stages...")
+                    
+                    // Convert report to AssessmentResult
+                    val assessmentResult = convertReportToAssessmentResult(reportData)
+                    
+                    // Get username from SharedPreferences
+                    val username = requireContext().getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+                        .getString("current_username", "User") ?: "User"
+                    
+                    // Show loading toast
+                    activity?.runOnUiThread {
+                        Toast.makeText(context, "Regenerating your learning path...", Toast.LENGTH_LONG).show()
+                    }
+                    
+                    // Generate stages using StageGeneratorService
+                    val stageGenerator = com.example.embeddedsystemscareerguide.services.StageGeneratorService.getInstance(requireContext())
+                    
+                    stageGenerator.generatePersonalizedStages(
+                        userName = username,
+                        assessmentResult = assessmentResult,
+                        callback = object : com.example.embeddedsystemscareerguide.services.StageGeneratorService.GenerationCallback {
+                            override fun onProgress(phase: Int, message: String) {
+                                Log.d("LearningPath", "Stage generation progress: $message")
+                            }
+                            
+                            override fun onSuccess(stages: List<PersonalizedStage>) {
+                                Log.d("LearningPath", "Successfully generated ${stages.size} stages")
+                                activity?.runOnUiThread {
+                                    Toast.makeText(context, "Learning path regenerated!", Toast.LENGTH_SHORT).show()
+                                    // Reload stages from Firestore (they're now saved)
+                                    loadStagesFromFirestore()
+                                }
+                            }
+                            
+                            override fun onError(error: String) {
+                                Log.e("LearningPath", "Stage generation failed: $error")
+                                activity?.runOnUiThread {
+                                    Toast.makeText(context, "Failed to generate stages: $error", Toast.LENGTH_LONG).show()
+                                    // Redirect to assessment as fallback
+                                    redirectToAssessment()
+                                }
+                            }
+                        }
+                    )
+                } else {
+                    Log.e("LearningPath", "Failed to get report data, redirecting to assessment")
+                    redirectToAssessment()
+                }
+            } catch (e: Exception) {
+                Log.e("LearningPath", "Error regenerating stages", e)
+                redirectToAssessment()
+            }
+        }
+    }
+
+    /**
+     * Convert saved report data to AssessmentResult for stage generation
+     */
+    private fun convertReportToAssessmentResult(reportData: Map<String, Any>): com.example.embeddedsystemscareerguide.services.StageGeneratorService.AssessmentResult {
+        val topicScoresMap = mutableMapOf<String, com.example.embeddedsystemscareerguide.services.StageGeneratorService.TopicScore>()
+        
+        // Extract topic scores from report
+        @Suppress("UNCHECKED_CAST")
+        val scoresData = reportData["topicScores"] as? Map<String, Map<String, Any>> ?: emptyMap()
+        
+        for ((topicName, scoreData) in scoresData) {
+            val score = (scoreData["score"] as? Number)?.toInt() ?: 0
+            val maxScore = (scoreData["maxScore"] as? Number)?.toInt() ?: 100
+            val percentage = if (maxScore > 0) (score * 100) / maxScore else 0
+            
+            topicScoresMap[topicName] = com.example.embeddedsystemscareerguide.services.StageGeneratorService.TopicScore(
+                score = score,
+                maxScore = maxScore,
+                percentage = percentage
+            )
+        }
+        
+        // If no topic scores found, create some defaults from overall score
+        if (topicScoresMap.isEmpty()) {
+            val overallScore = (reportData["totalScore"] as? Number)?.toInt() 
+                ?: (reportData["overallScore"] as? Number)?.toInt() 
+                ?: 50
+            val defaultTopics = listOf("Microcontrollers", "GPIO", "Interrupts", "Timers", "Communication Protocols")
+            defaultTopics.forEach { topic ->
+                topicScoresMap[topic] = com.example.embeddedsystemscareerguide.services.StageGeneratorService.TopicScore(
+                    score = overallScore,
+                    maxScore = 100,
+                    percentage = overallScore
+                )
+            }
+        }
+        
+        val totalScore = (reportData["totalScore"] as? Number)?.toInt() 
+            ?: (reportData["overallScore"] as? Number)?.toInt() 
+            ?: 50
+        
+        return com.example.embeddedsystemscareerguide.services.StageGeneratorService.AssessmentResult(
+            totalScore = totalScore,
+            maxScore = (reportData["maxScore"] as? Number)?.toInt() ?: 100,
+            topicScores = topicScoresMap,
+            timestamp = (reportData["timestamp"] as? Number)?.toLong() 
+                ?: (reportData["completedAt"] as? Number)?.toLong() 
+                ?: System.currentTimeMillis()
+        )
+    }
+
+    /**
+     * Redirect to assessment page when no report exists
+     */
+    private fun redirectToAssessment() {
+        activity?.runOnUiThread {
+            Toast.makeText(context, "Please complete the assessment first", Toast.LENGTH_SHORT).show()
+            val intent = android.content.Intent(requireContext(), com.example.embeddedsystemscareerguide.ui.assessment.AssessmentActivity::class.java)
+            intent.flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK
+            startActivity(intent)
+            activity?.overridePendingTransition(R.anim.fade_in, R.anim.fade_out)
+            activity?.finish()
+        }
+    }
+    
+    /**
+     * Get color hex based on difficulty level
+     */
+    private fun getColorForDifficulty(difficulty: String): String {
+        return when (difficulty.lowercase()) {
+            "beginner" -> "#10B981"      // Green
+            "intermediate" -> "#3B82F6"  // Blue
+            "advanced" -> "#EF4444"      // Red
+            else -> "#818CF8"            // Default purple
+        }
     }
     
     /**
@@ -278,108 +520,11 @@ class LearningPathFragment : Fragment() {
         }
     }
 
-    private fun loadStagesFromAssets() {
-        try {
-            val inputStream = requireContext().assets.open("learning_stages_curriculum.json")
-            val reader = InputStreamReader(inputStream)
-            val gson = Gson()
 
-            val curriculumType = object : TypeToken<Map<String, Any>>() {}.type
-            val curriculum = gson.fromJson<Map<String, Any>>(reader, curriculumType)
+    // NOTE: loadStagesFromAssets() and createFallbackStages() removed
+    // The app now regenerates stages from assessment report or redirects to assessment
+    // No more hardcoded 16-stage fallback
 
-            val stagesArray = curriculum["stages"] as List<Map<String, Any>>
-
-            stages.clear()
-            stagesArray.forEach { stageMap ->
-                // Safely cast topics array with proper type handling
-                val topicsRaw = stageMap["topics"]
-                val topics = when (topicsRaw) {
-                    is List<*> -> topicsRaw.mapNotNull { it as? String }
-                    else -> emptyList()
-                }
-
-                val stage = LearningStage(
-                    id = when (val idRaw = stageMap["id"]) {
-                        is Double -> idRaw.toInt().toString()
-                        is Int -> idRaw.toString()
-                        is String -> idRaw
-                        else -> "1"
-                    },
-                    title = stageMap["title"] as? String ?: "Unknown Stage",
-                    subtitle = stageMap["subtitle"] as? String ?: "Learning Content",
-                    description = stageMap["description"] as? String ?: "Stage description",
-                    icon = stageMap["icon"] as? String ?: "ic_foundations",
-                    iconRes = getIconResourceForStage(when (val idRaw = stageMap["id"]) {
-                        is Double -> idRaw.toInt()
-                        is Int -> idRaw
-                        is String -> idRaw.toIntOrNull() ?: 1
-                        else -> 1
-                    }),
-                    color = stageMap["color"] as? String ?: "#818CF8",
-                    xpReward = when (val xpRaw = stageMap["xp_reward"]) {
-                        is Double -> xpRaw.toInt()
-                        is Int -> xpRaw
-                        else -> 100
-                    },
-                    topics = topics,
-                    unlockRequirement = stageMap["unlock_requirement"] as? String ?: "none",
-                    estimatedDuration = stageMap["estimated_duration"] as? String ?: "3 hours",
-                    order = when (val idRaw = stageMap["id"]) {
-                        is Double -> idRaw.toInt()
-                        is Int -> idRaw
-                        is String -> idRaw.toIntOrNull() ?: 1
-                        else -> 1
-                    },
-                    type = getStageType(when (val idRaw = stageMap["id"]) {
-                        is Double -> idRaw.toInt()
-                        is Int -> idRaw
-                        is String -> idRaw.toIntOrNull() ?: 1
-                        else -> 1
-                    }),
-                    // Progress will be loaded from preferences
-                    isUnlocked = false,
-                    isCompleted = false,
-                    starsEarned = 0,
-                    progress = 0
-                )
-                stages.add(stage)
-            }
-
-            reader.close()
-        } catch (e: Exception) {
-            e.printStackTrace()
-            // Fallback to creating stages programmatically if JSON fails
-            createFallbackStages()
-        }
-    }
-
-    private fun createFallbackStages() {
-        stages.clear()
-        // Create a simplified version if JSON loading fails (now with 16 stages)
-        for (i in 1..16) {
-            stages.add(
-                LearningStage(
-                    id = i.toString(),
-                    title = if (i == 16) "Final Assessment" else "Stage $i",
-                    subtitle = if (i == 16) "Industry Readiness Test" else "Learning Topic $i",
-                    description = if (i == 16) "Complete comprehensive assessment" else "Description for stage $i",
-                    icon = if (i == 16) "ic_industry_ready" else "ic_foundations",
-                    iconRes = getIconResourceForStage(i),
-                    color = if (i == 16) "#DC2626" else "#818CF8",
-                    xpReward = if (i == 16) 500 else (100 + (i * 20)),
-                    topics = listOf("Topic 1", "Topic 2"),
-                    unlockRequirement = if (i == 1) "none" else "stage_${i - 1}_completed",
-                    estimatedDuration = if (i == 16) "2 hours" else "3 hours",
-                    order = i,
-                    type = getStageType(i),
-                    isUnlocked = i == 1, // Only Stage 1 unlocked initially
-                    isCompleted = false,
-                    starsEarned = 0,
-                    progress = 0
-                )
-            )
-        }
-    }
 
     private fun createGamePath() {
         val stagesContainer = binding.stagesContainer
@@ -495,31 +640,66 @@ class LearningPathFragment : Fragment() {
                     Toast.LENGTH_LONG).show()
             }
             stage.isCompleted -> {
-                // Offer to retake quiz or view progress
+                // Offer to retake quiz, read content, or view progress
                 showStageOptionsDialog(stage)
             }
             else -> {
-                // Launch quiz for this stage
-                launchQuizForStage(stage)
+                // V2: Show options to read content or take quiz
+                showNewStageOptionsDialog(stage)
             }
         }
+    }
+
+    /**
+     * V2: Show options dialog for new/unlocked stages (Read or Quiz)
+     */
+    private fun showNewStageOptionsDialog(stage: LearningStage) {
+        MaterialAlertDialogBuilder(requireContext(), R.style.Theme_App_AlertDialog)
+            .setTitle(stage.title)
+            .setMessage("${stage.subtitle}\n\n🎯 Topics: ${stage.topics.joinToString(", ")}\n\n📖 Ready to learn?")
+            .setPositiveButton("📖 Read Content") { _, _ ->
+                launchContentReading(stage)
+            }
+            .setNeutralButton("📝 Take Quiz") { _, _ ->
+                launchQuizForStage(stage)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     /**
      * Show options dialog for completed stages
      */
     private fun showStageOptionsDialog(stage: LearningStage) {
-        com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext(), R.style.Theme_App_AlertDialog)
-            .setTitle("${stage.title}")
-            .setMessage("✅ Completed with ${stage.starsEarned}⭐ (+${stage.xpReward} XP)\n\nWould you like to retake the quiz to improve your stars?")
-            .setPositiveButton("📝 Retake Quiz") { _, _ ->
-                launchQuizForStage(stage)
+        MaterialAlertDialogBuilder(requireContext(), R.style.Theme_App_AlertDialog)
+            .setTitle(stage.title)
+            .setMessage("✅ Completed with ${stage.starsEarned}⭐ (+${stage.xpReward} XP)\n\nWhat would you like to do?")
+            .setPositiveButton("📖 Review Content") { _, _ ->
+                launchContentReading(stage)
             }
-            .setNeutralButton("📊 View Progress") { _, _ ->
-                showProgressDetailsDialog(stage)
+            .setNeutralButton("📝 Retake Quiz") { _, _ ->
+                launchQuizForStage(stage)
             }
             .setNegativeButton("Cancel", null)
             .show()
+    }
+
+    /**
+     * V2: Launch content reading activity for a stage
+     */
+    private fun launchContentReading(stage: LearningStage) {
+        Toast.makeText(requireContext(),
+            "📖 Opening \"${stage.title}\" content",
+            Toast.LENGTH_SHORT).show()
+
+        val intent = android.content.Intent(requireContext(), ContentReadingActivity::class.java)
+        intent.putExtra(ContentReadingActivity.EXTRA_STAGE_ID, stage.id.toIntOrNull() ?: 1)
+        intent.putExtra(ContentReadingActivity.EXTRA_STAGE_TITLE, stage.title)
+        intent.putStringArrayListExtra(
+            ContentReadingActivity.EXTRA_STAGE_TOPICS,
+            ArrayList(stage.topics)
+        )
+        startActivity(intent)
     }
 
     /**
@@ -639,6 +819,9 @@ class LearningPathFragment : Fragment() {
             return
         }
         
+        // Set flag to prevent onResume from overwriting our optimistic update
+        stageCompletionInProgress = true
+        
         // Immediately update UI state (optimistic update)
         stage.isCompleted = true
         stage.starsEarned = starsEarned
@@ -647,6 +830,9 @@ class LearningPathFragment : Fragment() {
         val nextStageId = (stageId.toInt() + 1).toString()
         val nextStage = stages.find { it.id == nextStageId }
         nextStage?.isUnlocked = true
+        
+        // Rebuild UI immediately with optimistic update
+        createGamePath()
         
         // Save to cloud (async)
         lifecycleScope.launch {
@@ -680,6 +866,10 @@ class LearningPathFragment : Fragment() {
                 Toast.makeText(requireContext(),
                     "⚠️ Error saving progress. Please try again.",
                     Toast.LENGTH_SHORT).show()
+            } finally {
+                // Clear the flag after cloud operation completes
+                stageCompletionInProgress = false
+                Log.d("LearningPath", "Stage completion flag cleared")
             }
         }
     }

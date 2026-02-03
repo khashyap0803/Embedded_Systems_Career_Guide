@@ -1,6 +1,7 @@
 package com.example.embeddedsystemscareerguide.services
 
 import android.content.Context
+import android.content.SharedPreferences
 import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -12,6 +13,9 @@ import kotlinx.coroutines.withContext
 
 /**
  * FirestoreManager - Cloud Data Manager for V2.0
+ * 
+ * IMPORTANT: Uses USERNAME as document ID (not UID) for consistent hierarchy:
+ * users/{username}/data/... for all user data
  * 
  * Handles all Firestore operations for:
  * - User profiles
@@ -31,8 +35,14 @@ class FirestoreManager private constructor(private val context: Context) {
     companion object {
         private const val TAG = "FirestoreManager"
         
+        // SharedPreferences keys
+        private const val PREFS_NAME = "user_prefs"
+        private const val KEY_USERNAME = "current_username"
+        
         // Collection names
         const val COLLECTION_USERS = "users"
+        const val COLLECTION_DATA = "data"  // Sub-document for user data
+        const val COLLECTION_STAGES = "stages"  // Parent collection for stage-related data
         const val COLLECTION_PERSONALIZED_STAGES = "personalized_stages"
         const val COLLECTION_STAGE_CONTENT = "stage_content"
         const val COLLECTION_FLASHCARDS = "flashcards"
@@ -58,19 +68,48 @@ class FirestoreManager private constructor(private val context: Context) {
     private val firestore = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
     private val gson = Gson()
+    private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
     /**
-     * Get current user ID or throw if not logged in
+     * Get current user ID (UID) or throw if not logged in
      */
     private fun getCurrentUserId(): String {
         return auth.currentUser?.uid ?: throw IllegalStateException("User not logged in")
     }
 
     /**
-     * Get user document reference
+     * Get current username from SharedPreferences
+     * Falls back to UID if username not found (for backward compatibility)
      */
-    private fun getUserDocRef(userId: String = getCurrentUserId()) = 
-        firestore.collection(COLLECTION_USERS).document(userId)
+    private fun getCurrentUsername(): String {
+        val username = prefs.getString(KEY_USERNAME, null)
+        if (username.isNullOrBlank()) {
+            Log.w(TAG, "Username not found in SharedPreferences, falling back to UID")
+            return getCurrentUserId()
+        }
+        return username
+    }
+
+    /**
+     * Get user document reference using USERNAME as document ID
+     * Path: users/{username}
+     */
+    private fun getUserDocRef(username: String = getCurrentUsername()) = 
+        firestore.collection(COLLECTION_USERS).document(username)
+
+    /**
+     * Get data document reference for user
+     * Path: users/{username}/data (main document)
+     */
+    private fun getDataDocRef(username: String = getCurrentUsername()) = 
+        getUserDocRef(username).collection(COLLECTION_DATA).document("main")
+
+    /**
+     * Get stages document reference - hierarchy: users/{username}/data/stages/data
+     * Path: users/{username}/data/stages/data/{subCollection}
+     */
+    private fun getStagesDocRef(username: String = getCurrentUsername()) = 
+        getDataDocRef(username).collection(COLLECTION_STAGES).document("data")
 
     // ==================== USER PROFILE ====================
 
@@ -79,8 +118,8 @@ class FirestoreManager private constructor(private val context: Context) {
      */
     suspend fun saveUserProfile(profile: UserProfile): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val userId = getCurrentUserId()
-            getUserDocRef(userId).set(profile, SetOptions.merge()).await()
+            val username = getCurrentUsername()
+            getUserDocRef(username).set(profile, SetOptions.merge()).await()
             Log.d(TAG, "User profile saved for: ${profile.displayName}")
             Result.success(Unit)
         } catch (e: Exception) {
@@ -94,8 +133,8 @@ class FirestoreManager private constructor(private val context: Context) {
      */
     suspend fun getUserProfile(): Result<UserProfile?> = withContext(Dispatchers.IO) {
         try {
-            val userId = getCurrentUserId()
-            val doc = getUserDocRef(userId).get().await()
+            val username = getCurrentUsername()
+            val doc = getUserDocRef(username).get().await()
             val profile = doc.toObject(UserProfile::class.java)
             Result.success(profile)
         } catch (e: Exception) {
@@ -111,10 +150,10 @@ class FirestoreManager private constructor(private val context: Context) {
      */
     suspend fun savePersonalizedStages(stages: List<PersonalizedStage>): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val userId = getCurrentUserId()
+            val username = getCurrentUsername()
             val batch = firestore.batch()
             
-            val collectionRef = getUserDocRef(userId).collection(COLLECTION_PERSONALIZED_STAGES)
+            val collectionRef = getStagesDocRef(username).collection(COLLECTION_PERSONALIZED_STAGES)
             
             // Clear existing stages first
             val existingDocs = collectionRef.get().await()
@@ -142,8 +181,8 @@ class FirestoreManager private constructor(private val context: Context) {
      */
     suspend fun getPersonalizedStages(): Result<List<PersonalizedStage>> = withContext(Dispatchers.IO) {
         try {
-            val userId = getCurrentUserId()
-            val docs = getUserDocRef(userId)
+            val username = getCurrentUsername()
+            val docs = getStagesDocRef(username)
                 .collection(COLLECTION_PERSONALIZED_STAGES)
                 .orderBy("id")
                 .get()
@@ -165,8 +204,8 @@ class FirestoreManager private constructor(private val context: Context) {
      */
     suspend fun hasPersonalizedStages(): Boolean = withContext(Dispatchers.IO) {
         try {
-            val userId = getCurrentUserId()
-            val docs = getUserDocRef(userId)
+            val username = getCurrentUsername()
+            val docs = getStagesDocRef(username)
                 .collection(COLLECTION_PERSONALIZED_STAGES)
                 .limit(1)
                 .get()
@@ -178,6 +217,193 @@ class FirestoreManager private constructor(private val context: Context) {
         }
     }
 
+    /**
+     * Get assessment report for current user
+     * Path: users/{username}/data/report
+     * 
+     * @return Map of report data, or null if no report exists
+     */
+    suspend fun getAssessmentReport(): Map<String, Any>? = withContext(Dispatchers.IO) {
+        try {
+            val username = getCurrentUsername()
+            val doc = firestore.collection(COLLECTION_USERS)
+                .document(username)
+                .collection("data")
+                .document("report")
+                .get()
+                .await()
+            
+            if (doc.exists()) {
+                doc.data
+            } else {
+                Log.d(TAG, "No assessment report found for user: $username")
+                null
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error getting assessment report", e)
+            null
+        }
+    }
+
+    /**
+     * Check if user has assessment report
+     */
+    suspend fun hasAssessmentReport(): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val username = getCurrentUsername()
+            val doc = firestore.collection(COLLECTION_USERS)
+                .document(username)
+                .collection("data")
+                .document("report")
+                .get()
+                .await()
+            doc.exists()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error checking assessment report", e)
+            false
+        }
+    }
+
+    /**
+     * Collect user's performance data for intelligent stage regeneration
+     * This is called when user retakes assessment to consider their history
+     * 
+     * @return UserPerformanceData with completed stages, scores, weak/strong topics
+     */
+    suspend fun collectUserPerformanceData(): UserPerformanceData = withContext(Dispatchers.IO) {
+        try {
+            val username = getCurrentUsername()
+            val userDoc = getUserDocRef(username)
+            
+            // 1. Get completed stages with stars
+            val stages = userDoc.collection(COLLECTION_PERSONALIZED_STAGES)
+                .get()
+                .await()
+            
+            val completedStageIds = mutableListOf<String>()
+            val stageStars = mutableMapOf<String, Int>()
+            
+            stages.documents.forEach { doc ->
+                val stage = doc.toObject(PersonalizedStage::class.java)
+                if (stage?.isCompleted == true) {
+                    completedStageIds.add(stage.id.toString())
+                    stageStars[stage.id.toString()] = stage.starsEarned
+                }
+            }
+            
+            // 2. Get quiz history for each stage
+            val quizScores = mutableMapOf<String, Int>()
+            val wrongQuestions = mutableListOf<WrongQuestionRecord>()
+            
+            completedStageIds.forEach { stageId ->
+                val quizDocs = userDoc.collection(COLLECTION_QUIZ_HISTORY)
+                    .whereEqualTo("stageId", stageId.toIntOrNull() ?: 0)
+                    .get()
+                    .await()
+                
+                if (!quizDocs.isEmpty) {
+                    // Get the best score
+                    val bestScore = quizDocs.documents.maxOfOrNull { doc ->
+                        (doc.getLong("score") ?: 0L).toInt()
+                    } ?: 0
+                    quizScores[stageId] = bestScore
+                    
+                    // Collect wrong answers from the most recent quiz
+                    val latestQuiz = quizDocs.documents.maxByOrNull { doc ->
+                        doc.getLong("timestamp") ?: 0L
+                    }
+                    
+                    @Suppress("UNCHECKED_CAST")
+                    val wrongAnswers = latestQuiz?.get("wrongAnswers") as? List<Map<String, String>>
+                    wrongAnswers?.forEach { answer ->
+                        wrongQuestions.add(WrongQuestionRecord(
+                            stageId = stageId,
+                            topic = answer["topic"] ?: "",
+                            question = answer["question"] ?: "",
+                            userAnswer = answer["userAnswer"] ?: "",
+                            correctAnswer = answer["correctAnswer"] ?: ""
+                        ))
+                    }
+                }
+            }
+            
+            // 3. Determine weak and strong topics based on performance
+            val weakTopics = mutableListOf<String>()
+            val strongTopics = mutableListOf<String>()
+            
+            // Topics with low stars (1 or less) are weak
+            stageStars.forEach { (stageId, stars) ->
+                val stage = stages.documents.find { it.id == stageId }
+                    ?.toObject(PersonalizedStage::class.java)
+                
+                val topicsForStage = stage?.topics ?: emptyList()
+                if (stars <= 1) {
+                    weakTopics.addAll(topicsForStage)
+                } else if (stars >= 3) {
+                    strongTopics.addAll(topicsForStage)
+                }
+            }
+            
+            // Also consider topics from wrong questions as weak
+            wrongQuestions.forEach { record ->
+                if (record.topic.isNotEmpty() && !weakTopics.contains(record.topic)) {
+                    weakTopics.add(record.topic)
+                }
+            }
+            
+            // 4. Calculate overall progress
+            val totalXp = stages.documents.sumOf { doc ->
+                val stage = doc.toObject(PersonalizedStage::class.java)
+                if (stage?.isCompleted == true) stage.xpReward else 0
+            }
+            
+            val averageScore = if (quizScores.isNotEmpty()) {
+                quizScores.values.average().toInt()
+            } else 0
+            
+            Log.d(TAG, "Collected performance: ${completedStageIds.size} completed, " +
+                    "avg score: $averageScore, weak: ${weakTopics.size}, strong: ${strongTopics.size}")
+            
+            UserPerformanceData(
+                completedStageIds = completedStageIds,
+                stageScores = quizScores,
+                stageStars = stageStars,
+                weakTopics = weakTopics.distinct(),
+                strongTopics = strongTopics.distinct(),
+                wrongQuestions = wrongQuestions,
+                totalXpEarned = totalXp,
+                averageQuizScore = averageScore
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "Error collecting performance data", e)
+            UserPerformanceData()
+        }
+    }
+
+    /**
+     * Delete all personalized stages (for regeneration)
+     */
+    suspend fun deleteAllPersonalizedStages(): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val username = getCurrentUsername()
+            val stagesRef = getUserDocRef(username).collection(COLLECTION_PERSONALIZED_STAGES)
+            
+            val docs = stagesRef.get().await()
+            val batch = firestore.batch()
+            
+            docs.documents.forEach { doc ->
+                batch.delete(doc.reference)
+            }
+            
+            batch.commit().await()
+            Log.d(TAG, "Deleted ${docs.size()} personalized stages")
+            true
+        } catch (e: Exception) {
+            Log.e(TAG, "Error deleting stages", e)
+            false
+        }
+    }
+
     // ==================== STAGE CONTENT ====================
 
     /**
@@ -185,8 +411,8 @@ class FirestoreManager private constructor(private val context: Context) {
      */
     suspend fun saveStageContent(stageId: Int, content: StageContent): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val userId = getCurrentUserId()
-            getUserDocRef(userId)
+            val username = getCurrentUsername()
+            getStagesDocRef(username)
                 .collection(COLLECTION_STAGE_CONTENT)
                 .document(stageId.toString())
                 .set(content)
@@ -204,8 +430,8 @@ class FirestoreManager private constructor(private val context: Context) {
      */
     suspend fun getStageContent(stageId: Int): Result<StageContent?> = withContext(Dispatchers.IO) {
         try {
-            val userId = getCurrentUserId()
-            val doc = getUserDocRef(userId)
+            val username = getCurrentUsername()
+            val doc = getStagesDocRef(username)
                 .collection(COLLECTION_STAGE_CONTENT)
                 .document(stageId.toString())
                 .get()
@@ -225,9 +451,9 @@ class FirestoreManager private constructor(private val context: Context) {
      */
     suspend fun saveFlashcards(stageId: Int, flashcards: List<Flashcard>): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val userId = getCurrentUserId()
+            val username = getCurrentUsername()
             val data = mapOf("flashcards" to flashcards, "stageId" to stageId)
-            getUserDocRef(userId)
+            getStagesDocRef(username)
                 .collection(COLLECTION_FLASHCARDS)
                 .document(stageId.toString())
                 .set(data)
@@ -245,8 +471,8 @@ class FirestoreManager private constructor(private val context: Context) {
      */
     suspend fun getFlashcards(stageId: Int): Result<List<Flashcard>> = withContext(Dispatchers.IO) {
         try {
-            val userId = getCurrentUserId()
-            val doc = getUserDocRef(userId)
+            val username = getCurrentUsername()
+            val doc = getStagesDocRef(username)
                 .collection(COLLECTION_FLASHCARDS)
                 .document(stageId.toString())
                 .get()
@@ -297,8 +523,8 @@ class FirestoreManager private constructor(private val context: Context) {
      */
     suspend fun saveQuizResult(stageId: Int, result: QuizResult): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val userId = getCurrentUserId()
-            getUserDocRef(userId)
+            val username = getCurrentUsername()
+            getUserDocRef(username)
                 .collection(COLLECTION_QUIZ_HISTORY)
                 .document("${stageId}_${System.currentTimeMillis()}")
                 .set(result)
@@ -316,8 +542,8 @@ class FirestoreManager private constructor(private val context: Context) {
      */
     suspend fun getQuizHistory(stageId: Int): Result<List<QuizResult>> = withContext(Dispatchers.IO) {
         try {
-            val userId = getCurrentUserId()
-            val docs = getUserDocRef(userId)
+            val username = getCurrentUsername()
+            val docs = getUserDocRef(username)
                 .collection(COLLECTION_QUIZ_HISTORY)
                 .whereEqualTo("stageId", stageId)
                 .orderBy("timestamp")
@@ -341,8 +567,8 @@ class FirestoreManager private constructor(private val context: Context) {
      */
     suspend fun saveProgress(progress: UserProgress): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val userId = getCurrentUserId()
-            getUserDocRef(userId)
+            val username = getCurrentUsername()
+            getUserDocRef(username)
                 .collection(COLLECTION_PROGRESS)
                 .document("current")
                 .set(progress)
@@ -360,8 +586,8 @@ class FirestoreManager private constructor(private val context: Context) {
      */
     suspend fun getProgress(): Result<UserProgress?> = withContext(Dispatchers.IO) {
         try {
-            val userId = getCurrentUserId()
-            val doc = getUserDocRef(userId)
+            val username = getCurrentUsername()
+            val doc = getUserDocRef(username)
                 .collection(COLLECTION_PROGRESS)
                 .document("current")
                 .get()
@@ -381,8 +607,8 @@ class FirestoreManager private constructor(private val context: Context) {
      */
     suspend fun saveChatMessage(message: ChatMessage): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val userId = getCurrentUserId()
-            getUserDocRef(userId)
+            val username = getCurrentUsername()
+            getUserDocRef(username)
                 .collection(COLLECTION_CHAT_HISTORY)
                 .document(message.timestamp.toString())
                 .set(message)
@@ -399,8 +625,8 @@ class FirestoreManager private constructor(private val context: Context) {
      */
     suspend fun getChatHistory(limit: Int = 50): Result<List<ChatMessage>> = withContext(Dispatchers.IO) {
         try {
-            val userId = getCurrentUserId()
-            val docs = getUserDocRef(userId)
+            val username = getCurrentUsername()
+            val docs = getUserDocRef(username)
                 .collection(COLLECTION_CHAT_HISTORY)
                 .orderBy("timestamp")
                 .limitToLast(limit.toLong())
@@ -422,8 +648,8 @@ class FirestoreManager private constructor(private val context: Context) {
      */
     suspend fun clearChatHistory(): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val userId = getCurrentUserId()
-            val docs = getUserDocRef(userId)
+            val username = getCurrentUsername()
+            val docs = getUserDocRef(username)
                 .collection(COLLECTION_CHAT_HISTORY)
                 .get()
                 .await()
@@ -448,8 +674,8 @@ class FirestoreManager private constructor(private val context: Context) {
      */
     suspend fun saveAnalyticsReport(report: AnalyticsReport): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val userId = getCurrentUserId()
-            getUserDocRef(userId)
+            val username = getCurrentUsername()
+            getUserDocRef(username)
                 .collection(COLLECTION_ANALYTICS)
                 .document(report.timestamp.toString())
                 .set(report)
@@ -466,8 +692,8 @@ class FirestoreManager private constructor(private val context: Context) {
      */
     suspend fun getLatestAnalytics(): Result<AnalyticsReport?> = withContext(Dispatchers.IO) {
         try {
-            val userId = getCurrentUserId()
-            val docs = getUserDocRef(userId)
+            val username = getCurrentUsername()
+            val docs = getUserDocRef(username)
                 .collection(COLLECTION_ANALYTICS)
                 .orderBy("timestamp")
                 .limitToLast(1)
@@ -489,9 +715,9 @@ class FirestoreManager private constructor(private val context: Context) {
      */
     suspend fun saveProjects(projects: List<Project>): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val userId = getCurrentUserId()
+            val username = getCurrentUsername()
             val data = mapOf("projects" to projects, "generatedAt" to System.currentTimeMillis())
-            getUserDocRef(userId)
+            getUserDocRef(username)
                 .collection(COLLECTION_PROJECTS)
                 .document("suggestions")
                 .set(data)
@@ -508,8 +734,8 @@ class FirestoreManager private constructor(private val context: Context) {
      */
     suspend fun updateProjectStatus(projectId: Int, status: String): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val userId = getCurrentUserId()
-            getUserDocRef(userId)
+            val username = getCurrentUsername()
+            getUserDocRef(username)
                 .collection(COLLECTION_PROJECTS)
                 .document("status_$projectId")
                 .set(mapOf("status" to status, "updatedAt" to System.currentTimeMillis()))
@@ -528,8 +754,8 @@ class FirestoreManager private constructor(private val context: Context) {
      */
     suspend fun saveDailyTip(tip: DailyTip): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val userId = getCurrentUserId()
-            getUserDocRef(userId)
+            val username = getCurrentUsername()
+            getUserDocRef(username)
                 .collection(COLLECTION_DAILY_TIPS)
                 .document(tip.date)
                 .set(tip)
@@ -546,10 +772,10 @@ class FirestoreManager private constructor(private val context: Context) {
      */
     suspend fun getTodaysTip(): Result<DailyTip?> = withContext(Dispatchers.IO) {
         try {
-            val userId = getCurrentUserId()
+            val username = getCurrentUsername()
             val today = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
                 .format(java.util.Date())
-            val doc = getUserDocRef(userId)
+            val doc = getUserDocRef(username)
                 .collection(COLLECTION_DAILY_TIPS)
                 .document(today)
                 .get()
@@ -723,3 +949,32 @@ data class DailyTip(
     val category: String = "",
     val actionItem: String = ""
 )
+
+/**
+ * User's performance data for stage regeneration
+ * Collected when user retakes assessment to inform new stage generation
+ */
+data class UserPerformanceData(
+    val completedStageIds: List<String> = emptyList(),
+    val stageScores: Map<String, Int> = emptyMap(), // stageId -> best score percentage
+    val stageStars: Map<String, Int> = emptyMap(),  // stageId -> stars earned
+    val weakTopics: List<String> = emptyList(),     // Topics with low scores
+    val strongTopics: List<String> = emptyList(),   // Topics with high scores
+    val wrongQuestions: List<WrongQuestionRecord> = emptyList(),
+    val totalXpEarned: Int = 0,
+    val averageQuizScore: Int = 0
+)
+
+/**
+ * Record of a wrong answer for analysis during regeneration
+ */
+data class WrongQuestionRecord(
+    val stageId: String = "",
+    val topic: String = "",
+    val question: String = "",
+    val userAnswer: String = "",
+    val correctAnswer: String = ""
+)
+
+
+

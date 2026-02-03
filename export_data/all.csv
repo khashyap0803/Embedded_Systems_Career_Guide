@@ -1,0 +1,2408 @@
+Embedded Tracker - Complete Database Export
+Generated: 2026-01-02T17:38:40.004163
+
+=== PHASES ===
+ID,Name,Description,Status,Start Date,End Date
+1,Phase 1 – Hardware Foundations & Modern Embedded C++,"Calibrate hardware lab, sharpen modern C++ for microcontrollers, and build disciplined debugging habits. End goal: confidently shipping bring-up firmware on STM32 and ESP32 targets.",Pending,2026-01-07,2026-05-28
+2,Phase 2 – Real-Time Systems & Connected Firmware,"Deepen RTOS mastery, tackle open RISC-V/ESP32-C3 bring-up, design resilient connectivity stacks, and harden security for fleet-ready firmware. Culminates in a production-quality Zephyr/FreeRTOS application spanning CAN, Ethernet, BLE, and secure provisioning.",Pending,2026-05-29,2026-10-09
+3,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness","Blend TinyML with safety-critical practices, Android Automotive integration, and manufacturing readiness. Harden products for compliance while building intelligent firmware paired with production test rigs and certification artefacts.",Pending,2026-10-12,2027-03-02
+4,Phase 4 – Embedded Linux Bridge,"Bridge from bare-metal to Linux: Kernel modules, Device Trees, and Drivers.",Pending,2027-03-03,2027-04-05
+5,"Phase 5 – Productization, Launch & Career Amplification","Polish the product experience, finalize launch readiness, and translate achievements into standout portfolio assets. Concludes with simulated launch, community contributions, and career outreach campaign.",Pending,2027-04-06,2027-09-02
+
+=== WEEKS ===
+ID,Number,Phase,Focus,Status,Start Date,End Date
+60,0,Phase 1 – Hardware Foundations & Modern Embedded C++,Week 00 – Pre-Requisite Bootcamp (Complete Beginner Ramp-Up),Pending,2026-01-07,2026-01-14
+1,1,Phase 1 – Hardware Foundations & Modern Embedded C++,Week 01 – Electronics Foundations for STM32 Development,Pending,2026-01-15,2026-01-22
+2,2,Phase 1 – Hardware Foundations & Modern Embedded C++,Week 02 – Circuit simulation sprints & power supply literacy,Pending,2026-01-23,2026-01-30
+3,3,Phase 1 – Hardware Foundations & Modern Embedded C++,Week 03 – Digital logic blueprints & finite-state thinking,Pending,2026-02-02,2026-02-09
+4,4,Phase 1 – Hardware Foundations & Modern Embedded C++,Week 04 – ARM Cortex-M Architecture & STM32 MCU Deep Dive,Pending,2026-02-10,2026-02-17
+5,5,Phase 1 – Hardware Foundations & Modern Embedded C++,Week 05 – C programming foundations & syntax fluency,Pending,2026-02-18,2026-02-25
+6,6,Phase 1 – Hardware Foundations & Modern Embedded C++,"Week 06 – Memory, pointers, and ISR-grade C idioms",Pending,2026-02-26,2026-03-05
+68,7,Phase 1 – Hardware Foundations & Modern Embedded C++,Week 07 – ARM Assembly Fundamentals for Debugging,Pending,2026-03-06,2026-03-13
+72,8,Phase 1 – Hardware Foundations & Modern Embedded C++,"Week 08 – Timers, PWM & Waveform Generation",Pending,2026-03-16,2026-03-23
+7,9,Phase 1 – Hardware Foundations & Modern Embedded C++,Week 09 – DMA Fundamentals & Peripheral Basics,Pending,2026-03-24,2026-03-31
+8,10,Phase 1 – Hardware Foundations & Modern Embedded C++,"Week 10 – I2C, SPI & UART DMA Optimization Patterns",Pending,2026-04-01,2026-04-08
+9,11,Phase 1 – Hardware Foundations & Modern Embedded C++,Week 11 – Low Power Modes & UART Sleep Handling,Pending,2026-04-09,2026-04-16
+10,12,Phase 1 – Hardware Foundations & Modern Embedded C++,Week 12 – Power management & low energy design,Pending,2026-04-17,2026-04-24
+11,13,Phase 1 – Hardware Foundations & Modern Embedded C++,Week 13 – Bootloaders & secure update foundations,Pending,2026-04-27,2026-05-04
+12,14,Phase 1 – Hardware Foundations & Modern Embedded C++,Week 14 – Containerized Build Environments & CI Enablement,Pending,2026-05-05,2026-05-12
+13,15,Phase 1 – Hardware Foundations & Modern Embedded C++,Week 15 – Safety basics & design for reliability,Pending,2026-05-13,2026-05-20
+14,16,Phase 1 – Hardware Foundations & Modern Embedded C++,Week 16 – Phase consolidation & portfolio artifact,Pending,2026-05-21,2026-05-28
+15,17,Phase 2 – Real-Time Systems & Connected Firmware,Week 17 – Zephyr RTOS architecture & board bring-up,Pending,2026-05-29,2026-06-05
+16,18,Phase 2 – Real-Time Systems & Connected Firmware,Week 18 – FreeRTOS Synchronization Primitives,Pending,2026-06-08,2026-06-15
+17,19,Phase 2 – Real-Time Systems & Connected Firmware,Week 19 – Deterministic scheduling & time partitioning,Pending,2026-06-16,2026-06-23
+18,20,Phase 2 – Real-Time Systems & Connected Firmware,Week 20 Focus – Advanced DMA Patterns & Multi-channel DMA,Pending,2026-06-24,2026-07-01
+19,21,Phase 2 – Real-Time Systems & Connected Firmware,Week 21 – CAN/CAN-FD Physical Layer & LIN Protocol,Pending,2026-07-02,2026-07-09
+20,22,Phase 2 – Real-Time Systems & Connected Firmware,Week 22 – ISO-TP & UDS Automotive Diagnostics,Pending,2026-07-10,2026-07-17
+21,23,Phase 2 – Real-Time Systems & Connected Firmware,Week 23 – Bluetooth Low Energy (BLE) & MQTT Publish/Subscribe,Pending,2026-07-20,2026-07-27
+22,24,Phase 2 – Real-Time Systems & Connected Firmware,"Week 24 – Ethernet, TCP/IP, LwIP & MQTT Broker Integration",Pending,2026-07-28,2026-08-04
+23,25,Phase 2 – Real-Time Systems & Connected Firmware,Week 25 – Secure communications & provisioning hardening,Pending,2026-08-05,2026-08-12
+24,26,Phase 2 – Real-Time Systems & Connected Firmware,Week 26 – Fleet update infrastructure & DevOps,Pending,2026-08-13,2026-08-20
+25,27,Phase 2 – Real-Time Systems & Connected Firmware,"Week 27 – Wireless Connectivity: BLE, WiFi & MQTT",Pending,2026-08-21,2026-08-28
+26,28,Phase 2 – Real-Time Systems & Connected Firmware,Week 28 – Data pipelines & storage durability,Pending,2026-08-31,2026-09-07
+27,29,Phase 2 – Real-Time Systems & Connected Firmware,"Week 29 – Observability, logging, and remote diagnostics",Pending,2026-09-08,2026-09-15
+28,30,Phase 2 – Real-Time Systems & Connected Firmware,Week 30 – Gateway integration & heterogeneous compute,Pending,2026-09-16,2026-09-23
+29,31,Phase 2 – Real-Time Systems & Connected Firmware,Week 31 – Mixed-criticality & virtualization,Pending,2026-09-24,2026-10-01
+30,32,Phase 2 – Real-Time Systems & Connected Firmware,"Week 32 – Phase consolidation, demos, and midterm review",Pending,2026-10-02,2026-10-09
+31,33,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Week 33 – Edge AI & TinyML Sensor Preprocessing,Pending,2026-10-12,2026-10-19
+32,34,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness","Week 34 – Optimization, quantization, and benchmarks",Pending,2026-10-20,2026-10-27
+33,35,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Week 35 – Sensor fusion with ML & adaptive algorithms,Pending,2026-10-28,2026-11-04
+34,36,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Week 36 – USB Device/Host Mode & High-Speed Protocols,Pending,2026-11-05,2026-11-12
+61,37,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Week 37 – ISO 26262 Functional Safety Foundation,Pending,2026-11-13,2026-11-20
+62,38,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Week 38 – Embedded Networking & IoT Protocols,Pending,2026-11-23,2026-11-30
+35,39,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Week 39 – Embedded computer vision & perception,Pending,2026-12-01,2026-12-08
+36,40,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Week 40 – Functional safety standards deep dive,Pending,2026-12-09,2026-12-16
+37,41,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Week 41 – Diagnostic coverage & redundancy,Pending,2026-12-17,2026-12-24
+38,42,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Week 42 – Android Automotive HAL & security operations,Pending,2026-12-25,2027-01-01
+39,43,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Week 43 – Production test fixtures & DFM,Pending,2027-01-04,2027-01-11
+40,44,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Week 44 – Hardware design validation & compliance,Pending,2027-01-12,2027-01-19
+41,45,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Week 45 – Reliability engineering & environmental tests,Pending,2027-01-20,2027-01-27
+67,46,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Week 46 – AUTOSAR Fundamentals for Automotive Embedded,Pending,2027-01-28,2027-02-04
+42,47,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Week 47 – Supply chain resilience & lifecycle management,Pending,2027-02-05,2027-02-12
+43,48,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Week 48 – Linux Kernel Internals & Drivers,Pending,2027-02-15,2027-02-22
+44,49,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Week 49 – Regulatory compliance & certification prep,Pending,2027-02-23,2027-03-02
+63,50,Phase 4 – Embedded Linux Bridge,Week 50 – Linux Kernel Modules & Build System (Kbuild),Pending,2027-03-03,2027-03-10
+64,51,Phase 4 – Embedded Linux Bridge,Week 51 – Device Tree & Hardware Description,Pending,2027-03-11,2027-03-18
+65,52,Phase 4 – Embedded Linux Bridge,Week 52 – Yocto Project & Buildroot Basics,Pending,2027-03-19,2027-03-26
+66,53,Phase 4 – Embedded Linux Bridge,Week 53 – Linux Character Device Drivers,Pending,2027-03-29,2027-04-05
+45,54,"Phase 5 – Productization, Launch & Career Amplification","Week 54 – Phase integration, storytelling, and demo",Pending,2027-04-06,2027-04-13
+46,55,"Phase 5 – Productization, Launch & Career Amplification",Week 55 – Productization roadmap & customer empathy,Pending,2027-04-14,2027-04-21
+47,56,"Phase 5 – Productization, Launch & Career Amplification",Week 56 – UX refinement & embedded UI polish,Pending,2027-04-22,2027-04-29
+48,57,"Phase 5 – Productization, Launch & Career Amplification",Week 57 – AI observability & insight delivery,Pending,2027-04-30,2027-05-07
+49,58,"Phase 5 – Productization, Launch & Career Amplification",Week 58 – Production logistics & operations runbooks,Pending,2027-05-10,2027-05-17
+50,59,"Phase 5 – Productization, Launch & Career Amplification",Week 59 – Performance scaling & cost optimization,Pending,2027-05-18,2027-05-25
+51,60,"Phase 5 – Productization, Launch & Career Amplification",Week 60 – Security audits & red team drills,Pending,2027-05-26,2027-06-02
+52,61,"Phase 5 – Productization, Launch & Career Amplification","Week 61 – Testing, CI/CD & Release Engineering",Pending,2027-06-03,2027-06-10
+53,62,"Phase 5 – Productization, Launch & Career Amplification",Week 62 – Release management & documentation freeze,Pending,2027-06-11,2027-06-18
+54,63,"Phase 5 – Productization, Launch & Career Amplification",Week 63 – Launch simulation & incident readiness,Pending,2027-06-21,2027-06-28
+55,64,"Phase 5 – Productization, Launch & Career Amplification",Week 64 – Portfolio refresh & storytelling,Pending,2027-06-29,2027-07-06
+56,65,"Phase 5 – Productization, Launch & Career Amplification",Week 65 – Interview prep & coding drills,Pending,2027-07-07,2027-07-14
+57,66,"Phase 5 – Productization, Launch & Career Amplification",Week 66 – Community impact & open-source contributions,Pending,2027-07-15,2027-07-22
+58,67,"Phase 5 – Productization, Launch & Career Amplification",Week 67 – Capstone hardening & final demo,Pending,2027-07-23,2027-07-30
+59,68,"Phase 5 – Productization, Launch & Career Amplification",Week 68 – Launch retrospective & career outreach,Pending,2027-08-02,2027-08-09
+69,69,"Phase 5 – Productization, Launch & Career Amplification",Week 69 – SystemVerilog Basics for HW/SW Co-Design (Optional),Pending,2027-08-10,2027-08-17
+70,70,"Phase 5 – Productization, Launch & Career Amplification",Week 70 – Rust for Embedded Systems (Optional Advanced),Pending,2027-08-18,2027-08-25
+71,71,"Phase 5 – Productization, Launch & Career Amplification",Week 71 – Applied Embedded Math & DSP (Stanford Gap Fixer),Pending,2027-08-26,2027-09-02
+
+=== DAYS ===
+ID,Number,Week,Focus,Status,Scheduled Date
+372,1,0,"C Programming – Variables, loops, functions",Pending,2026-01-07
+373,2,0,C Programming – Pointers and memory,Pending,2026-01-08
+374,3,0,"Electronics 101 – Voltage, current, Ohm's law",Pending,2026-01-09
+375,4,0,"Electronics 101 – Components (resistors, capacitors, LEDs)",Pending,2026-01-12
+376,5,0,"Linux Terminal – Navigation, file operations",Pending,2026-01-13
+377,6,0,"Linux Terminal – GCC compilation, Makefiles",Pending,2026-01-14
+378,7,0,"Number Systems – Binary, hexadecimal, 2's complement",Pending,2026-01-15
+1,1,1,Decode Ohm's/Kirchhoff laws with AI co-pilots,Pending,2026-01-15
+2,2,1,Kirchhoff Laws and Circuit Analysis,Pending,2026-01-16
+3,3,1,Component Characterization Lab,Pending,2026-01-19
+4,4,1,Instrumentation Setup and Lab Hygiene,Pending,2026-01-20
+5,5,1,Deep work,Pending,2026-01-21
+6,6,1,"Integration, reflection, portfolio updates",Pending,2026-01-22
+7,7,1,Rest and Review,Pending,2026-01-23
+8,1,2,Wokwi simulation marathon,Pending,2026-01-23
+9,2,2,Advanced Wokwi Simulation,Pending,2026-01-26
+10,3,2,Power-supply troubleshooting drills,Pending,2026-01-27
+11,4,2,Weekly review & debugging retro,Pending,2026-01-28
+12,5,2,Deep work,Pending,2026-01-29
+13,6,2,"Integration, reflection, portfolio updates",Pending,2026-01-30
+14,7,2,Week 2 Review and Preparation,Pending,2026-02-02
+15,1,3,Truth tables → Logisim simulations,Pending,2026-02-02
+16,2,3,Karnaugh Maps and Logic Minimization,Pending,2026-02-03
+17,3,3,FSM practice in C,Pending,2026-02-04
+18,4,3,FSM State Diagram Design,Pending,2026-02-05
+19,5,3,Deep work,Pending,2026-02-06
+20,6,3,"Integration, reflection, portfolio updates",Pending,2026-02-09
+21,7,3,Week 3 Review and Preparation,Pending,2026-02-10
+22,1,4,Pipeline & memory map explorations,Pending,2026-02-10
+23,2,4,Cortex-M Register Model,Pending,2026-02-11
+24,3,4,Toolchain and debugger drills,Pending,2026-02-12
+25,4,4,Dual-boot workstation optimization,Pending,2026-02-13
+26,5,4,Deep work,Pending,2026-02-16
+27,6,4,"Integration, reflection, portfolio updates",Pending,2026-02-17
+28,7,4,Week 4 Review and Preparation,Pending,2026-02-18
+29,1,5,Daily syntax/code-drill block,Pending,2026-02-18
+30,2,5,Daily syntax/code-drill block,Pending,2026-02-19
+31,3,5,HackerRank C streak,Pending,2026-02-20
+32,4,5,Notion knowledge template build-out,Pending,2026-02-23
+33,5,5,Deep work,Pending,2026-02-24
+34,6,5,"Integration, reflection, portfolio updates",Pending,2026-02-25
+35,7,5,Week 5 Review and Preparation,Pending,2026-02-26
+36,1,6,Pointer gym & allocator simulator,Pending,2026-02-26
+37,2,6,Dynamic Memory Allocation,Pending,2026-02-27
+38,3,6,Bit Manipulation Techniques,Pending,2026-03-02
+39,4,6,ISR Design Patterns,Pending,2026-03-03
+40,5,6,Deep work,Pending,2026-03-04
+41,6,6,"Integration, reflection, portfolio updates",Pending,2026-03-05
+42,7,6,Week 6 Review and Preparation,Pending,2026-03-06
+407,1,7,ARM Assembly Syntax and Instruction Format,Pending,2026-03-06
+408,2,7,ARM Register Model and Special Registers,Pending,2026-03-09
+409,3,7,Data Processing and Arithmetic Instructions,Pending,2026-03-10
+410,4,7,Load/Store Instructions and Memory Access,Pending,2026-03-11
+411,5,7,Branch Instructions and Control Flow,Pending,2026-03-12
+412,6,7,Assembly Debugging with GDB and Disassembly,Pending,2026-03-13
+413,7,7,ARM Assembly Integration Project,Pending,2026-03-16
+512,1,8,TIMx Peripheral Architecture & Clock Configuration,Pending,2026-03-16
+513,2,8,"Timer Interrupt Modes (Update, Compare, Capture)",Pending,2026-03-17
+514,3,8,Hardware PWM Generation & LED Dimming,Pending,2026-03-18
+515,4,8,Input Capture for Signal Measurement,Pending,2026-03-19
+516,5,8,Output Compare & Precise Pulse Generation,Pending,2026-03-20
+517,6,8,Integration: Servo & Motor Control,Pending,2026-03-23
+518,7,8,Timer Review & Practice,Pending,2026-03-24
+449,1,9,UART Protocol Internals,Pending,2026-03-24
+450,2,9,I2C Protocol Mastery,Pending,2026-03-25
+451,3,9,SPI Protocol Deep Dive,Pending,2026-03-26
+452,4,9,Protocol Debugging,Pending,2026-03-27
+453,5,9,Protocol Performance,Pending,2026-03-30
+454,6,9,DMA Error Handling,Pending,2026-03-31
+455,7,9,Integration Project,Pending,2026-04-01
+43,1,10,Bit-banged UART and baud calculators,Pending,2026-04-01
+44,2,10,I2C Advanced Topics,Pending,2026-04-02
+45,3,10,I2C/SPI Advanced Lab Exercises,Pending,2026-04-03
+46,4,10,Protocol troubleshooting checklist,Pending,2026-04-06
+47,5,10,Deep work,Pending,2026-04-07
+48,6,10,"Integration, reflection, portfolio updates",Pending,2026-04-08
+49,7,10,Week 10 Review and Preparation,Pending,2026-04-09
+50,1,11,STM32 Low Power Mode Overview,Pending,2026-04-09
+51,2,11,UART Sleep Mode Handling,Pending,2026-04-10
+52,3,11,Wake-up Source Configuration,Pending,2026-04-13
+53,4,11,Deep work,Pending,2026-04-14
+54,5,11,Power Consumption Measurement,Pending,2026-04-15
+55,6,11,Low Power Integration & Battery Life,Pending,2026-04-16
+56,7,11,Week 11 Review and Preparation,Pending,2026-04-17
+57,1,12,Sleep state orchestration,Pending,2026-04-17
+58,2,12,Peripheral Clock Gating Optimization,Pending,2026-04-20
+59,3,12,Dynamic frequency scaling experiments,Pending,2026-04-21
+60,4,12,Energy profiling automation,Pending,2026-04-22
+61,5,12,Deep work,Pending,2026-04-23
+62,6,12,"Integration, reflection, portfolio updates",Pending,2026-04-24
+63,7,12,Rest & recharge,Pending,2026-04-27
+64,1,13,Blueprint dual-bank bootloader,Pending,2026-04-27
+65,2,13,Secure Boot Chain Implementation,Pending,2026-04-28
+66,3,13,Cryptographic primitives integration,Pending,2026-04-29
+67,4,13,FOTA staging pipeline,Pending,2026-04-30
+68,5,13,Deep work,Pending,2026-05-01
+69,6,13,"Integration, reflection, portfolio updates",Pending,2026-05-04
+70,7,13,Rest & recharge,Pending,2026-05-05
+71,1,14,Docker firmware build environment setup,Pending,2026-05-05
+72,2,14,Docker firmware build environment setup,Pending,2026-05-06
+73,3,14,Multi-stage Docker builds for firmware,Pending,2026-05-07
+74,4,14,Host-based simulation harness,Pending,2026-05-08
+75,5,14,GitHub Actions CI with containerized builds,Pending,2026-05-11
+76,6,14,"Integration, reflection, portfolio updates",Pending,2026-05-12
+77,7,14,Rest & recharge,Pending,2026-05-13
+78,1,15,Failure Mode and Effects Analysis (FMEA),Pending,2026-05-13
+79,2,15,Fault Tree Analysis (FTA) Techniques,Pending,2026-05-14
+80,3,15,Watchdog strategy consolidation,Pending,2026-05-15
+81,4,15,Brownout & EMI resilience,Pending,2026-05-18
+82,5,15,Deep work,Pending,2026-05-19
+83,6,15,"Integration, reflection, portfolio updates",Pending,2026-05-20
+84,7,15,Rest & recharge,Pending,2026-05-21
+85,1,16,Refactor showcase firmware,Pending,2026-05-21
+86,2,16,Refactor showcase firmware,Pending,2026-05-22
+87,3,16,Case study write-up,Pending,2026-05-25
+88,4,16,Phase retrospective & backlog grooming,Pending,2026-05-26
+89,5,16,Deep work,Pending,2026-05-27
+90,6,16,"Integration, reflection, portfolio updates",Pending,2026-05-28
+91,7,16,Rest & recharge,Pending,2026-05-29
+92,1,17,Custom Zephyr board definition,Pending,2026-05-29
+93,2,17,Zephyr Build System with West,Pending,2026-06-01
+94,3,17,Kernel services tour,Pending,2026-06-02
+95,4,17,West build automation,Pending,2026-06-03
+96,5,17,Deep work,Pending,2026-06-04
+97,6,17,"Integration, reflection, portfolio updates",Pending,2026-06-05
+98,7,17,Rest & recharge,Pending,2026-06-08
+456,1,18,Mutex Deep Dive,Pending,2026-06-08
+457,2,18,Semaphore Patterns,Pending,2026-06-09
+458,3,18,Queue Deep Dive,Pending,2026-06-10
+459,4,18,Event Groups,Pending,2026-06-11
+460,5,18,Task Notifications,Pending,2026-06-12
+461,6,18,Deadlock Prevention,Pending,2026-06-15
+462,7,18,Integration Project,Pending,2026-06-16
+99,1,19,Rate Monotonic Scheduling (RMS) Fundamentals,Pending,2026-06-16
+100,2,19,Deadline Monotonic Scheduling (DMS),Pending,2026-06-17
+101,3,19,WCET Analysis and Measurement Techniques,Pending,2026-06-18
+102,4,19,Time Partitioning and Slot-Based Scheduling,Pending,2026-06-19
+103,5,19,Scheduling Visualization and Tracing,Pending,2026-06-22
+104,6,19,Integration and Jitter Analysis,Pending,2026-06-23
+105,7,19,Deterministic Scheduling Review and Project,Pending,2026-06-24
+106,1,20,Chained DMA transfers,Pending,2026-06-24
+107,2,20,Linked DMA and Double Buffering,Pending,2026-06-25
+108,3,20,Zero-copy sensor framework,Pending,2026-06-26
+109,4,20,DMA Stress Testing and Fatigue Analysis,Pending,2026-06-29
+110,5,20,Deep work,Pending,2026-06-30
+111,6,20,"Integration, reflection, portfolio updates",Pending,2026-07-01
+112,7,20,Rest & recharge,Pending,2026-07-02
+113,1,21,CAN physical layer deep-dive,Pending,2026-07-02
+114,2,21,CAN-FD Extended Frame Format,Pending,2026-07-03
+115,3,21,LIN slave implementation,Pending,2026-07-06
+116,4,21,LIN schedule table manager,Pending,2026-07-07
+117,5,21,CAN/LIN gateway prototype,Pending,2026-07-08
+118,6,21,"Integration, reflection, portfolio updates",Pending,2026-07-09
+119,7,21,Rest & recharge,Pending,2026-07-10
+120,1,22,ISO-TP (ISO 15765-2) implementation,Pending,2026-07-10
+121,2,22,ISO-TP (ISO 15765-2) implementation,Pending,2026-07-13
+122,3,22,UDS (ISO 14229) diagnostics server,Pending,2026-07-14
+123,4,22,UDS diagnostics client/CLI tool,Pending,2026-07-15
+124,5,22,CAN/UDS network simulation,Pending,2026-07-16
+125,6,22,"Integration, reflection, portfolio updates",Pending,2026-07-17
+126,7,22,Rest & recharge,Pending,2026-07-20
+127,1,23,BLE Stack Architecture and Connection,Pending,2026-07-20
+128,2,23,BLE GATT Profile Development,Pending,2026-07-21
+129,3,23,Open toolchain & debug pipeline,Pending,2026-07-22
+130,4,23,Performance counters & tracing,Pending,2026-07-23
+131,5,23,Deep work,Pending,2026-07-24
+132,6,23,"Integration, reflection, portfolio updates",Pending,2026-07-27
+133,7,23,Rest & recharge,Pending,2026-07-28
+134,1,24,ESP32-C3 dual-stack firmware,Pending,2026-07-28
+135,2,24,ESP32-C3 dual-stack firmware,Pending,2026-07-29
+136,3,24,lwIP TCP/IP stack deep-dive,Pending,2026-07-30
+137,4,24,Wireshark packet capture & analysis,Pending,2026-07-31
+138,5,24,Wireshark packet capture & analysis,Pending,2026-08-03
+139,6,24,"Integration, reflection, portfolio updates",Pending,2026-08-04
+140,7,24,Rest & recharge,Pending,2026-08-05
+141,1,25,TLS stack integration,Pending,2026-08-05
+142,2,25,TLS stack integration,Pending,2026-08-06
+143,3,25,Secure credential provisioning,Pending,2026-08-07
+144,4,25,Pen test & threat modeling,Pending,2026-08-10
+145,5,25,Pen test & threat modeling,Pending,2026-08-11
+146,6,25,"Integration, reflection, portfolio updates",Pending,2026-08-12
+147,7,25,Rest & recharge,Pending,2026-08-13
+148,1,26,Update orchestration server,Pending,2026-08-13
+149,2,26,Update orchestration server,Pending,2026-08-14
+150,3,26,Progressive rollout automation,Pending,2026-08-17
+151,4,26,Device health telemetry,Pending,2026-08-18
+152,5,26,Deep work,Pending,2026-08-19
+153,6,26,"Integration, reflection, portfolio updates",Pending,2026-08-20
+154,7,26,Rest & recharge,Pending,2026-08-21
+463,1,27,BLE Fundamentals,Pending,2026-08-21
+464,2,27,GATT Programming,Pending,2026-08-24
+465,3,27,BLE Implementation,Pending,2026-08-25
+466,4,27,WiFi Fundamentals,Pending,2026-08-26
+467,5,27,MQTT Protocol,Pending,2026-08-27
+468,6,27,Wireless Security,Pending,2026-08-28
+469,7,27,Integration Project,Pending,2026-08-31
+155,1,28,Filesystem resilience,Pending,2026-08-31
+156,2,28,Filesystem resilience,Pending,2026-09-01
+157,3,28,Structured telemetry encoding,Pending,2026-09-02
+158,4,28,Edge analytics groundwork,Pending,2026-09-03
+159,5,28,Deep work,Pending,2026-09-04
+160,6,28,"Integration, reflection, portfolio updates",Pending,2026-09-07
+161,7,28,Rest & recharge,Pending,2026-09-08
+162,1,29,Unified logging schema,Pending,2026-09-08
+163,2,29,Unified logging schema,Pending,2026-09-09
+164,3,29,Crash dump & corefile export,Pending,2026-09-10
+165,4,29,Remote debug toolkit,Pending,2026-09-11
+166,5,29,Deep work,Pending,2026-09-14
+167,6,29,"Integration, reflection, portfolio updates",Pending,2026-09-15
+168,7,29,Rest & recharge,Pending,2026-09-16
+169,1,30,Linux gateway handshake,Pending,2026-09-16
+170,2,30,Linux gateway handshake,Pending,2026-09-17
+171,3,30,Edge containerization,Pending,2026-09-18
+172,4,30,Secure gateway firmware channel,Pending,2026-09-21
+173,5,30,Deep work,Pending,2026-09-22
+174,6,30,"Integration, reflection, portfolio updates",Pending,2026-09-23
+175,7,30,Rest & recharge,Pending,2026-09-24
+176,1,31,Static partitioning prototype,Pending,2026-09-24
+177,2,31,Static partitioning prototype,Pending,2026-09-25
+178,3,31,Hypervisor evaluation,Pending,2026-09-28
+179,4,31,Safety case scaffolding,Pending,2026-09-29
+180,5,31,Deep work,Pending,2026-09-30
+181,6,31,"Integration, reflection, portfolio updates",Pending,2026-10-01
+182,7,31,Rest & recharge,Pending,2026-10-02
+183,1,32,End-to-end integration demo,Pending,2026-10-02
+184,2,32,End-to-end integration demo,Pending,2026-10-05
+185,3,32,Documentation sprint,Pending,2026-10-06
+186,4,32,Midterm skills assessment,Pending,2026-10-07
+187,5,32,Deep work,Pending,2026-10-08
+188,6,32,"Integration, reflection, portfolio updates",Pending,2026-10-09
+189,7,32,Rest & recharge,Pending,2026-10-12
+190,1,33,Dataset curation & labeling,Pending,2026-10-12
+191,2,33,Dataset curation & labeling,Pending,2026-10-13
+192,3,33,Model prototyping,Pending,2026-10-14
+193,4,33,TFLite Micro deployment,Pending,2026-10-15
+194,5,33,Deep work,Pending,2026-10-16
+195,6,33,"Integration, reflection, portfolio updates",Pending,2026-10-19
+196,7,33,Rest & recharge,Pending,2026-10-20
+197,1,34,Quantization-aware training,Pending,2026-10-20
+198,2,34,Quantization-aware training,Pending,2026-10-21
+199,3,34,Operator fusion & optimization,Pending,2026-10-22
+200,4,34,Benchmark harness,Pending,2026-10-23
+201,5,34,Deep work,Pending,2026-10-26
+202,6,34,"Integration, reflection, portfolio updates",Pending,2026-10-27
+203,7,34,Rest & recharge,Pending,2026-10-28
+204,1,35,Feature engineering,Pending,2026-10-28
+205,2,35,Feature engineering,Pending,2026-10-29
+206,3,35,Adaptive filtering,Pending,2026-10-30
+207,4,35,On-device learning experiments,Pending,2026-11-02
+208,5,35,Deep work,Pending,2026-11-03
+209,6,35,"Integration, reflection, portfolio updates",Pending,2026-11-04
+210,7,35,Rest & recharge,Pending,2026-11-05
+470,1,36,USB Fundamentals,Pending,2026-11-05
+471,2,36,USB Device Classes,Pending,2026-11-06
+472,3,36,USB Low-Level,Pending,2026-11-09
+473,4,36,USB Host Mode,Pending,2026-11-10
+474,5,36,USB Debugging,Pending,2026-11-11
+475,6,36,USB Performance,Pending,2026-11-12
+476,7,36,Integration Project,Pending,2026-11-13
+498,1,37,ISO 26262 Overview and ASIL Classification,Pending,2026-11-13
+499,2,37,Hazard Analysis and Risk Assessment (HARA),Pending,2026-11-16
+500,3,37,Functional Safety Concept,Pending,2026-11-17
+501,4,37,Technical Safety Concept,Pending,2026-11-18
+502,5,37,Safety Analysis Methods,Pending,2026-11-19
+503,6,37,Safety Verification and Validation,Pending,2026-11-20
+504,7,37,Week 36 Integration and Review,Pending,2026-11-23
+379,1,38,"USB Physics (D+/D-, NRZI)",Pending,2026-11-23
+380,2,38,"USB Descriptors (Device, Config, Interface)",Pending,2026-11-24
+381,3,38,Enumeration Process,Pending,2026-11-25
+382,4,38,CDC (Serial) Class Implementation,Pending,2026-11-26
+383,5,38,HID (Keyboard/Mouse) Class,Pending,2026-11-27
+384,6,38,USB Debugging with Wireshark/Logic Analyzer,Pending,2026-11-30
+385,7,38,Mini-Project: USB Composite Device,Pending,2026-12-01
+211,1,39,Camera interface bring-up,Pending,2026-12-01
+212,2,39,Camera interface bring-up,Pending,2026-12-02
+213,3,39,Model selection,Pending,2026-12-03
+214,4,39,Pipeline optimization,Pending,2026-12-04
+215,5,39,Deep work,Pending,2026-12-07
+216,6,39,"Integration, reflection, portfolio updates",Pending,2026-12-08
+217,7,39,Rest & recharge,Pending,2026-12-09
+218,1,40,Safety plan creation,Pending,2026-12-09
+219,2,40,Safety plan creation,Pending,2026-12-10
+220,3,40,Software safety requirements,Pending,2026-12-11
+221,4,40,Verification planning,Pending,2026-12-14
+222,5,40,Deep work,Pending,2026-12-15
+223,6,40,"Integration, reflection, portfolio updates",Pending,2026-12-16
+224,7,40,Rest & recharge,Pending,2026-12-17
+225,1,41,Diagnostic coverage calculations,Pending,2026-12-17
+226,2,41,Diagnostic coverage calculations,Pending,2026-12-18
+227,3,41,Redundant monitoring,Pending,2026-12-21
+228,4,41,Fault injection campaign,Pending,2026-12-22
+229,5,41,Deep work,Pending,2026-12-23
+230,6,41,"Integration, reflection, portfolio updates",Pending,2026-12-24
+231,7,41,Rest & recharge,Pending,2026-12-25
+232,1,42,AOSP vehicle HAL customization,Pending,2026-12-25
+233,2,42,AOSP vehicle HAL customization,Pending,2026-12-28
+234,3,42,Android/MCU integration harness,Pending,2026-12-29
+235,4,42,SBOM & vulnerability automation,Pending,2026-12-30
+236,5,42,Deep work,Pending,2026-12-31
+237,6,42,"Integration, reflection, portfolio updates",Pending,2027-01-01
+238,7,42,Rest & recharge,Pending,2027-01-04
+239,1,43,Test fixture design,Pending,2027-01-04
+240,2,43,Test fixture design,Pending,2027-01-05
+241,3,43,Manufacturing test scripts,Pending,2027-01-06
+242,4,43,DFM review,Pending,2027-01-07
+243,5,43,Deep work,Pending,2027-01-08
+244,6,43,"Integration, reflection, portfolio updates",Pending,2027-01-11
+245,7,43,Rest & recharge,Pending,2027-01-12
+246,1,44,Schematic review blitz,Pending,2027-01-12
+247,2,44,Schematic review blitz,Pending,2027-01-13
+248,3,44,PCB layout validation,Pending,2027-01-14
+249,4,44,Compliance gap analysis,Pending,2027-01-15
+250,5,44,Deep work,Pending,2027-01-18
+251,6,44,"Integration, reflection, portfolio updates",Pending,2027-01-19
+252,7,44,Rest & recharge,Pending,2027-01-20
+253,1,45,HALT/HASS planning,Pending,2027-01-20
+254,2,45,HALT/HASS planning,Pending,2027-01-21
+255,3,45,Environmental testing,Pending,2027-01-22
+256,4,45,Reliability statistics,Pending,2027-01-25
+257,5,45,Deep work,Pending,2027-01-26
+258,6,45,"Integration, reflection, portfolio updates",Pending,2027-01-27
+259,7,45,Rest & recharge,Pending,2027-01-28
+400,1,46,AUTOSAR Architecture and Build Configuration,Pending,2027-01-28
+401,2,46,AUTOSAR Software Component Development,Pending,2027-01-29
+402,3,46,AUTOSAR BSW Layer Configuration,Pending,2027-02-01
+403,4,46,AUTOSAR Application Layer Development,Pending,2027-02-02
+404,5,46,AUTOSAR Communication Stack Integration,Pending,2027-02-03
+405,6,46,AUTOSAR Memory and Diagnostic Services,Pending,2027-02-04
+406,7,46,AUTOSAR Integration and Testing,Pending,2027-02-05
+260,1,47,Component Lifecycle Management,Pending,2027-02-05
+261,2,47,Supply Chain Risk Assessment,Pending,2027-02-08
+262,3,47,Inventory Management,Pending,2027-02-09
+263,4,47,Supplier Relationship,Pending,2027-02-10
+264,5,47,Deep work,Pending,2027-02-11
+265,6,47,"Integration, reflection, portfolio updates",Pending,2027-02-12
+266,7,47,Rest & recharge,Pending,2027-02-15
+477,1,48,Kernel Build System,Pending,2027-02-15
+478,2,48,Kernel Modules,Pending,2027-02-16
+479,3,48,Character Drivers,Pending,2027-02-17
+480,4,48,Kernel Synchronization,Pending,2027-02-18
+481,5,48,Memory Management,Pending,2027-02-19
+482,6,48,Interrupt Handling,Pending,2027-02-22
+483,7,48,Integration Project,Pending,2027-02-23
+267,1,49,Regulatory Compliance Overview,Pending,2027-02-23
+268,2,49,Technical Documentation,Pending,2027-02-24
+269,3,49,Technical File Completion,Pending,2027-02-25
+270,4,49,Pre-Certification Preparation,Pending,2027-02-26
+271,5,49,Deep work,Pending,2027-03-01
+272,6,49,"Integration, reflection, portfolio updates",Pending,2027-03-02
+273,7,49,Rest & recharge,Pending,2027-03-03
+386,1,50,Kernel Module Architecture and Lifecycle,Pending,2027-03-03
+387,2,50,Kbuild System and Module Makefiles,Pending,2027-03-04
+388,3,50,Module Parameters and Symbol Export,Pending,2027-03-05
+389,4,50,MQTT Integration with Kernel Driver,Pending,2027-03-08
+390,5,50,Memory Management in Kernel Modules,Pending,2027-03-09
+391,6,50,Kernel Debugging and Tracing,Pending,2027-03-10
+392,7,50,Kernel Module Integration Project,Pending,2027-03-11
+393,1,51,Linux Kernel Architecture,Pending,2027-03-11
+394,2,51,Loadable Kernel Modules (LKM),Pending,2027-03-12
+395,3,51,Kbuild & Makefiles,Pending,2027-03-15
+396,4,51,Module Parameters & Exports,Pending,2027-03-16
+397,5,51,Kernel Symbols & System Map,Pending,2027-03-17
+398,6,51,Cross-Compilation for ARM,Pending,2027-03-18
+399,7,51,Hello World Module,Pending,2027-03-19
+484,1,52,Yocto Architecture,Pending,2027-03-19
+485,2,52,Custom Layers,Pending,2027-03-22
+486,3,52,BSP Development,Pending,2027-03-23
+487,4,52,Package Management,Pending,2027-03-24
+488,5,52,Image Customization,Pending,2027-03-25
+489,6,52,SDK Generation,Pending,2027-03-26
+490,7,52,Integration Project,Pending,2027-03-29
+505,1,53,Build System Deep Dive,Pending,2027-03-29
+506,2,53,Static Analysis Integration,Pending,2027-03-30
+507,3,53,Testing Strategy and Quality,Pending,2027-03-31
+508,4,53,CI/CD Pipeline Development,Pending,2027-04-01
+509,5,53,Release Management Process,Pending,2027-04-02
+510,6,53,Field Debugging Techniques,Pending,2027-04-05
+511,7,53,Consolidation and Review,Pending,2027-04-06
+274,1,54,Intelligent firmware showcase,Pending,2027-04-06
+275,2,54,Intelligent firmware showcase,Pending,2027-04-07
+276,3,54,Certification dossier review,Pending,2027-04-08
+277,4,54,Phase retrospective & backlog refresh,Pending,2027-04-09
+278,5,54,Deep work,Pending,2027-04-12
+279,6,54,"Integration, reflection, portfolio updates",Pending,2027-04-13
+280,7,54,Rest & recharge,Pending,2027-04-14
+281,1,55,Voice-of-customer synthesis,Pending,2027-04-14
+282,2,55,Voice-of-customer synthesis,Pending,2027-04-15
+283,3,55,Productization backlog grooming,Pending,2027-04-16
+284,4,55,Experience journey mapping,Pending,2027-04-19
+285,5,55,Deep work,Pending,2027-04-20
+286,6,55,"Integration, reflection, portfolio updates",Pending,2027-04-21
+287,7,55,Rest & recharge,Pending,2027-04-22
+288,1,56,Qt/Qt Quick HMI enhancements,Pending,2027-04-22
+289,2,56,Qt/Qt Quick HMI enhancements,Pending,2027-04-23
+290,3,56,UX validation,Pending,2027-04-26
+291,4,56,UI performance optimization,Pending,2027-04-27
+292,5,56,Deep work,Pending,2027-04-28
+293,6,56,"Integration, reflection, portfolio updates",Pending,2027-04-29
+294,7,56,Rest & recharge,Pending,2027-04-30
+295,1,57,Model performance & drift monitoring,Pending,2027-04-30
+296,2,57,AI ops dashboards & alerts,Pending,2027-05-03
+297,3,57,Insight storytelling & incident playbooks,Pending,2027-05-04
+298,4,57,Deep work,Pending,2027-05-05
+299,5,57,Deep work,Pending,2027-05-06
+300,6,57,"Integration, reflection, portfolio updates",Pending,2027-05-07
+301,7,57,Rest & recharge,Pending,2027-05-10
+302,1,58,Operations runbook,Pending,2027-05-10
+303,2,58,Fulfillment & logistics mapping,Pending,2027-05-11
+304,3,58,Support tooling setup,Pending,2027-05-12
+305,4,58,Deep work,Pending,2027-05-13
+306,5,58,Deep work,Pending,2027-05-14
+307,6,58,"Integration, reflection, portfolio updates",Pending,2027-05-17
+308,7,58,Rest & recharge,Pending,2027-05-18
+309,1,59,Performance budget enforcement,Pending,2027-05-18
+310,2,59,Cost modeling,Pending,2027-05-19
+311,3,59,Performance tuning sprint,Pending,2027-05-20
+312,4,59,Deep work,Pending,2027-05-21
+313,5,59,Deep work,Pending,2027-05-24
+314,6,59,"Integration, reflection, portfolio updates",Pending,2027-05-25
+315,7,59,Rest & recharge,Pending,2027-05-26
+316,1,60,Security audit walkthrough,Pending,2027-05-26
+317,2,60,Security audit walkthrough,Pending,2027-05-27
+318,3,60,Red team exercise,Pending,2027-05-28
+319,4,60,Update security training,Pending,2027-05-31
+320,5,60,Deep work,Pending,2027-06-01
+321,6,60,"Integration, reflection, portfolio updates",Pending,2027-06-02
+322,7,60,Rest & recharge,Pending,2027-06-03
+491,1,61,Build System,Pending,2027-06-03
+492,2,61,Static Analysis,Pending,2027-06-04
+493,3,61,Testing Strategy,Pending,2027-06-07
+494,4,61,CI/CD Pipeline,Pending,2027-06-08
+495,5,61,Release Management,Pending,2027-06-09
+496,6,61,Field Debugging,Pending,2027-06-10
+497,7,61,Integration Project,Pending,2027-06-11
+323,1,62,Release checklist completion,Pending,2027-06-11
+324,2,62,Documentation freeze,Pending,2027-06-14
+325,3,62,Training & enablement,Pending,2027-06-15
+326,4,62,Deep work,Pending,2027-06-16
+327,5,62,Deep work,Pending,2027-06-17
+328,6,62,"Integration, reflection, portfolio updates",Pending,2027-06-18
+329,7,62,Rest & recharge,Pending,2027-06-21
+330,1,63,Game day exercise,Pending,2027-06-21
+331,2,63,Incident command training,Pending,2027-06-22
+332,3,63,Post-launch metrics,Pending,2027-06-23
+333,4,63,Deep work,Pending,2027-06-24
+334,5,63,Deep work,Pending,2027-06-25
+335,6,63,"Integration, reflection, portfolio updates",Pending,2027-06-28
+336,7,63,Rest & recharge,Pending,2027-06-29
+337,1,64,Portfolio rebuild,Pending,2027-06-29
+338,2,64,Highlight reel production,Pending,2027-06-30
+339,3,64,Reference packet,Pending,2027-07-01
+340,4,64,Deep work,Pending,2027-07-02
+341,5,64,Deep work,Pending,2027-07-05
+342,6,64,"Integration, reflection, portfolio updates",Pending,2027-07-06
+343,7,64,Rest & recharge,Pending,2027-07-07
+344,1,65,Systems design interview prep,Pending,2027-07-07
+345,2,65,Firmware coding kata,Pending,2027-07-08
+346,3,65,Behavioral interview stories,Pending,2027-07-09
+347,4,65,Deep work,Pending,2027-07-12
+348,5,65,Deep work,Pending,2027-07-13
+349,6,65,"Integration, reflection, portfolio updates",Pending,2027-07-14
+350,7,65,Rest & recharge,Pending,2027-07-15
+351,1,66,Open-source contribution sprint,Pending,2027-07-15
+352,2,66,Community talk or blog,Pending,2027-07-16
+353,3,66,Mentorship & outreach,Pending,2027-07-19
+354,4,66,Deep work,Pending,2027-07-20
+355,5,66,Deep work,Pending,2027-07-21
+356,6,66,"Integration, reflection, portfolio updates",Pending,2027-07-22
+357,7,66,Rest & recharge,Pending,2027-07-23
+358,1,67,Capstone polish sprint,Pending,2027-07-23
+359,2,67,Final live demo rehearsal,Pending,2027-07-26
+360,3,67,Celebration & gratitude,Pending,2027-07-27
+361,4,67,Deep work,Pending,2027-07-28
+362,5,67,Deep work,Pending,2027-07-29
+363,6,67,"Integration, reflection, portfolio updates",Pending,2027-07-30
+364,7,67,Rest & recharge,Pending,2027-08-02
+365,1,68,Launch retrospective,Pending,2027-08-02
+366,2,68,Career outreach campaign,Pending,2027-08-03
+367,3,68,Roadmap transition plan,Pending,2027-08-04
+368,4,68,Deep work,Pending,2027-08-05
+369,5,68,Deep work,Pending,2027-08-06
+370,6,68,"Integration, reflection, portfolio updates",Pending,2027-08-09
+371,7,68,Rest & recharge,Pending,2027-08-10
+414,1,69,AUTOSAR Architecture Overview,Pending,2027-08-10
+415,2,69,Basic Software (BSW) Layers,Pending,2027-08-11
+416,3,69,Application Software Components (SWC),Pending,2027-08-12
+417,4,69,Runtime Environment (RTE),Pending,2027-08-13
+418,5,69,AUTOSAR Configurator Tools,Pending,2027-08-16
+419,6,69,Classic vs Adaptive AUTOSAR,Pending,2027-08-17
+420,7,69,AUTOSAR Hands-on with EB Tresos Demo,Pending,2027-08-18
+421,1,70,ARM Instruction Set Architecture (ISA) Overview,Pending,2027-08-18
+422,2,70,"ARM Registers (R0-R15, CPSR, SPSR)",Pending,2027-08-19
+423,3,70,ARM Assembly Syntax and Common Instructions,Pending,2027-08-20
+424,4,70,Inline Assembly in C for Performance,Pending,2027-08-23
+435,5,70,Rust Ownership and Borrowing Basics,Pending,2027-08-24
+436,6,70,no_std Rust for Bare-Metal,Pending,2027-08-25
+437,7,70,embedded-hal and PAC Crates,Pending,2027-08-26
+428,1,71,"Digital Logic Refresher (Gates, Flip-Flops)",Pending,2027-08-26
+429,2,71,Verilog Basics: Modules and Ports,Pending,2027-08-27
+430,3,71,SystemVerilog: Always Blocks and FSMs,Pending,2027-08-30
+431,4,71,Testbench Writing for Verification,Pending,2027-08-31
+442,5,71,Fixed-Point Arithmetic (Q15/Q31 formats),Pending,2027-09-01
+443,6,71,"Implementing a Q15 Math Library (multiply, divide, sqrt)",Pending,2027-09-02
+444,7,71,Digital Filters: Moving Average and IIR/FIR basics,Pending,2027-09-03
+
+=== TASKS ===
+ID,Title,Week,Day,Hour,Status,Work Seconds,Break Seconds
+3636,C Variables and Data Types,0,1,1,Pending,0,0
+3637,Control Flow: Loops,0,1,2,Pending,0,0
+3638,Functions and Prototypes,0,1,3,Pending,0,0
+2145,Pointer Fundamentals,0,2,1,Pending,0,0
+2146,Pointer Arithmetic,0,2,2,Pending,0,0
+2147,Function Pointers,0,2,3,Pending,0,0
+2148,Voltage Fundamentals,0,3,1,Pending,0,0
+2149,Kirchhoff Voltage Law,0,3,2,Pending,0,0
+2150,Voltage Measurement,0,3,3,Pending,0,0
+2151,Resistor Color Codes,0,4,1,Pending,0,0
+2152,Resistor Networks,0,4,2,Pending,0,0
+2153,Power Ratings,0,4,3,Pending,0,0
+2154,Linux Command Line Basics,0,5,1,Pending,0,0
+2155,File Operations,0,5,2,Pending,0,0
+2156,Text Processing,0,5,3,Pending,0,0
+3633,GCC Compilation Process,0,6,1,Pending,0,0
+3634,Compiler Flags and Warnings,0,6,2,Pending,0,0
+3635,Makefile Fundamentals,0,6,3,Pending,0,0
+2160,Binary Number System,0,7,1,Pending,0,0
+2161,Binary Arithmetic,0,7,2,Pending,0,0
+2162,Bitwise Operations,0,7,3,Pending,0,0
+2163,Ohms Law Application,1,1,1,Pending,0,0
+2164,Resistance Combinations,1,1,2,Pending,0,0
+2165,Power Calculations,1,1,3,Pending,0,0
+3966,Kirchhoff Current Law (KCL),1,2,1,Pending,0,0
+3967,Kirchhoff Voltage Law (KVL),1,2,2,Pending,0,0
+3968,Combined Circuit Analysis,1,2,3,Pending,0,0
+3969,Resistor Testing with Multimeter,1,3,1,Pending,0,0
+3970,Capacitor Testing,1,3,2,Pending,0,0
+3971,LED Forward Voltage Testing,1,3,3,Pending,0,0
+3972,Oscilloscope Basic Operation,1,4,1,Pending,0,0
+3973,Multimeter Best Practices,1,4,2,Pending,0,0
+3974,ESD Protection Setup,1,4,3,Pending,0,0
+2175,Study reference manual sections in depth,1,5,1,Pending,0,0
+2176,Complete hands-on debugging exercise,1,5,2,Pending,0,0
+2177,Apply learned concepts to practical implementation,1,5,3,Pending,0,0
+2178,Plan system integration approach and dependencies,1,6,1,Pending,0,0
+2179,Execute component interface tests,1,6,2,Pending,0,0
+2180,Review integration test results and metrics,1,6,3,Pending,0,0
+3975,Review Electronics Concepts,1,7,1,Pending,0,0
+3976,Self-Assessment Quiz,1,7,2,Pending,0,0
+3977,Prepare for Week 2,1,7,3,Pending,0,0
+2184,Set up first Wokwi LED blink project with STM32,2,1,1,Pending,0,0
+2185,Simulate button input with debouncing in Wokwi,2,1,2,Pending,0,0
+2186,Verify PWM output waveform in Wokwi oscilloscope,2,1,3,Pending,0,0
+3999,Multi-Component Simulation,2,2,1,Pending,0,0
+4000,Timing Analysis in Simulation,2,2,2,Pending,0,0
+4001,Export to Real Hardware,2,2,3,Pending,0,0
+2190,Measure voltage rails with multimeter on dev board,2,3,1,Pending,0,0
+2191,Debug power sequencing issues with oscilloscope,2,3,2,Pending,0,0
+2192,Troubleshoot brownout and voltage droop scenarios,2,3,3,Pending,0,0
+2193,Debugging Techniques,2,4,1,Pending,0,0
+2194,Use GDB for debugging firmware and inspecting variables,2,4,2,Pending,0,0
+2195,Core Dump Analysis,2,4,3,Pending,0,0
+2196,Analyze hardware timing diagrams,2,5,1,Pending,0,0
+2197,Practice peripheral configuration independently,2,5,2,Pending,0,0
+2198,Build working prototype using week concepts,2,5,3,Pending,0,0
+2199,Identify integration test points and interfaces,2,6,1,Pending,0,0
+2200,Validate data flow between modules,2,6,2,Pending,0,0
+2201,Analyze component coupling issues,2,6,3,Pending,0,0
+3978,Review Simulation Concepts,2,7,1,Pending,0,0
+3979,Power Supply Self-Assessment,2,7,2,Pending,0,0
+3980,Prepare for Digital Logic,2,7,3,Pending,0,0
+2205,"Build truth tables for AND, OR, XOR gates in Logisim",3,1,1,Pending,0,0
+2206,Simulate combinational logic circuits with Logisim,3,1,2,Pending,0,0
+2207,Verify digital logic designs with logic analyzer,3,1,3,Pending,0,0
+4002,Apply Boolean algebra simplification with K-Map,3,2,1,Pending,0,0
+4003,Logic Minimization,3,2,2,Pending,0,0
+4004,Dont Care Conditions,3,2,3,Pending,0,0
+2211,Implement two-state LED toggle FSM in C with switch-case,3,3,1,Pending,0,0
+2212,Build three-state traffic light FSM with defined transitions,3,3,2,Pending,0,0
+2213,Design FSM state diagram and convert to C struct-based implementation,3,3,3,Pending,0,0
+4005,State Diagram Notation,3,4,1,Pending,0,0
+4006,State Transition Tables,3,4,2,Pending,0,0
+4007,FSM Coding in C,3,4,3,Pending,0,0
+2217,Research advanced configuration options,3,5,1,Pending,0,0
+2218,Build test fixture for experimentation,3,5,2,Pending,0,0
+2219,Extend examples with custom modifications,3,5,3,Pending,0,0
+2220,Design integration validation strategy,3,6,1,Pending,0,0
+2221,Test error handling at integration points,3,6,2,Pending,0,0
+2222,Document integration lessons learned,3,6,3,Pending,0,0
+3981,Review Digital Logic Concepts,3,7,1,Pending,0,0
+3982,Logisim Practice Problems,3,7,2,Pending,0,0
+3983,Prepare for ARM Architecture,3,7,3,Pending,0,0
+2226,Analyze ARM Cortex-M pipeline stages fetch-decode-execute,4,1,1,Pending,0,0
+2227,"Map STM32 memory regions: Flash, SRAM, peripherals",4,1,2,Pending,0,0
+2228,Explore AHB and APB bus architecture with debugger,4,1,3,Pending,0,0
+4008,General Purpose Registers,4,2,1,Pending,0,0
+4009,"Special Registers (SP, LR, PC)",4,2,2,Pending,0,0
+4010,Program Status Registers,4,2,3,Pending,0,0
+2232,Debugging Techniques,4,3,1,Pending,0,0
+2233,Use GDB for debugging firmware and inspecting variables,4,3,2,Pending,0,0
+2234,Core Dump Analysis,4,3,3,Pending,0,0
+2235,Configure Linux development environment with toolchains,4,4,1,Pending,0,0
+2236,Set up cross-platform build automation scripts,4,4,2,Pending,0,0
+2237,Optimize workspace for dual Windows/Linux development,4,4,3,Pending,0,0
+2238,Compare implementation approaches,4,5,1,Pending,0,0
+2239,Implement feature without reference code,4,5,2,Pending,0,0
+2240,Solve real-world problem using new skills,4,5,3,Pending,0,0
+2241,Map component interactions for integration,4,6,1,Pending,0,0
+2242,Verify timing constraints across components,4,6,2,Pending,0,0
+2243,Assess system stability post-integration,4,6,3,Pending,0,0
+3984,Review ARM Architecture,4,7,1,Pending,0,0
+3985,Assembly Practice,4,7,2,Pending,0,0
+3986,Prepare for C Programming,4,7,3,Pending,0,0
+3639,C Syntax: Data Types and Declarations,5,1,1,Pending,0,0
+3640,C Syntax: Control Structures,5,1,2,Pending,0,0
+3641,C Syntax: Operators and Expressions,5,1,3,Pending,0,0
+3642,C Syntax: Arrays and Strings,5,2,1,Pending,0,0
+3643,C Syntax: Multi-dimensional Arrays,5,2,2,Pending,0,0
+3644,C Syntax: String Library Functions,5,2,3,Pending,0,0
+3645,HackerRank: Easy C Problems,5,3,1,Pending,0,0
+3646,HackerRank: Medium C Problems,5,3,2,Pending,0,0
+3647,Code Review and Optimization,5,3,3,Pending,0,0
+2256,Create Notion database template for C syntax quick-reference,5,4,1,Pending,0,0
+2257,Build knowledge-base structure for embedded programming concepts,5,4,2,Pending,0,0
+2258,Document learning progress tracker with spaced repetition system,5,4,3,Pending,0,0
+2259,Investigate edge cases and limitations,5,5,1,Pending,0,0
+2260,Optimize implementation for performance,5,5,2,Pending,0,0
+2261,Create reusable code module from learnings,5,5,3,Pending,0,0
+2262,Prepare integration environment setup,5,6,1,Pending,0,0
+2263,Run end-to-end system tests,5,6,2,Pending,0,0
+2264,Evaluate performance at integration points,5,6,3,Pending,0,0
+3987,Review C Syntax Mastery,5,7,1,Pending,0,0
+3988,Coding Challenge Completion,5,7,2,Pending,0,0
+3989,Prepare for Pointers,5,7,3,Pending,0,0
+2268,Pointer Fundamentals,6,1,1,Pending,0,0
+2269,Pointer Arithmetic,6,1,2,Pending,0,0
+2270,Function Pointers,6,1,3,Pending,0,0
+4011,malloc/calloc/realloc,6,2,1,Pending,0,0
+4012,free and Double-Free Prevention,6,2,2,Pending,0,0
+4013,Memory Pool Implementation,6,2,3,Pending,0,0
+4014,Bitwise AND/OR/XOR/NOT,6,3,1,Pending,0,0
+4015,Bit Shifting for Performance,6,3,2,Pending,0,0
+4016,Bit Field Structures,6,3,3,Pending,0,0
+4017,ISR Best Practices,6,4,1,Pending,0,0
+4018,Shared Data Protection,6,4,2,Pending,0,0
+4019,Deferred Processing,6,4,3,Pending,0,0
+2280,Study industry best practices,6,5,1,Pending,0,0
+2281,Practice troubleshooting common issues,6,5,2,Pending,0,0
+2282,Document implementation patterns for portfolio,6,5,3,Pending,0,0
+2283,Define integration acceptance criteria,6,6,1,Pending,0,0
+2284,Debug integration failures systematically,6,6,2,Pending,0,0
+2285,Validate integration against requirements,6,6,3,Pending,0,0
+3990,Review Pointer Mastery,6,7,1,Pending,0,0
+3991,Memory Debugging Practice,6,7,2,Pending,0,0
+3992,Prepare for Assembly,6,7,3,Pending,0,0
+2289,Understand ARM unified assembly syntax (UAL) and mnemonics,7,1,1,Pending,0,0
+2290,Analyze instruction encoding format for ARM Thumb-2,7,1,2,Pending,0,0
+2291,Practice reading disassembled C code in ARM assembly,7,1,3,Pending,0,0
+2292,ARM Architecture Overview,7,2,1,Pending,0,0
+2293,Connect JTAG/SWD debugger for hardware debugging,7,2,2,Pending,0,0
+2294,Use JTAG hardware breakpoints for real-time analysis,7,2,3,Pending,0,0
+4020,Data Processing Instructions,7,3,1,Pending,0,0
+4021,Immediate Values,7,3,2,Pending,0,0
+4022,Barrel Shifter Operations,7,3,3,Pending,0,0
+2298,Implement LDR/STR single-register transfers,7,4,1,Pending,0,0
+2299,Practice LDM/STM multiple-register transfers,7,4,2,Pending,0,0
+2300,Analyze memory addressing modes (pre/post indexed),7,4,3,Pending,0,0
+2301,"Implement conditional branch instructions (BEQ, BNE, BGT)",7,5,1,Pending,0,0
+2302,Build subroutine calls with BL and return with BX LR,7,5,2,Pending,0,0
+2303,Design conditional execution using IT blocks,7,5,3,Pending,0,0
+2304,Debug assembly code using GDB disassemble command,7,6,1,Pending,0,0
+2305,Analyze stack frames and register values in GDB,7,6,2,Pending,0,0
+2306,Correlate C source with generated assembly using -S flag,7,6,3,Pending,0,0
+2307,Implement optimized memcpy routine in ARM assembly,7,7,1,Pending,0,0
+2308,Write assembly startup code for bare-metal Cortex-M,7,7,2,Pending,0,0
+2309,Debug interrupt vectors and exception handlers in assembly,7,7,3,Pending,0,0
+4035,Understand STM32 TIMx peripheral clock tree and prescaler configuration,8,1,1,Pending,0,0
+4036,Configure basic timer with HAL_TIM_Base_Start and counter modes,8,1,2,Pending,0,0
+4037,Implement timer update interrupt callback for LED toggle,8,1,3,Pending,0,0
+4038,Configure timer update interrupt with HAL_TIM_Base_Start_IT,8,2,1,Pending,0,0
+4039,Implement periodic callback for sensor polling,8,2,2,Pending,0,0
+4040,Design timeout handler using one-pulse mode,8,2,3,Pending,0,0
+4041,Configure PWM output using HAL_TIM_PWM_Start on TIM channel,8,3,1,Pending,0,0
+4042,Implement duty cycle control for LED brightness,8,3,2,Pending,0,0
+4043,Generate multi-channel PWM for RGB LED control,8,3,3,Pending,0,0
+4044,Configure input capture mode for rising edge detection,8,4,1,Pending,0,0
+4045,Measure pulse width using input capture timestamps,8,4,2,Pending,0,0
+4046,Build frequency meter using input capture period,8,4,3,Pending,0,0
+4047,Configure output compare mode for precise timing,8,5,1,Pending,0,0
+4048,Generate encoder simulation pulses with output compare,8,5,2,Pending,0,0
+4049,Implement IR protocol timing with output compare,8,5,3,Pending,0,0
+4050,Control servo motor position with PWM pulse width,8,6,1,Pending,0,0
+4051,Implement DC motor speed control with PWM duty cycle,8,6,2,Pending,0,0
+4052,Build buzzer tone generator with timer frequency control,8,6,3,Pending,0,0
+4053,Review STM32 timer architecture and modes,8,7,1,Pending,0,0
+4054,Practice timer configuration exercises,8,7,2,Pending,0,0
+4055,Prepare for DMA by understanding timer-DMA interactions,8,7,3,Pending,0,0
+2310,UART Protocol,9,1,1,Pending,0,0
+2311,UART Configuration,9,1,2,Pending,0,0
+2312,UART with DMA,9,1,3,Pending,0,0
+2313,Implement I2C communication protocol,9,2,1,Pending,0,0
+2314,I2C Master Mode,9,2,2,Pending,0,0
+2315,I2C Slave Mode,9,2,3,Pending,0,0
+2316,Implement SPI communication protocol,9,3,1,Pending,0,0
+2317,Configure SPI clock polarity and phase modes,9,3,2,Pending,0,0
+2318,Configure SPI peripheral with DMA transfers,9,3,3,Pending,0,0
+2319,Debug I2C communication protocol issues,9,4,1,Pending,0,0
+2320,Analyze SPI clock and data timing errors,9,4,2,Pending,0,0
+2321,Trace UART framing and baud rate issues,9,4,3,Pending,0,0
+2322,DMA Fundamentals,9,5,1,Pending,0,0
+2323,DMA Configuration,9,5,2,Pending,0,0
+2324,DMA with Peripherals,9,5,3,Pending,0,0
+4056,Configure ADC1 for single-channel continuous conversion,9,6,1,Pending,0,0
+4023,DMA Transfer Error Detection,9,6,1,Pending,0,0
+4024,DMA Interrupt Handling,9,6,2,Pending,0,0
+4057,Implement DMA-driven ADC circular buffer transfer,9,6,2,Pending,0,0
+4058,Calibrate ADC using internal voltage reference (VREFINT),9,6,3,Pending,0,0
+4025,DMA Recovery Strategies,9,6,3,Pending,0,0
+2328,Design DMA with UART/SPI integration strategy,9,7,1,Pending,0,0
+4059,Implement Analog Watchdog (AWD) interrupt protection,9,7,1,Pending,0,0
+4060,Synchronize Timer TRGO with ADC injection,9,7,2,Pending,0,0
+2329,Test UART-DMA circular buffer operation,9,7,2,Pending,0,0
+2330,Analyze DMA throughput and latency metrics,9,7,3,Pending,0,0
+2331,UART Protocol,10,1,1,Pending,0,0
+2332,UART Configuration,10,1,2,Pending,0,0
+2333,UART with DMA,10,1,3,Pending,0,0
+4026,I2C Clock Stretching,10,2,1,Pending,0,0
+4027,I2C Multi-Master Arbitration,10,2,2,Pending,0,0
+4028,I2C Repeated Start,10,2,3,Pending,0,0
+2337,Build I2C sensor driver with error recovery,10,3,1,Pending,0,0
+2338,Create SPI flash memory driver with wear leveling,10,3,2,Pending,0,0
+2339,Integrate multiple I2C/SPI devices on shared bus,10,3,3,Pending,0,0
+2340,Debug UART communication with oscilloscope timing analysis,10,4,1,Pending,0,0
+2341,Troubleshoot I2C bus hangs with logic analyzer capture,10,4,2,Pending,0,0
+2342,Diagnose SPI clock and data phase issues,10,4,3,Pending,0,0
+2343,Study reference manual sections in depth,10,5,1,Pending,0,0
+2344,Complete hands-on debugging exercise,10,5,2,Pending,0,0
+2345,Apply learned concepts to practical implementation,10,5,3,Pending,0,0
+2346,Identify integration test points and interfaces,10,6,1,Pending,0,0
+2347,Trace data path through component interfaces,10,6,2,Pending,0,0
+2348,Analyze component coupling issues,10,6,3,Pending,0,0
+3993,Review Protocol Mastery,10,7,1,Pending,0,0
+3994,Protocol Debugging Practice,10,7,2,Pending,0,0
+3995,Prepare for Low Power,10,7,3,Pending,0,0
+2352,"Understand STM32 Sleep, Stop, and Standby modes",11,1,1,Pending,0,0
+2353,"Configure low-power clocks (LSI, LSE)",11,1,2,Pending,0,0
+2354,Implement peripheral power gating,11,1,3,Pending,0,0
+2355,Configure UART wakeup from stop mode,11,2,1,Pending,0,0
+2356,Implement low-power UART with address matching,11,2,2,Pending,0,0
+2357,Test UART communication during power transitions,11,2,3,Pending,0,0
+4029,RTC Alarm Wakeup,11,3,1,Pending,0,0
+4030,Configure GPIO wakeup from low-power modes,11,3,2,Pending,0,0
+4031,Configure UART wakeup for sleep mode exit,11,3,3,Pending,0,0
+2361,Analyze current consumption in different sleep modes,11,4,1,Pending,0,0
+2362,Profile wake-up time and transition latency,11,4,2,Pending,0,0
+2363,Optimize power consumption for target battery life,11,4,3,Pending,0,0
+4032,Current Measurement Setup,11,5,1,Pending,0,0
+4033,Average vs Peak Current,11,5,2,Pending,0,0
+4034,Power Profiling Tools,11,5,3,Pending,0,0
+2367,Integrate all low power modes into application,11,6,1,Pending,0,0
+2368,Measure and optimize total system power budget,11,6,2,Pending,0,0
+2369,Calculate expected battery life and document,11,6,3,Pending,0,0
+3996,Review Low Power Concepts,11,7,1,Pending,0,0
+3997,Power Measurement Practice,11,7,2,Pending,0,0
+3998,Prepare for Power Management,11,7,3,Pending,0,0
+2373,Configure MCU low-power sleep modes,12,1,1,Pending,0,0
+2374,Configure multiple wake sources for low power,12,1,2,Pending,0,0
+2375,Sleep Optimization,12,1,3,Pending,0,0
+2376,Disable unused peripheral clocks to reduce power,12,2,1,Pending,0,0
+2377,Optimize clock tree for low power operation,12,2,2,Pending,0,0
+2378,Implement dynamic clock switching on demand,12,2,3,Pending,0,0
+2379,Power Analysis,12,3,1,Pending,0,0
+2380,Low Power Design,12,3,2,Pending,0,0
+2381,Battery Management,12,3,3,Pending,0,0
+2382,CPU Profiling,12,4,1,Pending,0,0
+2383,Memory Profiling,12,4,2,Pending,0,0
+2384,Power Profiling,12,4,3,Pending,0,0
+2385,Analyze hardware timing diagrams,12,5,1,Pending,0,0
+2386,Practice peripheral configuration independently,12,5,2,Pending,0,0
+2387,Build working prototype using week concepts,12,5,3,Pending,0,0
+2388,Design integration validation strategy,12,6,1,Pending,0,0
+2389,Test error handling at integration points,12,6,2,Pending,0,0
+2390,Document integration lessons learned,12,6,3,Pending,0,0
+2391,Consolidate understanding of week topics,12,7,1,Pending,0,0
+2392,Analyze power consumption profiling results from the week,12,7,2,Pending,0,0
+2393,Outline objectives for upcoming week,12,7,3,Pending,0,0
+2394,Bootloader Architecture,13,1,1,Pending,0,0
+2395,Dual-Bank Update,13,1,2,Pending,0,0
+2396,Configure MCUBoot secure bootloader for STM32 Cortex-M,13,1,3,Pending,0,0
+2397,Implement image signature verification,13,2,1,Pending,0,0
+2398,Configure hardware root of trust (ROTPK),13,2,2,Pending,0,0
+2399,Build MCUBoot with signed image verification,13,2,3,Pending,0,0
+2400,Cryptography Fundamentals,13,3,1,Pending,0,0
+2401,Hardware Crypto,13,3,2,Pending,0,0
+2402,Key Management,13,3,3,Pending,0,0
+2403,OTA Architecture,13,4,1,Pending,0,0
+2404,Delta Updates,13,4,2,Pending,0,0
+2405,OTA Rollback,13,4,3,Pending,0,0
+2406,Research advanced configuration options,13,5,1,Pending,0,0
+2407,Build test fixture for experimentation,13,5,2,Pending,0,0
+2408,Extend examples with custom modifications,13,5,3,Pending,0,0
+2409,Map component interactions for integration,13,6,1,Pending,0,0
+2410,Measure and validate system timing margins,13,6,2,Pending,0,0
+2411,Assess system stability post-integration,13,6,3,Pending,0,0
+2412,Create summary notes for key concepts,13,7,1,Pending,0,0
+2413,Document bootloader update sequence and rollback procedures,13,7,2,Pending,0,0
+2414,Identify resources needed for next phase,13,7,3,Pending,0,0
+3648,Docker Fundamentals for Embedded,14,1,1,Pending,0,0
+3649,Multi-stage Docker Builds,14,1,2,Pending,0,0
+3650,Docker Volume Mapping,14,1,3,Pending,0,0
+3651,Configure Docker Compose for embedded development,14,2,1,Pending,0,0
+3652,Set up ARM GCC toolchain in Docker container,14,2,2,Pending,0,0
+3653,Implement layer caching for faster Docker builds,14,2,3,Pending,0,0
+3654,Docker Registry Setup,14,3,1,Pending,0,0
+3655,CI/CD Docker Integration,14,3,2,Pending,0,0
+3656,Build Reproducibility,14,3,3,Pending,0,0
+2424,Build host-based unit test harness for firmware modules,14,4,1,Pending,0,0
+2425,Mock hardware peripherals for host-based simulation,14,4,2,Pending,0,0
+2426,Integrate host simulation with CI pipeline,14,4,3,Pending,0,0
+2427,Configure GitHub Actions workflow for firmware builds,14,5,1,Pending,0,0
+2428,Set up automated testing in CI pipeline,14,5,2,Pending,0,0
+2429,Implement artifact publishing for firmware binaries,14,5,3,Pending,0,0
+2430,Prepare integration environment setup,14,6,1,Pending,0,0
+2431,Run end-to-end system tests,14,6,2,Pending,0,0
+2432,Evaluate performance at integration points,14,6,3,Pending,0,0
+2433,Review and refactor week code samples,14,7,1,Pending,0,0
+2434,Review containerized build reproducibility and cache optimization,14,7,2,Pending,0,0
+2435,Set measurable learning goals,14,7,3,Pending,0,0
+2436,FMEA Fundamentals,15,1,1,Pending,0,0
+2437,Risk Priority Number,15,1,2,Pending,0,0
+2438,FMEA Documentation,15,1,3,Pending,0,0
+2439,Fault Tree Analysis Fundamentals,15,2,1,Pending,0,0
+2440,Boolean Logic in FTA,15,2,2,Pending,0,0
+2441,FTA vs FMEA Integration,15,2,3,Pending,0,0
+3657,Watchdog Timer Architecture,15,3,1,Pending,0,0
+3658,Watchdog Integration Patterns,15,3,2,Pending,0,0
+3659,Watchdog Testing,15,3,3,Pending,0,0
+3660,Brownout Detection (BOD),15,4,1,Pending,0,0
+3661,EMI Countermeasures,15,4,2,Pending,0,0
+3662,Power-Fail Safe Design,15,4,3,Pending,0,0
+2448,Compare implementation approaches,15,5,1,Pending,0,0
+2449,Implement feature without reference code,15,5,2,Pending,0,0
+2450,Solve real-world problem using new skills,15,5,3,Pending,0,0
+2451,Define integration acceptance criteria,15,6,1,Pending,0,0
+2452,Debug integration failures systematically,15,6,2,Pending,0,0
+2453,Validate integration against requirements,15,6,3,Pending,0,0
+2454,Identify gaps in understanding,15,7,1,Pending,0,0
+2455,Summarize safety design patterns and FMEA analysis learnings,15,7,2,Pending,0,0
+2456,Schedule time for complex topics,15,7,3,Pending,0,0
+2457,Refactor firmware codebase for clean architecture,16,1,1,Pending,0,0
+2458,Optimize critical code paths for performance,16,1,2,Pending,0,0
+2459,Document firmware API and module interfaces,16,1,3,Pending,0,0
+2460,Add comprehensive error handling and logging,16,2,1,Pending,0,0
+2461,Write unit tests for core firmware modules,16,2,2,Pending,0,0
+2462,Validate firmware on target hardware,16,2,3,Pending,0,0
+2463,Write technical case study of project challenges,16,3,1,Pending,0,0
+2464,Document design decisions and trade-offs,16,3,2,Pending,0,0
+2465,Create architecture diagrams for portfolio,16,3,3,Pending,0,0
+2466,Conduct phase retrospective with learnings,16,4,1,Pending,0,0
+2467,Prioritize backlog for next phase,16,4,2,Pending,0,0
+2468,Set personal goals for continued growth,16,4,3,Pending,0,0
+2469,Investigate edge cases and limitations,16,5,1,Pending,0,0
+2470,Optimize implementation for performance,16,5,2,Pending,0,0
+2471,Create reusable code module from learnings,16,5,3,Pending,0,0
+2472,Plan system integration approach and dependencies,16,6,1,Pending,0,0
+2473,Execute component interface tests,16,6,2,Pending,0,0
+2474,Review integration test results and metrics,16,6,3,Pending,0,0
+2475,Connect concepts to earlier learnings,16,7,1,Pending,0,0
+2476,Compile portfolio documentation for phase 2 certification,16,7,2,Pending,0,0
+2477,Plan project work for next week,16,7,3,Pending,0,0
+2478,Zephyr Overview,17,1,1,Pending,0,0
+2479,Write and debug Linux device tree overlays,17,1,2,Pending,0,0
+2480,Zephyr Drivers,17,1,3,Pending,0,0
+2481,Master West meta-tool for workspace management,17,2,1,Pending,0,0
+2482,Implement wait-for-all and wait-for-any patterns,17,2,2,Pending,0,0
+2483,Build state machine with event-driven transitions,17,2,3,Pending,0,0
+2484,"Explore Zephyr kernel services: threads, fifos, and work queues",17,3,1,Pending,0,0
+2485,Configure Zephyr kernel timing with k_sleep and k_timer APIs,17,3,2,Pending,0,0
+2486,Implement Zephyr semaphores and mutexes for thread synchronization,17,3,3,Pending,0,0
+2487,RTOS Fundamentals,17,4,1,Pending,0,0
+2488,Task Management,17,4,2,Pending,0,0
+2489,Synchronization,17,4,3,Pending,0,0
+2490,Study industry best practices,17,5,1,Pending,0,0
+2491,Practice troubleshooting common issues,17,5,2,Pending,0,0
+2492,Document implementation patterns for portfolio,17,5,3,Pending,0,0
+2493,Identify integration test points and interfaces,17,6,1,Pending,0,0
+2494,Verify message passing correctness,17,6,2,Pending,0,0
+2495,Analyze component coupling issues,17,6,3,Pending,0,0
+2496,Prepare for next week topics,17,7,1,Pending,0,0
+2497,Evaluate Zephyr device tree bindings and board configuration,17,7,2,Pending,0,0
+2498,Prepare development environment,17,7,3,Pending,0,0
+3663,FreeRTOS Task Creation,18,1,1,Pending,0,0
+3664,Task State Machine,18,1,2,Pending,0,0
+3665,Task Priority Inheritance,18,1,3,Pending,0,0
+3666,Implement binary semaphore for mutual exclusion patterns,18,2,1,Pending,0,0
+3667,Design counting semaphore for resource pool management,18,2,2,Pending,0,0
+3668,Build producer-consumer pattern using semaphore synchronization,18,2,3,Pending,0,0
+2505,Queue Fundamentals,18,3,1,Pending,0,0
+2506,Queue Operations,18,3,2,Pending,0,0
+2507,Queue Design,18,3,3,Pending,0,0
+2508,Create event groups for multi-flag synchronization,18,4,1,Pending,0,0
+2509,Implement wait-for-all and wait-for-any patterns,18,4,2,Pending,0,0
+2510,Build state machine with event-driven transitions,18,4,3,Pending,0,0
+2511,Master xTaskNotify for lightweight task signaling,18,5,1,Pending,0,0
+2512,Implement notification as binary semaphore pattern,18,5,2,Pending,0,0
+2513,Build interrupt-to-task notification pathway,18,5,3,Pending,0,0
+2514,Identify deadlock conditions in multi-resource systems,18,6,1,Pending,0,0
+2515,Implement resource ordering to prevent deadlock,18,6,2,Pending,0,0
+2516,Design timeout-based deadlock recovery mechanism,18,6,3,Pending,0,0
+2517,Design integration validation strategy,18,7,1,Pending,0,0
+2518,Test error handling at integration points,18,7,2,Pending,0,0
+2519,Document integration lessons learned,18,7,3,Pending,0,0
+3957,Implement Rate Monotonic Scheduling with static priorities,19,1,1,Pending,0,0
+3958,Calculate schedulability using RMS utilization bound,19,1,2,Pending,0,0
+3959,Analyze task period and deadline relationships,19,1,3,Pending,0,0
+3960,Implement Deadline Monotonic Scheduling algorithm,19,2,1,Pending,0,0
+3961,Compare RMS vs DMS for varying deadline constraints,19,2,2,Pending,0,0
+3962,Build periodic task set with response time analysis,19,2,3,Pending,0,0
+3963,Measure worst-case execution time using cycle counters,19,3,1,Pending,0,0
+3964,Apply static WCET analysis with timing annotations,19,3,2,Pending,0,0
+3965,Handle interrupt preemption in WCET calculations,19,3,3,Pending,0,0
+3669,Design time partitioning scheme with fixed time slots,19,4,1,Pending,0,0
+3670,Implement temporal isolation between partitions,19,4,2,Pending,0,0
+3671,Build partition scheduler with health monitoring,19,4,3,Pending,0,0
+3672,Visualize task execution traces with timeline diagrams,19,5,1,Pending,0,0
+3673,Measure scheduling jitter and latency distributions,19,5,2,Pending,0,0
+3674,Profile context switch overhead and optimize,19,5,3,Pending,0,0
+2535,Map component interactions for integration,19,6,1,Pending,0,0
+2536,Test timing synchronization between modules,19,6,2,Pending,0,0
+2537,Assess system stability post-integration,19,6,3,Pending,0,0
+2538,Consolidate understanding of week topics,19,7,1,Pending,0,0
+2539,Analyze deterministic scheduling performance metrics,19,7,2,Pending,0,0
+2540,Outline objectives for upcoming week,19,7,3,Pending,0,0
+2541,DMA Fundamentals,20,1,1,Pending,0,0
+2542,DMA Configuration,20,1,2,Pending,0,0
+2543,DMA with Peripherals,20,1,3,Pending,0,0
+2544,Configure linked DMA descriptors for chained transfers,20,2,1,Pending,0,0
+2545,Implement double-buffering with ping-pong DMA,20,2,2,Pending,0,0
+2546,Handle DMA half-transfer and transfer-complete interrupts,20,2,3,Pending,0,0
+2547,Implement zero-copy DMA buffer management for sensors,20,3,1,Pending,0,0
+2548,Build circular buffer with DMA scatter-gather for continuous acquisition,20,3,2,Pending,0,0
+2549,Optimize memory-mapped sensor data path to avoid copies,20,3,3,Pending,0,0
+2550,Design DMA stress test suite for high-throughput scenarios,20,4,1,Pending,0,0
+2551,Measure DMA channel contention under sustained load,20,4,2,Pending,0,0
+2552,Validate DMA error recovery mechanisms with fault injection,20,4,3,Pending,0,0
+2553,Study reference manual sections in depth,20,5,1,Pending,0,0
+2554,Complete hands-on debugging exercise,20,5,2,Pending,0,0
+2555,Apply learned concepts to practical implementation,20,5,3,Pending,0,0
+2556,Prepare integration environment setup,20,6,1,Pending,0,0
+2557,Run end-to-end system tests,20,6,2,Pending,0,0
+2558,Evaluate performance at integration points,20,6,3,Pending,0,0
+2559,Create summary notes for key concepts,20,7,1,Pending,0,0
+2560,Review scatter-gather DMA configurations and memory bandwidth,20,7,2,Pending,0,0
+2561,Identify resources needed for next phase,20,7,3,Pending,0,0
+2562,CAN Protocol,21,1,1,Pending,0,0
+2563,CAN Configuration,21,1,2,Pending,0,0
+2564,CAN Application,21,1,3,Pending,0,0
+2565,Implement CAN-FD bit rate switching for data phase,21,2,1,Pending,0,0
+2566,Analyze CAN-FD frame format and DLC mapping,21,2,2,Pending,0,0
+2567,Build CAN-FD transmit/receive with hardware acceptance filters,21,2,3,Pending,0,0
+2568,Implement LIN slave node identification and diagnostics,21,3,1,Pending,0,0
+2569,Build LIN signal response with protected identifier,21,3,2,Pending,0,0
+2570,Handle LIN frame timing constraints and bit synchronization,21,3,3,Pending,0,0
+2571,Design LIN master schedule table with collision avoidance,21,4,1,Pending,0,0
+2572,Implement LIN diagnostic frame scheduling,21,4,2,Pending,0,0
+2573,Build LIN event-triggered frame mechanism,21,4,3,Pending,0,0
+2574,Design CAN-to-LIN gateway message routing table,21,5,1,Pending,0,0
+2575,Implement bidirectional gateway with signal translation,21,5,2,Pending,0,0
+2576,Build gateway timing manager for LIN scheduling,21,5,3,Pending,0,0
+2577,Define integration acceptance criteria,21,6,1,Pending,0,0
+2578,Debug integration failures systematically,21,6,2,Pending,0,0
+2579,Validate integration against requirements,21,6,3,Pending,0,0
+2580,Review and refactor week code samples,21,7,1,Pending,0,0
+2581,Document CAN-FD bit timing calculations and transceiver specs,21,7,2,Pending,0,0
+2582,Set measurable learning goals,21,7,3,Pending,0,0
+3675,ISO-TP Segmentation,22,1,1,Pending,0,0
+3676,ISO-TP Flow Control,22,1,2,Pending,0,0
+3677,ISO-TP State Machine,22,1,3,Pending,0,0
+3678,ISO-TP Error Handling,22,2,1,Pending,0,0
+3679,ISO-TP Buffer Management,22,2,2,Pending,0,0
+3680,ISO-TP Testing,22,2,3,Pending,0,0
+3681,UDS Service Implementation,22,3,1,Pending,0,0
+3682,UDS Security Access,22,3,2,Pending,0,0
+3683,UDS Data Transfer,22,3,3,Pending,0,0
+3684,UDS Client Design,22,4,1,Pending,0,0
+3685,UDS Request/Response,22,4,2,Pending,0,0
+3686,UDS Fault Code Handling,22,4,3,Pending,0,0
+2595,Build virtual CAN network with multiple ECU simulators,22,5,1,Pending,0,0
+2596,Implement UDS client-server communication in simulation,22,5,2,Pending,0,0
+2597,Generate CAN traffic patterns for stress testing,22,5,3,Pending,0,0
+2598,Plan system integration approach and dependencies,22,6,1,Pending,0,0
+2599,Execute component interface tests,22,6,2,Pending,0,0
+2600,Review integration test results and metrics,22,6,3,Pending,0,0
+2601,Identify gaps in understanding,22,7,1,Pending,0,0
+2602,Analyze ISO-TP and UDS diagnostic protocol traces,22,7,2,Pending,0,0
+2603,Schedule time for complex topics,22,7,3,Pending,0,0
+2604,"Study BLE protocol stack layers (L2CAP, ATT, GAP)",23,1,1,Pending,0,0
+2605,Understand BLE connection parameters and intervals,23,1,2,Pending,0,0
+2606,Analyze BLE advertising packet structure,23,1,3,Pending,0,0
+2607,Design custom GATT service with characteristics,23,2,1,Pending,0,0
+2608,Implement GATT read/write/notify operations,23,2,2,Pending,0,0
+2609,Test GATT profile with BLE scanner app,23,2,3,Pending,0,0
+2610,Configure BLE sniffer for connection event capture,23,3,1,Pending,0,0
+2611,Debug BLE advertising and scanning with protocol analyzer,23,3,2,Pending,0,0
+2612,Profile BLE power consumption during connection intervals,23,3,3,Pending,0,0
+2613,Profile BLE connection event timing,23,4,1,Pending,0,0
+2614,Measure RSSI and connection quality metrics,23,4,2,Pending,0,0
+2615,Optimize BLE throughput and latency,23,4,3,Pending,0,0
+2616,Analyze hardware timing diagrams,23,5,1,Pending,0,0
+2617,Practice peripheral configuration independently,23,5,2,Pending,0,0
+2618,Build working prototype using week concepts,23,5,3,Pending,0,0
+2619,Identify integration test points and interfaces,23,6,1,Pending,0,0
+2620,Test data format conversion points,23,6,2,Pending,0,0
+2621,Analyze component coupling issues,23,6,3,Pending,0,0
+2622,Connect concepts to earlier learnings,23,7,1,Pending,0,0
+2623,Document BLE connection parameters and GATT profile design,23,7,2,Pending,0,0
+2624,Plan project work for next week,23,7,3,Pending,0,0
+2625,Configure ESP32-C3 Ethernet MAC and PHY,24,1,1,Pending,0,0
+2626,Set up dual-stack IPv4/IPv6 networking,24,1,2,Pending,0,0
+2627,Test Ethernet connectivity with ping and traceroute,24,1,3,Pending,0,0
+2628,Implement TCP client/server on ESP32,24,2,1,Pending,0,0
+2629,Handle socket errors and reconnection,24,2,2,Pending,0,0
+2630,Measure TCP throughput and latency,24,2,3,Pending,0,0
+2631,Explore lwIP netconn and socket APIs for TCP/UDP,24,3,1,Pending,0,0
+2632,Configure lwIP memory pools and pbuf management,24,3,2,Pending,0,0
+2633,Debug lwIP with LWIP_DEBUG and packet tracing,24,3,3,Pending,0,0
+2634,Capture Ethernet frames with Wireshark,24,4,1,Pending,0,0
+2635,Analyze TCP handshake and data transfer,24,4,2,Pending,0,0
+2636,Debug network issues with packet inspection,24,4,3,Pending,0,0
+2637,Filter packets by protocol and port,24,5,1,Pending,0,0
+2638,Analyze MQTT publish/subscribe traffic,24,5,2,Pending,0,0
+2639,Identify network bottlenecks and optimize,24,5,3,Pending,0,0
+2640,Design integration validation strategy,24,6,1,Pending,0,0
+2641,Test error handling at integration points,24,6,2,Pending,0,0
+2642,Document integration lessons learned,24,6,3,Pending,0,0
+2643,Prepare for next week topics,24,7,1,Pending,0,0
+2644,Review LwIP stack configuration and TCP socket handling,24,7,2,Pending,0,0
+2645,Prepare development environment,24,7,3,Pending,0,0
+2646,Integrate mbedTLS with Zephyr/FreeRTOS networking stack,25,1,1,Pending,0,0
+2647,Configure TLS cipher suites for embedded resource constraints,25,1,2,Pending,0,0
+2648,Implement TLS session resumption for low-latency reconnects,25,1,3,Pending,0,0
+2649,Build certificate chain validation with hardware crypto acceleration,25,2,1,Pending,0,0
+2650,Handle TLS handshake timeouts and retransmission,25,2,2,Pending,0,0
+2651,Debug TLS connection with Wireshark decryption,25,2,3,Pending,0,0
+3687,Certificate-Based Auth,25,3,1,Pending,0,0
+3688,Secure Key Injection,25,3,2,Pending,0,0
+3689,Hardware Security Module,25,3,3,Pending,0,0
+2655,Conduct firmware penetration testing for common vulnerabilities,25,4,1,Pending,0,0
+2656,Build threat model using STRIDE methodology,25,4,2,Pending,0,0
+2657,Implement security countermeasures from threat analysis,25,4,3,Pending,0,0
+2658,Test buffer overflow and injection attack vectors,25,5,1,Pending,0,0
+2659,Validate secure boot chain against tampering,25,5,2,Pending,0,0
+2660,Document security test results and remediation plan,25,5,3,Pending,0,0
+2661,Map component interactions for integration,25,6,1,Pending,0,0
+2662,Verify clock domain crossing timing,25,6,2,Pending,0,0
+2663,Assess system stability post-integration,25,6,3,Pending,0,0
+2664,Consolidate understanding of week topics,25,7,1,Pending,0,0
+2665,Summarize TLS handshake implementation and certificate chain,25,7,2,Pending,0,0
+2666,Outline objectives for upcoming week,25,7,3,Pending,0,0
+2667,Design update orchestration server with device registry,26,1,1,Pending,0,0
+2668,Build firmware distribution pipeline with CDN integration,26,1,2,Pending,0,0
+2669,Implement device authentication for update authorization,26,1,3,Pending,0,0
+2670,Create update manifest format with version dependencies,26,2,1,Pending,0,0
+2671,Build update campaign management with targeting rules,26,2,2,Pending,0,0
+2672,Implement update scheduling with maintenance windows,26,2,3,Pending,0,0
+2673,Design canary deployment strategy with staged rollout,26,3,1,Pending,0,0
+2674,Build rollout monitoring with success rate thresholds,26,3,2,Pending,0,0
+2675,Implement automatic rollback on failure detection,26,3,3,Pending,0,0
+2676,Create device health reporting with heartbeat mechanism,26,4,1,Pending,0,0
+2677,Build telemetry aggregation pipeline for fleet analytics,26,4,2,Pending,0,0
+2678,Implement alert thresholds for fleet health monitoring,26,4,3,Pending,0,0
+2679,Research advanced configuration options,26,5,1,Pending,0,0
+2680,Build test fixture for experimentation,26,5,2,Pending,0,0
+2681,Extend examples with custom modifications,26,5,3,Pending,0,0
+2682,Prepare integration environment setup,26,6,1,Pending,0,0
+2683,Run end-to-end system tests,26,6,2,Pending,0,0
+2684,Evaluate performance at integration points,26,6,3,Pending,0,0
+2685,Create summary notes for key concepts,26,7,1,Pending,0,0
+2686,Evaluate OTA update infrastructure and delta patching strategies,26,7,2,Pending,0,0
+2687,Identify resources needed for next phase,26,7,3,Pending,0,0
+3690,BLE Stack Architecture,27,1,1,Pending,0,0
+3691,BLE Advertising,27,1,2,Pending,0,0
+3692,BLE Connection Parameters,27,1,3,Pending,0,0
+3693,GATT Service Definition,27,2,1,Pending,0,0
+3694,GATT Notifications,27,2,2,Pending,0,0
+3695,GATT Descriptors,27,2,3,Pending,0,0
+3696,BLE Peripheral Implementation,27,3,1,Pending,0,0
+3697,BLE Central Implementation,27,3,2,Pending,0,0
+3698,BLE Debugging,27,3,3,Pending,0,0
+3699,WiFi Station Mode,27,4,1,Pending,0,0
+3700,WiFi SoftAP Mode,27,4,2,Pending,0,0
+3701,WiFi Provisioning Flow,27,4,3,Pending,0,0
+2700,MQTT Protocol,27,5,1,Pending,0,0
+2701,Implement MQTT client with QoS handling,27,5,2,Pending,0,0
+2702,MQTT Security,27,5,3,Pending,0,0
+2703,Embedded Security Basics,27,6,1,Pending,0,0
+2704,Secure Coding,27,6,2,Pending,0,0
+2705,Security Testing,27,6,3,Pending,0,0
+2706,Define integration acceptance criteria,27,7,1,Pending,0,0
+2707,Debug integration failures systematically,27,7,2,Pending,0,0
+2708,Validate integration against requirements,27,7,3,Pending,0,0
+3702,Wear Leveling Concepts,28,1,1,Pending,0,0
+3703,LittleFS Integration,28,1,2,Pending,0,0
+3704,Filesystem Corruption Recovery,28,1,3,Pending,0,0
+3705,Flash Translation Layer,28,2,1,Pending,0,0
+3706,Journaling Filesystems,28,2,2,Pending,0,0
+3707,Filesystem Testing,28,2,3,Pending,0,0
+2715,Design Protocol Buffers schema for sensor telemetry,28,3,1,Pending,0,0
+2716,Implement CBOR encoding for bandwidth-efficient data,28,3,2,Pending,0,0
+2717,Build MessagePack serialization for structured logs,28,3,3,Pending,0,0
+2718,Implement edge-side data filtering and aggregation,28,4,1,Pending,0,0
+2719,Build local anomaly detection before cloud upload,28,4,2,Pending,0,0
+2720,Design analytics pipeline for resource-constrained edge,28,4,3,Pending,0,0
+2721,Compare implementation approaches,28,5,1,Pending,0,0
+2722,Implement feature without reference code,28,5,2,Pending,0,0
+2723,Solve real-world problem using new skills,28,5,3,Pending,0,0
+2724,Plan system integration approach and dependencies,28,6,1,Pending,0,0
+2725,Execute component interface tests,28,6,2,Pending,0,0
+2726,Review integration test results and metrics,28,6,3,Pending,0,0
+2727,Review and refactor week code samples,28,7,1,Pending,0,0
+2728,Review data pipeline buffering strategies and storage formats,28,7,2,Pending,0,0
+2729,Set measurable learning goals,28,7,3,Pending,0,0
+3708,Structured Logging Design,29,1,1,Pending,0,0
+3709,Circular Log Buffer,29,1,2,Pending,0,0
+3710,Log Compression,29,1,3,Pending,0,0
+3711,Remote Logging Protocol,29,2,1,Pending,0,0
+3712,Log Filtering and Routing,29,2,2,Pending,0,0
+3713,Log Analysis Dashboard,29,2,3,Pending,0,0
+3714,Crash Dump Generation,29,3,1,Pending,0,0
+3715,Core File Format,29,3,2,Pending,0,0
+3716,Post-Mortem Debugging,29,3,3,Pending,0,0
+2739,Debugging Techniques,29,4,1,Pending,0,0
+2740,Use GDB for debugging firmware and inspecting variables,29,4,2,Pending,0,0
+2741,Core Dump Analysis,29,4,3,Pending,0,0
+2742,Investigate edge cases and limitations,29,5,1,Pending,0,0
+2743,Optimize implementation for performance,29,5,2,Pending,0,0
+2744,Create reusable code module from learnings,29,5,3,Pending,0,0
+2745,Identify integration test points and interfaces,29,6,1,Pending,0,0
+2746,Validate buffer management between layers,29,6,2,Pending,0,0
+2747,Analyze component coupling issues,29,6,3,Pending,0,0
+2748,Identify gaps in understanding,29,7,1,Pending,0,0
+2749,Analyze distributed logging with syslog-ng and trace correlation,29,7,2,Pending,0,0
+2750,Schedule time for complex topics,29,7,3,Pending,0,0
+2751,Design gateway-MCU communication protocol over serial/SPI,30,1,1,Pending,0,0
+2752,Implement secure handshake with mutual authentication,30,1,2,Pending,0,0
+2753,Build connection state machine with reconnection logic,30,1,3,Pending,0,0
+2754,Create Linux-side gateway service with D-Bus interface,30,2,1,Pending,0,0
+2755,Implement message routing between MCU and cloud endpoints,30,2,2,Pending,0,0
+2756,Build health monitoring for gateway-MCU link,30,2,3,Pending,0,0
+2757,Deploy containerized workloads on Linux gateway,30,3,1,Pending,0,0
+2758,Configure Docker/Podman for edge compute,30,3,2,Pending,0,0
+2759,Implement container orchestration with K3s,30,3,3,Pending,0,0
+2760,Establish secure firmware update channel over TLS,30,4,1,Pending,0,0
+2761,Implement mutual authentication for gateway,30,4,2,Pending,0,0
+2762,Build encrypted command channel with AES-GCM,30,4,3,Pending,0,0
+2763,Study industry best practices,30,5,1,Pending,0,0
+2764,Practice troubleshooting common issues,30,5,2,Pending,0,0
+2765,Document implementation patterns for portfolio,30,5,3,Pending,0,0
+2766,Design integration validation strategy,30,6,1,Pending,0,0
+2767,Test error handling at integration points,30,6,2,Pending,0,0
+2768,Document integration lessons learned,30,6,3,Pending,0,0
+2769,Connect concepts to earlier learnings,30,7,1,Pending,0,0
+2770,Document gateway routing tables and protocol translation logic,30,7,2,Pending,0,0
+2771,Plan project work for next week,30,7,3,Pending,0,0
+3717,Memory Protection Unit,31,1,1,Pending,0,0
+3718,Static Partitioning,31,1,2,Pending,0,0
+3719,Inter-Partition Communication,31,1,3,Pending,0,0
+3720,ARM TrustZone Basics,31,2,1,Pending,0,0
+3721,Secure Boot Chain,31,2,2,Pending,0,0
+3722,Secure World Services,31,2,3,Pending,0,0
+3723,Hypervisor Concepts,31,3,1,Pending,0,0
+3724,Xen on ARM Evaluation,31,3,2,Pending,0,0
+3725,Virtual Machine Configuration,31,3,3,Pending,0,0
+3726,Safety Case Structure,31,4,1,Pending,0,0
+3727,Safety Requirements Traceability,31,4,2,Pending,0,0
+3728,Safety Validation Plan,31,4,3,Pending,0,0
+2784,Study reference manual sections in depth,31,5,1,Pending,0,0
+2785,Complete hands-on debugging exercise,31,5,2,Pending,0,0
+2786,Apply learned concepts to practical implementation,31,5,3,Pending,0,0
+2787,Map component interactions for integration,31,6,1,Pending,0,0
+2788,Validate interrupt latency constraints,31,6,2,Pending,0,0
+2789,Assess system stability post-integration,31,6,3,Pending,0,0
+2790,Prepare for next week topics,31,7,1,Pending,0,0
+2791,Summarize mixed-criticality scheduling and hypervisor partitioning,31,7,2,Pending,0,0
+2792,Prepare development environment,31,7,3,Pending,0,0
+2793,Rehearse end-to-end demo with full hardware setup,32,1,1,Pending,0,0
+2794,Validate demo scenario flow and timing,32,1,2,Pending,0,0
+2795,Prepare demo backup plan and fallback scenarios,32,1,3,Pending,0,0
+2796,Execute live demo run-through with stakeholders,32,2,1,Pending,0,0
+2797,Collect demo feedback and refine presentation,32,2,2,Pending,0,0
+2798,Document demo highlights and technical achievements,32,2,3,Pending,0,0
+2799,Conduct thorough peer code review,32,3,1,Pending,0,0
+2800,Design Review,32,3,2,Pending,0,0
+2801,Documentation Review,32,3,3,Pending,0,0
+2802,Conduct thorough peer code review,32,4,1,Pending,0,0
+2803,Design Review,32,4,2,Pending,0,0
+2804,Documentation Review,32,4,3,Pending,0,0
+2805,Analyze hardware timing diagrams,32,5,1,Pending,0,0
+2806,Practice peripheral configuration independently,32,5,2,Pending,0,0
+2807,Build working prototype using week concepts,32,5,3,Pending,0,0
+2808,Prepare integration environment setup,32,6,1,Pending,0,0
+2809,Run end-to-end system tests,32,6,2,Pending,0,0
+2810,Evaluate performance at integration points,32,6,3,Pending,0,0
+2811,Consolidate understanding of week topics,32,7,1,Pending,0,0
+2812,Compile phase 2 learnings and integration patterns documentation,32,7,2,Pending,0,0
+2813,Outline objectives for upcoming week,32,7,3,Pending,0,0
+2814,Collect sensor data for TinyML training dataset,33,1,1,Pending,0,0
+2815,Label training data with annotation tools,33,1,2,Pending,0,0
+2816,Split dataset into train/validation/test sets,33,1,3,Pending,0,0
+2817,Perform data augmentation for diverse training,33,2,1,Pending,0,0
+2818,Balance dataset classes to prevent bias,33,2,2,Pending,0,0
+2819,Export dataset in TensorFlow-compatible format,33,2,3,Pending,0,0
+2820,Build CNN model for gesture recognition,33,3,1,Pending,0,0
+2821,Train model with TensorFlow and evaluate accuracy,33,3,2,Pending,0,0
+2822,Iterate model architecture for size/accuracy tradeoff,33,3,3,Pending,0,0
+2823,Convert TensorFlow model to TFLite Micro format,33,4,1,Pending,0,0
+2824,Deploy TFLite Micro interpreter on Cortex-M,33,4,2,Pending,0,0
+2825,Measure inference latency and memory footprint,33,4,3,Pending,0,0
+2826,Research advanced configuration options,33,5,1,Pending,0,0
+2827,Build test fixture for experimentation,33,5,2,Pending,0,0
+2828,Extend examples with custom modifications,33,5,3,Pending,0,0
+2829,Define integration acceptance criteria,33,6,1,Pending,0,0
+2830,Debug integration failures systematically,33,6,2,Pending,0,0
+2831,Validate integration against requirements,33,6,3,Pending,0,0
+2832,Create summary notes for key concepts,33,7,1,Pending,0,0
+2833,Evaluate Edge AI model accuracy metrics and inference latency,33,7,2,Pending,0,0
+2834,Identify resources needed for next phase,33,7,3,Pending,0,0
+3750,Quantization Fundamentals,34,1,1,Pending,0,0
+3751,Post-Training Quantization,34,1,2,Pending,0,0
+3752,Quantization Error Analysis,34,1,3,Pending,0,0
+3753,Quantization-Aware Training,34,2,1,Pending,0,0
+3754,Mixed-Precision Quantization,34,2,2,Pending,0,0
+3755,QAT vs PTQ Comparison,34,2,3,Pending,0,0
+3756,Operator Fusion,34,3,1,Pending,0,0
+3757,Memory Optimization,34,3,2,Pending,0,0
+3758,CMSIS-NN Optimization,34,3,3,Pending,0,0
+3759,Inference Benchmarking,34,4,1,Pending,0,0
+3760,Power Profiling,34,4,2,Pending,0,0
+3761,Performance Report,34,4,3,Pending,0,0
+2847,Compare implementation approaches,34,5,1,Pending,0,0
+2848,Implement feature without reference code,34,5,2,Pending,0,0
+2849,Solve real-world problem using new skills,34,5,3,Pending,0,0
+2850,Plan system integration approach and dependencies,34,6,1,Pending,0,0
+2851,Execute component interface tests,34,6,2,Pending,0,0
+2852,Review integration test results and metrics,34,6,3,Pending,0,0
+2853,Review and refactor week code samples,34,7,1,Pending,0,0
+2854,Document quantization trade-offs and INT8 calibration results,34,7,2,Pending,0,0
+2855,Set measurable learning goals,34,7,3,Pending,0,0
+3762,Feature Extraction,35,1,1,Pending,0,0
+3763,Feature Selection,35,1,2,Pending,0,0
+3764,Feature Normalization,35,1,3,Pending,0,0
+3765,Window-Based Features,35,2,1,Pending,0,0
+3766,Statistical Features,35,2,2,Pending,0,0
+3767,Frequency Features,35,2,3,Pending,0,0
+3768,Kalman Filter Implementation,35,3,1,Pending,0,0
+3769,Extended Kalman Filter,35,3,2,Pending,0,0
+3770,Adaptive Filter Tuning,35,3,3,Pending,0,0
+3771,Online Learning Concepts,35,4,1,Pending,0,0
+3772,On-Device Model Update,35,4,2,Pending,0,0
+3773,Continual Learning,35,4,3,Pending,0,0
+2868,Investigate edge cases and limitations,35,5,1,Pending,0,0
+2869,Optimize implementation for performance,35,5,2,Pending,0,0
+2870,Create reusable code module from learnings,35,5,3,Pending,0,0
+2871,Identify integration test points and interfaces,35,6,1,Pending,0,0
+2872,Check data integrity across boundaries,35,6,2,Pending,0,0
+2873,Analyze component coupling issues,35,6,3,Pending,0,0
+2874,Identify gaps in understanding,35,7,1,Pending,0,0
+2875,Review sensor fusion algorithm accuracy with IMU/magnetometer data,35,7,2,Pending,0,0
+2876,Schedule time for complex topics,35,7,3,Pending,0,0
+2877,Understand USB speed classes (LS/FS/HS/SS) and signaling,36,1,1,Pending,0,0
+2878,"Analyze USB packet structure: token, data, handshake",36,1,2,Pending,0,0
+2879,"Study USB endpoint types: control, bulk, interrupt, isochronous",36,1,3,Pending,0,0
+2880,Implement USB CDC class for virtual COM port,36,2,1,Pending,0,0
+2881,Implement USB HID class for keyboard/mouse emulation,36,2,2,Pending,0,0
+2882,Implement USB MSC class for mass storage device,36,2,3,Pending,0,0
+2883,Analyze USB D+/D- differential signaling with oscilloscope,36,3,1,Pending,0,0
+2884,Implement USB descriptor creation and parsing,36,3,2,Pending,0,0
+2885,Handle USB suspend/resume power management,36,3,3,Pending,0,0
+2886,Configure USB host controller for enumeration,36,4,1,Pending,0,0
+2887,Implement USB host class driver for HID devices,36,4,2,Pending,0,0
+2888,Build USB hub support with multi-device handling,36,4,3,Pending,0,0
+2889,Capture USB traffic with Wireshark USBPcap,36,5,1,Pending,0,0
+2890,Debug USB enumeration failures with protocol analyzer,36,5,2,Pending,0,0
+2891,Analyze USB timing with logic analyzer,36,5,3,Pending,0,0
+2892,Optimize USB bulk transfer throughput,36,6,1,Pending,0,0
+2893,Measure USB latency and jitter for real-time applications,36,6,2,Pending,0,0
+2894,Implement double-buffering for continuous data streaming,36,6,3,Pending,0,0
+2895,Design integration validation strategy,36,7,1,Pending,0,0
+2896,Test error handling at integration points,36,7,2,Pending,0,0
+2897,Document integration lessons learned,36,7,3,Pending,0,0
+3729,ISO 26262 Standard Structure,37,1,1,Pending,0,0
+3730,ASIL A/B/C/D Classification,37,1,2,Pending,0,0
+3731,Safety Lifecycle Overview,37,1,3,Pending,0,0
+3732,Hazard Identification,37,2,1,Pending,0,0
+3733,Risk Assessment Matrix,37,2,2,Pending,0,0
+3734,Safety Goals Derivation,37,2,3,Pending,0,0
+3735,Functional Safety Requirements,37,3,1,Pending,0,0
+3736,Safety Mechanisms,37,3,2,Pending,0,0
+3737,Fault Tolerance Time Interval,37,3,3,Pending,0,0
+3738,Hardware Safety Requirements,37,4,1,Pending,0,0
+3739,Software Safety Requirements,37,4,2,Pending,0,0
+3740,Hardware-Software Interface,37,4,3,Pending,0,0
+3741,FMEA for Hardware,37,5,1,Pending,0,0
+3742,FTA (Fault Tree Analysis),37,5,2,Pending,0,0
+3743,FMEDA Calculation,37,5,3,Pending,0,0
+3744,Safety Case Structure,37,6,1,Pending,0,0
+3745,Verification Planning,37,6,2,Pending,0,0
+3746,Validation Activities,37,6,3,Pending,0,0
+3747,Safety Documentation Review,37,7,1,Pending,0,0
+3748,ASIL Decomposition Practice,37,7,2,Pending,0,0
+3749,Functional Safety Quiz,37,7,3,Pending,0,0
+2919,USB Fundamentals,38,1,1,Pending,0,0
+2920,USB Device Mode,38,1,2,Pending,0,0
+2921,Implement Modbus RTU protocol for industrial communication,38,1,3,Pending,0,0
+2922,USB Fundamentals,38,2,1,Pending,0,0
+2923,USB Device Mode,38,2,2,Pending,0,0
+2924,Design Modbus TCP gateway for PLC integration,38,2,3,Pending,0,0
+2925,Trace USB enumeration sequence with logic analyzer,38,3,1,Pending,0,0
+2926,Implement USB SET_CONFIGURATION handling,38,3,2,Pending,0,0
+2927,Debug enumeration failures with USB protocol analyzer,38,3,3,Pending,0,0
+2928,Implement USB CDC ACM class for virtual serial port,38,4,1,Pending,0,0
+2929,Handle CDC SET_LINE_CODING and SET_CONTROL_LINE_STATE,38,4,2,Pending,0,0
+2930,Test CDC data transfer throughput with serial terminal,38,4,3,Pending,0,0
+2931,Implement HID report descriptor for keyboard,38,5,1,Pending,0,0
+2932,Build HID mouse with button and movement reports,38,5,2,Pending,0,0
+2933,Create composite HID device with multiple interfaces,38,5,3,Pending,0,0
+2934,USB Fundamentals,38,6,1,Pending,0,0
+2935,USB Device Mode,38,6,2,Pending,0,0
+2936,USB Debugging,38,6,3,Pending,0,0
+2937,USB Fundamentals,38,7,1,Pending,0,0
+2938,USB Device Mode,38,7,2,Pending,0,0
+2939,USB Debugging,38,7,3,Pending,0,0
+3774,Camera Interface Setup,39,1,1,Pending,0,0
+3775,Image Format Handling,39,1,2,Pending,0,0
+3776,Frame Buffer Management,39,1,3,Pending,0,0
+3777,ISP Pipeline Basics,39,2,1,Pending,0,0
+3778,Image Preprocessing,39,2,2,Pending,0,0
+3779,DMA for Image Transfer,39,2,3,Pending,0,0
+3780,Object Detection Models,39,3,1,Pending,0,0
+3781,Model Selection Criteria,39,3,2,Pending,0,0
+3782,Model Conversion,39,3,3,Pending,0,0
+3783,Inference Pipeline Design,39,4,1,Pending,0,0
+3784,NMS Implementation,39,4,2,Pending,0,0
+3785,Latency Optimization,39,4,3,Pending,0,0
+2952,Study industry best practices,39,5,1,Pending,0,0
+2953,Practice troubleshooting common issues,39,5,2,Pending,0,0
+2954,Document implementation patterns for portfolio,39,5,3,Pending,0,0
+2955,Map component interactions for integration,39,6,1,Pending,0,0
+2956,Test real-time deadline compliance,39,6,2,Pending,0,0
+2957,Assess system stability post-integration,39,6,3,Pending,0,0
+2958,Connect concepts to earlier learnings,39,7,1,Pending,0,0
+2959,Analyze computer vision pipeline performance on Cortex-M/DSP,39,7,2,Pending,0,0
+2960,Plan project work for next week,39,7,3,Pending,0,0
+2961,Draft project-specific safety plan per ISO 26262 Part 2,40,1,1,Pending,0,0
+2962,Define safety lifecycle phases and gate reviews,40,1,2,Pending,0,0
+2963,Establish safety organization roles and responsibilities,40,1,3,Pending,0,0
+2964,Create safety plan compliance matrix,40,2,1,Pending,0,0
+2965,Document configuration management for safety artifacts,40,2,2,Pending,0,0
+2966,Define tool qualification requirements,40,2,3,Pending,0,0
+2967,Derive software safety requirements from system design,40,3,1,Pending,0,0
+2968,"Apply ASIL-specific coding guidelines (MISRA, AUTOSAR)",40,3,2,Pending,0,0
+2969,Document software architecture safety analysis,40,3,3,Pending,0,0
+2970,Create software verification plan per ISO 26262 Part 6,40,4,1,Pending,0,0
+2971,Define test coverage targets for each ASIL level,40,4,2,Pending,0,0
+2972,Plan code review and static analysis activities,40,4,3,Pending,0,0
+2973,Study reference manual sections in depth,40,5,1,Pending,0,0
+2974,Complete hands-on debugging exercise,40,5,2,Pending,0,0
+2975,Apply learned concepts to practical implementation,40,5,3,Pending,0,0
+2976,Prepare integration environment setup,40,6,1,Pending,0,0
+2977,Run end-to-end system tests,40,6,2,Pending,0,0
+2978,Evaluate performance at integration points,40,6,3,Pending,0,0
+2979,Prepare for next week topics,40,7,1,Pending,0,0
+2980,Summarize functional safety standards mapping to AUTOSAR layers,40,7,2,Pending,0,0
+2981,Prepare development environment,40,7,3,Pending,0,0
+3786,Diagnostic Coverage Basics,41,1,1,Pending,0,0
+3787,Single Point Fault Metric,41,1,2,Pending,0,0
+3788,Latent Fault Metric,41,1,3,Pending,0,0
+3789,Diagnostic Coverage Analysis,41,2,1,Pending,0,0
+3790,Coverage Improvement,41,2,2,Pending,0,0
+3791,Documentation for Certification,41,2,3,Pending,0,0
+3792,Redundant Sensor Design,41,3,1,Pending,0,0
+3793,Redundant Computation,41,3,2,Pending,0,0
+3794,Voting Mechanisms,41,3,3,Pending,0,0
+3795,Fault Injection Test Design,41,4,1,Pending,0,0
+3796,Hardware Fault Injection,41,4,2,Pending,0,0
+3797,Software Fault Injection,41,4,3,Pending,0,0
+2994,Analyze hardware timing diagrams,41,5,1,Pending,0,0
+2995,Practice peripheral configuration independently,41,5,2,Pending,0,0
+2996,Build working prototype using week concepts,41,5,3,Pending,0,0
+2997,Define integration acceptance criteria,41,6,1,Pending,0,0
+2998,Debug integration failures systematically,41,6,2,Pending,0,0
+2999,Validate integration against requirements,41,6,3,Pending,0,0
+3000,Consolidate understanding of week topics,41,7,1,Pending,0,0
+3001,Document diagnostic coverage analysis and FMEDA calculations,41,7,2,Pending,0,0
+3002,Outline objectives for upcoming week,41,7,3,Pending,0,0
+3003,Study AOSP Vehicle HAL architecture and HIDL interfaces,42,1,1,Pending,0,0
+3004,Implement custom vehicle property in Vehicle HAL,42,1,2,Pending,0,0
+3005,Test Vehicle HAL with Android Automotive emulator,42,1,3,Pending,0,0
+3006,Extend Vehicle HAL for OEM-specific features,42,2,1,Pending,0,0
+3007,Debug HAL communication with adb and logcat,42,2,2,Pending,0,0
+3008,Profile Vehicle HAL performance with systrace,42,2,3,Pending,0,0
+3009,Build Android-MCU serial communication bridge,42,3,1,Pending,0,0
+3010,Implement message protocol between Android and MCU,42,3,2,Pending,0,0
+3011,Test integration harness with real-time data exchange,42,3,3,Pending,0,0
+3012,Embedded Security Basics,42,4,1,Pending,0,0
+3013,Secure Coding,42,4,2,Pending,0,0
+3014,Security Testing,42,4,3,Pending,0,0
+3015,Research advanced configuration options,42,5,1,Pending,0,0
+3016,Build test fixture for experimentation,42,5,2,Pending,0,0
+3017,Extend examples with custom modifications,42,5,3,Pending,0,0
+3018,Plan system integration approach and dependencies,42,6,1,Pending,0,0
+3019,Execute component interface tests,42,6,2,Pending,0,0
+3020,Review integration test results and metrics,42,6,3,Pending,0,0
+3021,Create summary notes for key concepts,42,7,1,Pending,0,0
+3022,Review Android Automotive HAL implementation and vehicle abstraction,42,7,2,Pending,0,0
+3023,Identify resources needed for next phase,42,7,3,Pending,0,0
+3024,Design PCB test fixture with pogo pins for production,43,1,1,Pending,0,0
+3025,Create fixture wiring diagram for automated testing,43,1,2,Pending,0,0
+3026,Build boundary scan chain for PCB fault detection,43,1,3,Pending,0,0
+3027,Implement test fixture power sequencing logic,43,2,1,Pending,0,0
+3028,Design fixture mechanical alignment for high-volume production,43,2,2,Pending,0,0
+3029,Create fixture calibration procedure for accurate measurements,43,2,3,Pending,0,0
+3030,Develop production test sequence with pass/fail criteria,43,3,1,Pending,0,0
+3031,Implement flash programming station for firmware loading,43,3,2,Pending,0,0
+3032,Create production data logging for traceability,43,3,3,Pending,0,0
+3033,Conduct Design for Manufacturing (DFM) checklist review,43,4,1,Pending,0,0
+3034,Analyze solder joint reliability and component placement,43,4,2,Pending,0,0
+3035,Document manufacturing yield improvement recommendations,43,4,3,Pending,0,0
+3036,Compare implementation approaches,43,5,1,Pending,0,0
+3037,Implement feature without reference code,43,5,2,Pending,0,0
+3038,Solve real-world problem using new skills,43,5,3,Pending,0,0
+3039,Identify integration test points and interfaces,43,6,1,Pending,0,0
+3040,Validate data flow between modules,43,6,2,Pending,0,0
+3041,Analyze component coupling issues,43,6,3,Pending,0,0
+3042,Review and refactor week code samples,43,7,1,Pending,0,0
+3043,Document production test fixture design and boundary scan strategies,43,7,2,Pending,0,0
+3044,Set measurable learning goals,43,7,3,Pending,0,0
+3045,Schematic Capture,44,1,1,Pending,0,0
+3046,Design HIL test bench for ECU simulation,44,1,2,Pending,0,0
+3047,Signal Integrity,44,1,3,Pending,0,0
+3048,Schematic Capture,44,2,1,Pending,0,0
+3049,Implement HIL test automation with Python scripts,44,2,2,Pending,0,0
+3050,Signal Integrity,44,2,3,Pending,0,0
+3051,PCB Design Basics,44,3,1,Pending,0,0
+3052,PCB Layout Rules,44,3,2,Pending,0,0
+3053,PCB Manufacturing,44,3,3,Pending,0,0
+3798,EMC Pre-Compliance Testing,44,4,1,Pending,0,0
+3799,CE/FCC Requirements,44,4,2,Pending,0,0
+3800,Compliance Test Planning,44,4,3,Pending,0,0
+3057,Investigate edge cases and limitations,44,5,1,Pending,0,0
+3058,Optimize implementation for performance,44,5,2,Pending,0,0
+3059,Create reusable code module from learnings,44,5,3,Pending,0,0
+3060,Design integration validation strategy,44,6,1,Pending,0,0
+3061,Test error handling at integration points,44,6,2,Pending,0,0
+3062,Document integration lessons learned,44,6,3,Pending,0,0
+3063,Identify gaps in understanding,44,7,1,Pending,0,0
+3064,Analyze hardware validation results and thermal characterization data,44,7,2,Pending,0,0
+3065,Schedule time for complex topics,44,7,3,Pending,0,0
+3066,Design HALT test profile with temperature/vibration steps,45,1,1,Pending,0,0
+3067,Define HALT destruct limits and operational margins,45,1,2,Pending,0,0
+3068,Create HALT to HASS transition criteria,45,1,3,Pending,0,0
+3069,Plan HASS screening profile for production,45,2,1,Pending,0,0
+3070,Define HASS detection and precipitation levels,45,2,2,Pending,0,0
+3071,Establish HASS proof-of-screen validation,45,2,3,Pending,0,0
+3072,Execute thermal shock testing per MIL-STD-810,45,3,1,Pending,0,0
+3073,Conduct vibration profile testing with accelerometer,45,3,2,Pending,0,0
+3074,Perform humidity and salt fog resistance testing,45,3,3,Pending,0,0
+3075,Calculate MTBF from accelerated life test data,45,4,1,Pending,0,0
+3076,Apply Arrhenius equation for thermal acceleration,45,4,2,Pending,0,0
+3077,Build reliability prediction model with Weibull analysis,45,4,3,Pending,0,0
+3078,Study industry best practices,45,5,1,Pending,0,0
+3079,Practice troubleshooting common issues,45,5,2,Pending,0,0
+3080,Document implementation patterns for portfolio,45,5,3,Pending,0,0
+3081,Map component interactions for integration,45,6,1,Pending,0,0
+3082,Verify timing constraints across components,45,6,2,Pending,0,0
+3083,Assess system stability post-integration,45,6,3,Pending,0,0
+3084,Connect concepts to earlier learnings,45,7,1,Pending,0,0
+3085,Summarize environmental stress screening and HALT/HASS procedures,45,7,2,Pending,0,0
+3086,Plan project work for next week,45,7,3,Pending,0,0
+3087,Understand AUTOSAR layered architecture overview,46,1,1,Pending,0,0
+3088,Study AUTOSAR ECU software architecture patterns,46,1,2,Pending,0,0
+3089,Explore AUTOSAR build and configuration tools,46,1,3,Pending,0,0
+3090,Create application software component (SWC),46,2,1,Pending,0,0
+3091,Define SWC ports and interfaces,46,2,2,Pending,0,0
+3092,Implement runnable entities in SWC,46,2,3,Pending,0,0
+3093,Configure Basic Software (BSW) modules,46,3,1,Pending,0,0
+3094,Set up MCAL for target microcontroller,46,3,2,Pending,0,0
+3095,Configure ECU abstraction layer,46,3,3,Pending,0,0
+3096,Develop application algorithms in SWC,46,4,1,Pending,0,0
+3097,Integrate application with RTE,46,4,2,Pending,0,0
+3098,Test application behavior with Virtual ECU,46,4,3,Pending,0,0
+3099,Configure CAN communication stack,46,5,1,Pending,0,0
+3100,Set up COM and PDU router modules,46,5,2,Pending,0,0
+3101,Test CAN message transmission and reception,46,5,3,Pending,0,0
+3102,Configure AUTOSAR MemStack with NvM and Fee modules,46,6,1,Pending,0,0
+3103,Implement AUTOSAR SecOC for secure communication,46,6,2,Pending,0,0
+3104,Set up AUTOSAR Dem for diagnostic event management,46,6,3,Pending,0,0
+3105,Build complete AUTOSAR configuration in EB Tresos/Vector DaVinci,46,7,1,Pending,0,0
+3106,Generate RTE code and integrate with BSW,46,7,2,Pending,0,0
+3107,Test AUTOSAR application with Hardware-in-Loop simulation,46,7,3,Pending,0,0
+3945,EOL Monitoring,47,1,1,Pending,0,0
+3946,Second Source Strategy,47,1,2,Pending,0,0
+3947,Obsolescence Planning,47,1,3,Pending,0,0
+3948,Supplier Risk Analysis,47,2,1,Pending,0,0
+3949,Geopolitical Risk,47,2,2,Pending,0,0
+3950,Lead Time Management,47,2,3,Pending,0,0
+3951,Safety Stock Calculation,47,3,1,Pending,0,0
+3952,Demand Forecasting,47,3,2,Pending,0,0
+3953,Just-in-Time vs Buffer Stock,47,3,3,Pending,0,0
+3954,Supplier Scorecard,47,4,1,Pending,0,0
+3955,Contract Negotiation,47,4,2,Pending,0,0
+3956,Quality Agreements,47,4,3,Pending,0,0
+3120,Study reference manual sections in depth,47,5,1,Pending,0,0
+3121,Complete hands-on debugging exercise,47,5,2,Pending,0,0
+3122,Apply learned concepts to practical implementation,47,5,3,Pending,0,0
+3123,Prepare integration environment setup,47,6,1,Pending,0,0
+3124,Run end-to-end system tests,47,6,2,Pending,0,0
+3125,Evaluate performance at integration points,47,6,3,Pending,0,0
+3126,Prepare for next week topics,47,7,1,Pending,0,0
+3127,Evaluate component life-cycle management and obsolescence strategies,47,7,2,Pending,0,0
+3128,Prepare development environment,47,7,3,Pending,0,0
+3129,Configure kernel using menuconfig,48,1,1,Pending,0,0
+3130,Build kernel image and modules,48,1,2,Pending,0,0
+3131,Analyze kernel build output and symbols,48,1,3,Pending,0,0
+3132,Write loadable kernel module from scratch,48,2,1,Pending,0,0
+3133,Implement module initialization and cleanup,48,2,2,Pending,0,0
+3134,Test module loading with insmod/rmmod,48,2,3,Pending,0,0
+3135,Implement character device driver structure,48,3,1,Pending,0,0
+3136,Register chrdev with kernel,48,3,2,Pending,0,0
+3137,Test character device from userspace,48,3,3,Pending,0,0
+3138,Use spinlocks for short critical sections,48,4,1,Pending,0,0
+3139,Implement mutex for sleeping contexts,48,4,2,Pending,0,0
+3140,Test synchronization with concurrent access,48,4,3,Pending,0,0
+3141,Stack vs Heap Memory,48,5,1,Pending,0,0
+3142,Dynamic Memory Management,48,5,2,Pending,0,0
+3143,Memory Debugging,48,5,3,Pending,0,0
+3144,Interrupt Fundamentals,48,6,1,Pending,0,0
+3145,NVIC Configuration,48,6,2,Pending,0,0
+3146,ISR Best Practices,48,6,3,Pending,0,0
+3147,Define integration acceptance criteria,48,7,1,Pending,0,0
+3148,Debug integration failures systematically,48,7,2,Pending,0,0
+3149,Validate integration against requirements,48,7,3,Pending,0,0
+3933,CE/FCC/UL Requirements,49,1,1,Pending,0,0
+3934,EMC Standards,49,1,2,Pending,0,0
+3935,Safety Standards,49,1,3,Pending,0,0
+3936,Technical File Structure,49,2,1,Pending,0,0
+3937,Test Report Compilation,49,2,2,Pending,0,0
+3938,Risk Assessment Documentation,49,2,3,Pending,0,0
+3939,Bill of Materials for Compliance,49,3,1,Pending,0,0
+3940,Schematic and Layout Documentation,49,3,2,Pending,0,0
+3941,Software Documentation,49,3,3,Pending,0,0
+3942,Lab Selection,49,4,1,Pending,0,0
+3943,Pre-Compliance Testing,49,4,2,Pending,0,0
+3944,Test Plan Review,49,4,3,Pending,0,0
+3162,Analyze hardware timing diagrams,49,5,1,Pending,0,0
+3163,Practice peripheral configuration independently,49,5,2,Pending,0,0
+3164,Build working prototype using week concepts,49,5,3,Pending,0,0
+3165,Plan system integration approach and dependencies,49,6,1,Pending,0,0
+3166,Execute component interface tests,49,6,2,Pending,0,0
+3167,Review integration test results and metrics,49,6,3,Pending,0,0
+3168,Consolidate understanding of week topics,49,7,1,Pending,0,0
+3169,Document regulatory compliance checklist and certification evidence,49,7,2,Pending,0,0
+3170,Outline objectives for upcoming week,49,7,3,Pending,0,0
+3171,Understand kernel module loading with insmod/modprobe,50,1,1,Pending,0,0
+3172,Implement module_init and module_exit functions,50,1,2,Pending,0,0
+3173,Handle module dependencies and versioning,50,1,3,Pending,0,0
+3174,Create kernel module Kbuild Makefile,50,2,1,Pending,0,0
+3175,Configure out-of-tree module compilation,50,2,2,Pending,0,0
+3176,Build module with custom compiler flags,50,2,3,Pending,0,0
+3177,Implement module parameters with module_param macro,50,3,1,Pending,0,0
+3178,Export symbols for inter-module communication,50,3,2,Pending,0,0
+3179,Handle module reference counting,50,3,3,Pending,0,0
+3180,MQTT Protocol,50,4,1,Pending,0,0
+3181,Implement MQTT client with QoS handling,50,4,2,Pending,0,0
+3182,MQTT Security,50,4,3,Pending,0,0
+3183,Implement kmalloc/kfree for dynamic kernel memory,50,5,1,Pending,0,0
+3184,Use vmalloc for large kernel allocations,50,5,2,Pending,0,0
+3185,Handle memory barriers and synchronization,50,5,3,Pending,0,0
+3186,Debug kernel modules with printk and dynamic debug,50,6,1,Pending,0,0
+3187,Use ftrace for kernel function tracing,50,6,2,Pending,0,0
+3188,Analyze kernel oops and panic messages,50,6,3,Pending,0,0
+3189,Build complete character device driver module,50,7,1,Pending,0,0
+3190,Integrate module with Device Tree,50,7,2,Pending,0,0
+3191,Test module with automated kernel test framework,50,7,3,Pending,0,0
+3192,Study Linux kernel subsystem architecture overview,51,1,1,Pending,0,0
+3193,Analyze kernel source tree structure and organization,51,1,2,Pending,0,0
+3194,Explore kernel build process from menuconfig to vmlinux,51,1,3,Pending,0,0
+3195,Linux Kernel Overview,51,2,1,Pending,0,0
+3196,Kernel Configuration,51,2,2,Pending,0,0
+3197,Kernel Modules,51,2,3,Pending,0,0
+3198,Makefile Fundamentals,51,3,1,Pending,0,0
+3199,Variables and Patterns,51,3,2,Pending,0,0
+3200,Build Automation,51,3,3,Pending,0,0
+3201,Device Tree Syntax,51,4,1,Pending,0,0
+3202,Device Tree Overlays,51,4,2,Pending,0,0
+3203,Device Tree Debugging,51,4,3,Pending,0,0
+3204,Linux Kernel Overview,51,5,1,Pending,0,0
+3205,Kernel Configuration,51,5,2,Pending,0,0
+3206,Kernel Modules,51,5,3,Pending,0,0
+3207,ARM Architecture Overview,51,6,1,Pending,0,0
+3208,Register Set,51,6,2,Pending,0,0
+3209,Instruction Set,51,6,3,Pending,0,0
+3210,Device Tree Syntax,51,7,1,Pending,0,0
+3211,Device Tree Overlays,51,7,2,Pending,0,0
+3212,Device Tree Debugging,51,7,3,Pending,0,0
+3213,Understand Yocto/OpenEmbedded architecture and terminology,52,1,1,Pending,0,0
+3214,Set up Poky build environment and initial configuration,52,1,2,Pending,0,0
+3215,Build first Yocto image with core-image-minimal,52,1,3,Pending,0,0
+3216,Create custom meta-layer with proper structure,52,2,1,Pending,0,0
+3217,Configure layer.conf and BBLAYERS,52,2,2,Pending,0,0
+3218,Add custom recipe to meta-layer,52,2,3,Pending,0,0
+3219,Create BSP layer for custom hardware,52,3,1,Pending,0,0
+3220,Configure machine.conf for target board,52,3,2,Pending,0,0
+3221,Integrate device tree with BSP layer,52,3,3,Pending,0,0
+3222,Add and configure IPK package format,52,4,1,Pending,0,0
+3223,Create package groups for image composition,52,4,2,Pending,0,0
+3224,Configure package feeds for OTA updates,52,4,3,Pending,0,0
+3225,Create custom image recipe with IMAGE_INSTALL,52,5,1,Pending,0,0
+3226,Configure image features and distro settings,52,5,2,Pending,0,0
+3227,Implement image post-processing scripts,52,5,3,Pending,0,0
+3228,Generate extensible SDK (eSDK) for development,52,6,1,Pending,0,0
+3229,Configure SDK with required libraries and tools,52,6,2,Pending,0,0
+3230,Test cross-compilation with generated SDK,52,6,3,Pending,0,0
+3231,Identify integration test points and interfaces,52,7,1,Pending,0,0
+3232,Trace data path through component interfaces,52,7,2,Pending,0,0
+3233,Analyze component coupling issues,52,7,3,Pending,0,0
+3801,CMake for Embedded,53,1,1,Pending,0,0
+3802,Build System Comparison,53,1,2,Pending,0,0
+3803,Reproducible Builds,53,1,3,Pending,0,0
+3804,Static Analyzer Setup,53,2,1,Pending,0,0
+3805,MISRA C Compliance,53,2,2,Pending,0,0
+3806,Custom Rule Development,53,2,3,Pending,0,0
+3924,Testing Pyramid for Embedded,53,3,1,Pending,0,0
+3925,Test Coverage Metrics,53,3,2,Pending,0,0
+3926,Test-Driven Development,53,3,3,Pending,0,0
+3807,GitHub Actions for Firmware,53,4,1,Pending,0,0
+3808,Automated Testing in CI,53,4,2,Pending,0,0
+3809,Release Automation,53,4,3,Pending,0,0
+3810,Version Control Strategy,53,5,1,Pending,0,0
+3811,Changelog Generation,53,5,2,Pending,0,0
+3812,Release Artifacts,53,5,3,Pending,0,0
+3927,Remote Debugging Setup,53,6,1,Pending,0,0
+3928,Logging Best Practices,53,6,2,Pending,0,0
+3929,Post-Mortem Analysis,53,6,3,Pending,0,0
+3930,Knowledge Consolidation,53,7,1,Pending,0,0
+3931,Process Documentation,53,7,2,Pending,0,0
+3932,Continuous Improvement,53,7,3,Pending,0,0
+3255,Demonstrate intelligent firmware features to audience,54,1,1,Pending,0,0
+3256,Showcase ML inference on edge with live sensor data,54,1,2,Pending,0,0
+3257,Present power optimization and sleep mode integration,54,1,3,Pending,0,0
+3258,Demo OTA update and rollback capability,54,2,1,Pending,0,0
+3259,Show remote debugging and observability features,54,2,2,Pending,0,0
+3260,Highlight security features and secure boot chain,54,2,3,Pending,0,0
+3261,Review certification documentation completeness,54,3,1,Pending,0,0
+3262,Validate compliance matrix against regulations,54,3,2,Pending,0,0
+3263,Prepare certification submission package,54,3,3,Pending,0,0
+3264,Conduct phase retrospective with team feedback,54,4,1,Pending,0,0
+3265,Document lessons learned and best practices,54,4,2,Pending,0,0
+3266,Groom backlog for next phase priorities,54,4,3,Pending,0,0
+3267,Research advanced configuration options,54,5,1,Pending,0,0
+3268,Build test fixture for experimentation,54,5,2,Pending,0,0
+3269,Extend examples with custom modifications,54,5,3,Pending,0,0
+3270,Design integration validation strategy,54,6,1,Pending,0,0
+3271,Test error handling at integration points,54,6,2,Pending,0,0
+3272,Document integration lessons learned,54,6,3,Pending,0,0
+3273,Create summary notes for key concepts,54,7,1,Pending,0,0
+3274,Review technical storytelling portfolio and demonstration scripts,54,7,2,Pending,0,0
+3275,Identify resources needed for next phase,54,7,3,Pending,0,0
+3276,Conduct stakeholder interviews for product requirements,55,1,1,Pending,0,0
+3277,Analyze customer feedback patterns and pain points,55,1,2,Pending,0,0
+3278,Create customer persona profiles for embedded product,55,1,3,Pending,0,0
+3279,Build voice-of-customer synthesis report,55,2,1,Pending,0,0
+3280,Prioritize features using MoSCoW method,55,2,2,Pending,0,0
+3281,Define minimum viable product scope and roadmap,55,2,3,Pending,0,0
+3282,Groom product backlog with user stories and acceptance criteria,55,3,1,Pending,0,0
+3283,Estimate story points for productization features,55,3,2,Pending,0,0
+3284,Create sprint plan for productization phase,55,3,3,Pending,0,0
+3285,Map end-to-end customer journey for embedded product,55,4,1,Pending,0,0
+3286,Identify touchpoints and moments of truth,55,4,2,Pending,0,0
+3287,Design delightful unboxing and first-run experience,55,4,3,Pending,0,0
+3288,Compare implementation approaches,55,5,1,Pending,0,0
+3289,Implement feature without reference code,55,5,2,Pending,0,0
+3290,Solve real-world problem using new skills,55,5,3,Pending,0,0
+3291,Map component interactions for integration,55,6,1,Pending,0,0
+3292,Measure and validate system timing margins,55,6,2,Pending,0,0
+3293,Assess system stability post-integration,55,6,3,Pending,0,0
+3294,Review and refactor week code samples,55,7,1,Pending,0,0
+3295,Document productization roadmap milestones and customer integration,55,7,2,Pending,0,0
+3296,Set measurable learning goals,55,7,3,Pending,0,0
+3813,Qt Quick Fundamentals,56,1,1,Pending,0,0
+3814,Qt Embedded Optimization,56,1,2,Pending,0,0
+3815,Qt/C++ Integration,56,1,3,Pending,0,0
+3816,Qt Graphics Performance,56,2,1,Pending,0,0
+3817,Implement Qt widget theming and styling,56,2,2,Pending,0,0
+3818,Qt Localization,56,2,3,Pending,0,0
+3819,UX Testing Methods,56,3,1,Pending,0,0
+3820,Define and track user experience metrics,56,3,2,Pending,0,0
+3821,UX Iteration,56,3,3,Pending,0,0
+3822,UI Performance Profiling,56,4,1,Pending,0,0
+3823,UI Memory Optimization,56,4,2,Pending,0,0
+3824,GPU vs CPU Rendering,56,4,3,Pending,0,0
+3309,Investigate edge cases and limitations,56,5,1,Pending,0,0
+3310,Optimize implementation for performance,56,5,2,Pending,0,0
+3311,Create reusable code module from learnings,56,5,3,Pending,0,0
+3312,Prepare integration environment setup,56,6,1,Pending,0,0
+3313,Run end-to-end system tests,56,6,2,Pending,0,0
+3314,Evaluate performance at integration points,56,6,3,Pending,0,0
+3315,Identify gaps in understanding,56,7,1,Pending,0,0
+3316,Evaluate embedded UI performance metrics and touch responsiveness,56,7,2,Pending,0,0
+3317,Schedule time for complex topics,56,7,3,Pending,0,0
+3825,Model Monitoring Setup,57,1,1,Pending,0,0
+3826,Data Drift Detection,57,1,2,Pending,0,0
+3827,Performance Alerting,57,1,3,Pending,0,0
+3828,ML Ops Dashboard,57,2,1,Pending,0,0
+3829,Inference Latency Tracking,57,2,2,Pending,0,0
+3830,Alert Runbook,57,2,3,Pending,0,0
+3831,ML Incident Response,57,3,1,Pending,0,0
+3832,Model Rollback Plan,57,3,2,Pending,0,0
+3833,Post-Mortem Template,57,3,3,Pending,0,0
+3327,Analyze model inference accuracy trends over time,57,4,1,Pending,0,0
+3328,Investigate data drift detection mechanisms,57,4,2,Pending,0,0
+3329,Set up A/B testing for model updates,57,4,3,Pending,0,0
+3330,Study industry best practices,57,5,1,Pending,0,0
+3331,Practice troubleshooting common issues,57,5,2,Pending,0,0
+3332,Document implementation patterns for portfolio,57,5,3,Pending,0,0
+3333,Define integration acceptance criteria,57,6,1,Pending,0,0
+3334,Debug integration failures systematically,57,6,2,Pending,0,0
+3335,Validate integration against requirements,57,6,3,Pending,0,0
+3336,Connect concepts to earlier learnings,57,7,1,Pending,0,0
+3337,Analyze AI inference telemetry and model drift indicators,57,7,2,Pending,0,0
+3338,Plan project work for next week,57,7,3,Pending,0,0
+3834,Runbook Structure,58,1,1,Pending,0,0
+3835,Operational Procedures,58,1,2,Pending,0,0
+3836,Escalation Matrix,58,1,3,Pending,0,0
+3837,Supply Chain Mapping,58,2,1,Pending,0,0
+3838,Inventory Management,58,2,2,Pending,0,0
+3839,Alternate Sourcing,58,2,3,Pending,0,0
+3840,Support Ticket System,58,3,1,Pending,0,0
+3841,Knowledge Base,58,3,2,Pending,0,0
+3842,Support Metrics,58,3,3,Pending,0,0
+3348,Document production line setup procedures,58,4,1,Pending,0,0
+3349,Create quality control checkpoint checklist,58,4,2,Pending,0,0
+3350,Plan inventory buffer for supply chain resilience,58,4,3,Pending,0,0
+3351,Study reference manual sections in depth,58,5,1,Pending,0,0
+3352,Complete hands-on debugging exercise,58,5,2,Pending,0,0
+3353,Apply learned concepts to practical implementation,58,5,3,Pending,0,0
+3354,Plan system integration approach and dependencies,58,6,1,Pending,0,0
+3355,Execute component interface tests,58,6,2,Pending,0,0
+3356,Review integration test results and metrics,58,6,3,Pending,0,0
+3357,Prepare for next week topics,58,7,1,Pending,0,0
+3358,Review production logistics workflows and inventory tracking,58,7,2,Pending,0,0
+3359,Prepare development environment,58,7,3,Pending,0,0
+3843,Performance Budget Definition,59,1,1,Pending,0,0
+3844,Budget Monitoring,59,1,2,Pending,0,0
+3845,Budget Violation Response,59,1,3,Pending,0,0
+3846,BOM Cost Analysis,59,2,1,Pending,0,0
+3847,Cost Reduction Ideas,59,2,2,Pending,0,0
+3848,Make vs Buy Analysis,59,2,3,Pending,0,0
+3849,CPU Optimization,59,3,1,Pending,0,0
+3850,Memory Optimization,59,3,2,Pending,0,0
+3851,Power Optimization,59,3,3,Pending,0,0
+3369,Profile CPU and memory bottlenecks,59,4,1,Pending,0,0
+3370,Analyze cache hit rates and memory access patterns,59,4,2,Pending,0,0
+3371,Implement targeted performance optimizations,59,4,3,Pending,0,0
+3372,Analyze hardware timing diagrams,59,5,1,Pending,0,0
+3373,Practice peripheral configuration independently,59,5,2,Pending,0,0
+3374,Build working prototype using week concepts,59,5,3,Pending,0,0
+3375,Identify integration test points and interfaces,59,6,1,Pending,0,0
+3376,Verify message passing correctness,59,6,2,Pending,0,0
+3377,Analyze component coupling issues,59,6,3,Pending,0,0
+3378,Consolidate understanding of week topics,59,7,1,Pending,0,0
+3379,Document performance scaling benchmarks and cost optimization results,59,7,2,Pending,0,0
+3380,Outline objectives for upcoming week,59,7,3,Pending,0,0
+3381,Conduct code review for security vulnerabilities,60,1,1,Pending,0,0
+3382,Analyze static analysis reports for security issues,60,1,2,Pending,0,0
+3383,Review authentication and authorization mechanisms,60,1,3,Pending,0,0
+3384,Audit cryptographic implementation correctness,60,2,1,Pending,0,0
+3385,Verify secure storage of keys and credentials,60,2,2,Pending,0,0
+3386,Check secure communication channel configuration,60,2,3,Pending,0,0
+3387,Execute red team attack scenarios on firmware,60,3,1,Pending,0,0
+3388,Attempt firmware extraction and reverse engineering,60,3,2,Pending,0,0
+3389,Document discovered vulnerabilities and severity,60,3,3,Pending,0,0
+3390,Update team on latest security threats and mitigations,60,4,1,Pending,0,0
+3391,Train on secure coding practices and code review,60,4,2,Pending,0,0
+3392,Review security incident response procedures,60,4,3,Pending,0,0
+3393,Research advanced configuration options,60,5,1,Pending,0,0
+3394,Build test fixture for experimentation,60,5,2,Pending,0,0
+3395,Extend examples with custom modifications,60,5,3,Pending,0,0
+3396,Design integration validation strategy,60,6,1,Pending,0,0
+3397,Test error handling at integration points,60,6,2,Pending,0,0
+3398,Document integration lessons learned,60,6,3,Pending,0,0
+3399,Create summary notes for key concepts,60,7,1,Pending,0,0
+3400,Analyze security audit findings and penetration test remediations,60,7,2,Pending,0,0
+3401,Identify resources needed for next phase,60,7,3,Pending,0,0
+3852,Week Review: Build Systems,61,1,1,Pending,0,0
+3853,Practice: CMake Exercise,61,1,2,Pending,0,0
+3854,Documentation Update,61,1,3,Pending,0,0
+3855,Week Review: Quality Tools,61,2,1,Pending,0,0
+3856,Practice: Code Review,61,2,2,Pending,0,0
+3857,Process Improvement,61,2,3,Pending,0,0
+3408,Unit Testing,61,3,1,Pending,0,0
+3409,Review test coverage metrics,61,3,2,Pending,0,0
+3410,Test Automation,61,3,3,Pending,0,0
+3858,CI/CD Review,61,4,1,Pending,0,0
+3859,Pipeline Optimization,61,4,2,Pending,0,0
+3860,Test Coverage Analysis,61,4,3,Pending,0,0
+3861,Release Process Review,61,5,1,Pending,0,0
+3862,Automation Improvement,61,5,2,Pending,0,0
+3863,Documentation Review,61,5,3,Pending,0,0
+3417,Debugging Techniques,61,6,1,Pending,0,0
+3418,Master GDB debugger commands and workflows,61,6,2,Pending,0,0
+3419,Core Dump Analysis,61,6,3,Pending,0,0
+3420,Map component interactions for integration,61,7,1,Pending,0,0
+3421,Test timing synchronization between modules,61,7,2,Pending,0,0
+3422,Assess system stability post-integration,61,7,3,Pending,0,0
+3864,Release Checklist Review,62,1,1,Pending,0,0
+3865,Pre-Release Testing,62,1,2,Pending,0,0
+3866,Sign-Off Collection,62,1,3,Pending,0,0
+3867,Documentation Audit,62,2,1,Pending,0,0
+3868,API Documentation,62,2,2,Pending,0,0
+3869,User Guide Update,62,2,3,Pending,0,0
+3870,Training Material Creation,62,3,1,Pending,0,0
+3871,Demo Preparation,62,3,2,Pending,0,0
+3872,Onboarding Guide,62,3,3,Pending,0,0
+3432,Conduct dry-run of release process,62,4,1,Pending,0,0
+3433,Validate release artifacts and checksums,62,4,2,Pending,0,0
+3434,Prepare rollback procedures and contingency plans,62,4,3,Pending,0,0
+3435,Compare implementation approaches,62,5,1,Pending,0,0
+3436,Implement feature without reference code,62,5,2,Pending,0,0
+3437,Solve real-world problem using new skills,62,5,3,Pending,0,0
+3438,Prepare integration environment setup,62,6,1,Pending,0,0
+3439,Run end-to-end system tests,62,6,2,Pending,0,0
+3440,Evaluate performance at integration points,62,6,3,Pending,0,0
+3441,Review and refactor week code samples,62,7,1,Pending,0,0
+3442,Review release management documentation and version control practices,62,7,2,Pending,0,0
+3443,Set measurable learning goals,62,7,3,Pending,0,0
+3444,Conduct production launch simulation with full team,63,1,1,Pending,0,0
+3445,Execute incident response drill with defined scenarios,63,1,2,Pending,0,0
+3446,Validate runbook procedures during simulation,63,1,3,Pending,0,0
+3447,Train on incident command structure and communication,63,2,1,Pending,0,0
+3448,Practice escalation procedures with mock incidents,63,2,2,Pending,0,0
+3449,Document lessons learned from incident drills,63,2,3,Pending,0,0
+3450,Define post-launch success metrics and KPIs,63,3,1,Pending,0,0
+3451,Set up monitoring dashboards for launch metrics,63,3,2,Pending,0,0
+3452,Create automated alerts for critical thresholds,63,3,3,Pending,0,0
+3453,Practice incident escalation procedures,63,4,1,Pending,0,0
+3454,Review post-mortem template and format,63,4,2,Pending,0,0
+3455,Test monitoring alert response workflow,63,4,3,Pending,0,0
+3456,Investigate edge cases and limitations,63,5,1,Pending,0,0
+3457,Optimize implementation for performance,63,5,2,Pending,0,0
+3458,Create reusable code module from learnings,63,5,3,Pending,0,0
+3459,Define integration acceptance criteria,63,6,1,Pending,0,0
+3460,Debug integration failures systematically,63,6,2,Pending,0,0
+3461,Validate integration against requirements,63,6,3,Pending,0,0
+3462,Identify gaps in understanding,63,7,1,Pending,0,0
+3463,Analyze launch simulation results and incident response playbooks,63,7,2,Pending,0,0
+3464,Schedule time for complex topics,63,7,3,Pending,0,0
+3465,Curate top projects for portfolio presentation,64,1,1,Pending,0,0
+3466,Write compelling project descriptions and outcomes,64,1,2,Pending,0,0
+3467,Create visual assets for portfolio projects,64,1,3,Pending,0,0
+3468,Record demo videos of key projects,64,2,1,Pending,0,0
+3469,Edit highlight reel with professional touches,64,2,2,Pending,0,0
+3470,Caption and annotate technical demonstrations,64,2,3,Pending,0,0
+3471,Compile reference letters from mentors,64,3,1,Pending,0,0
+3472,Prepare LinkedIn recommendations,64,3,2,Pending,0,0
+3473,Build professional networking contact list,64,3,3,Pending,0,0
+3474,Refine portfolio narrative and flow,64,4,1,Pending,0,0
+3475,Prepare portfolio presentation slides,64,4,2,Pending,0,0
+3476,Practice portfolio walkthrough delivery,64,4,3,Pending,0,0
+3477,Study industry best practices,64,5,1,Pending,0,0
+3478,Practice troubleshooting common issues,64,5,2,Pending,0,0
+3479,Document implementation patterns for portfolio,64,5,3,Pending,0,0
+3480,Plan system integration approach and dependencies,64,6,1,Pending,0,0
+3481,Execute component interface tests,64,6,2,Pending,0,0
+3482,Review integration test results and metrics,64,6,3,Pending,0,0
+3483,Connect concepts to earlier learnings,64,7,1,Pending,0,0
+3484,Compile portfolio refresh deliverables and storytelling materials,64,7,2,Pending,0,0
+3485,Plan project work for next week,64,7,3,Pending,0,0
+3873,System Design Patterns,65,1,1,Pending,0,0
+3874,Design Interview Practice,65,1,2,Pending,0,0
+3875,Mock Interview,65,1,3,Pending,0,0
+3876,Coding Challenge Practice,65,2,1,Pending,0,0
+3877,Algorithm Review,65,2,2,Pending,0,0
+3878,Time/Space Analysis,65,2,3,Pending,0,0
+3879,STAR Method Stories,65,3,1,Pending,0,0
+3880,Common Questions,65,3,2,Pending,0,0
+3881,Cultural Fit Preparation,65,3,3,Pending,0,0
+3495,Mock interview practice session,65,4,1,Pending,0,0
+3496,Review common interview questions,65,4,2,Pending,0,0
+3497,Refine salary negotiation strategy,65,4,3,Pending,0,0
+3498,Study reference manual sections in depth,65,5,1,Pending,0,0
+3499,Complete hands-on debugging exercise,65,5,2,Pending,0,0
+3500,Apply learned concepts to practical implementation,65,5,3,Pending,0,0
+3501,Identify integration test points and interfaces,65,6,1,Pending,0,0
+3502,Test data format conversion points,65,6,2,Pending,0,0
+3503,Analyze component coupling issues,65,6,3,Pending,0,0
+3504,Prepare for next week topics,65,7,1,Pending,0,0
+3505,Review interview recording sessions and technical communication,65,7,2,Pending,0,0
+3506,Prepare development environment,65,7,3,Pending,0,0
+3882,Open Source Project Selection,66,1,1,Pending,0,0
+3883,First Contribution,66,1,2,Pending,0,0
+3884,Community Engagement,66,1,3,Pending,0,0
+3885,Technical Blog Writing,66,2,1,Pending,0,0
+3886,Conference Talk Proposal,66,2,2,Pending,0,0
+3887,Content Creation,66,2,3,Pending,0,0
+3888,Mentorship Participation,66,3,1,Pending,0,0
+3889,Community Building,66,3,2,Pending,0,0
+3890,Knowledge Sharing,66,3,3,Pending,0,0
+3516,Research open-source contribution opportunities,66,4,1,Pending,0,0
+3517,Draft conference talk abstract,66,4,2,Pending,0,0
+3518,Plan community engagement activities,66,4,3,Pending,0,0
+3519,Analyze hardware timing diagrams,66,5,1,Pending,0,0
+3520,Practice peripheral configuration independently,66,5,2,Pending,0,0
+3521,Build working prototype using week concepts,66,5,3,Pending,0,0
+3522,Design integration validation strategy,66,6,1,Pending,0,0
+3523,Test error handling at integration points,66,6,2,Pending,0,0
+3524,Document integration lessons learned,66,6,3,Pending,0,0
+3525,Consolidate understanding of week topics,66,7,1,Pending,0,0
+3526,Document open-source contributions and community engagement metrics,66,7,2,Pending,0,0
+3527,Outline objectives for upcoming week,66,7,3,Pending,0,0
+3891,Code Quality Sprint,67,1,1,Pending,0,0
+3892,Performance Optimization,67,1,2,Pending,0,0
+3893,Conduct team bug bash session for quality assurance,67,1,3,Pending,0,0
+3894,Demo Script Creation,67,2,1,Pending,0,0
+3895,Demo Rehearsal,67,2,2,Pending,0,0
+3896,Create comprehensive backup and recovery plan,67,2,3,Pending,0,0
+3897,Achievement Documentation,67,3,1,Pending,0,0
+3898,Thank You Notes,67,3,2,Pending,0,0
+3899,Celebration Planning,67,3,3,Pending,0,0
+3537,Stress-test capstone under edge conditions,67,4,1,Pending,0,0
+3538,Prepare backup demo environment,67,4,2,Pending,0,0
+3539,Finalize demo talking points,67,4,3,Pending,0,0
+3540,Research advanced configuration options,67,5,1,Pending,0,0
+3541,Build test fixture for experimentation,67,5,2,Pending,0,0
+3542,Extend examples with custom modifications,67,5,3,Pending,0,0
+3543,Map component interactions for integration,67,6,1,Pending,0,0
+3544,Verify clock domain crossing timing,67,6,2,Pending,0,0
+3545,Assess system stability post-integration,67,6,3,Pending,0,0
+3546,Create summary notes for key concepts,67,7,1,Pending,0,0
+3547,Evaluate capstone demonstration readiness and presentation flow,67,7,2,Pending,0,0
+3548,Identify resources needed for next phase,67,7,3,Pending,0,0
+3900,Retrospective Facilitation,68,1,1,Pending,0,0
+3901,Lessons Learned Document,68,1,2,Pending,0,0
+3902,Process Improvement Plan,68,1,3,Pending,0,0
+3903,LinkedIn Optimization,68,2,1,Pending,0,0
+3904,Networking Outreach,68,2,2,Pending,0,0
+3905,Job Application Strategy,68,2,3,Pending,0,0
+3555,Create 1-year/5-year career development roadmap,68,3,1,Pending,0,0
+3556,Identify skill gaps and learning path for target roles,68,3,2,Pending,0,0
+3557,Plan continuous learning with certifications and courses,68,3,3,Pending,0,0
+3558,Compile launch lessons learned document,68,4,1,Pending,0,0
+3559,Update job search target company list,68,4,2,Pending,0,0
+3560,Schedule networking conversations,68,4,3,Pending,0,0
+3561,Compare implementation approaches,68,5,1,Pending,0,0
+3562,Implement feature without reference code,68,5,2,Pending,0,0
+3563,Solve real-world problem using new skills,68,5,3,Pending,0,0
+3564,Prepare integration environment setup,68,6,1,Pending,0,0
+3565,Run end-to-end system tests,68,6,2,Pending,0,0
+3566,Evaluate performance at integration points,68,6,3,Pending,0,0
+3567,Review and refactor week code samples,68,7,1,Pending,0,0
+3568,Summarize career roadmap goals and professional development plan,68,7,2,Pending,0,0
+3569,Set measurable learning goals,68,7,3,Pending,0,0
+3570,AUTOSAR Architecture,69,1,1,Pending,0,0
+3571,Software Components,69,1,2,Pending,0,0
+3572,RTE Configuration,69,1,3,Pending,0,0
+3906,BSW Module Overview,69,2,1,Pending,0,0
+3907,Memory Stack,69,2,2,Pending,0,0
+3908,Communication Stack,69,2,3,Pending,0,0
+3909,Design AUTOSAR Software Components (SWC),69,3,1,Pending,0,0
+3910,Runnable Entities,69,3,2,Pending,0,0
+3911,Inter-Runnable Variables,69,3,3,Pending,0,0
+3912,RTE Generation,69,4,1,Pending,0,0
+3913,RTE API Usage,69,4,2,Pending,0,0
+3914,RTE Debugging,69,4,3,Pending,0,0
+3582,AUTOSAR Architecture,69,5,1,Pending,0,0
+3583,Software Components,69,5,2,Pending,0,0
+3584,RTE Configuration,69,5,3,Pending,0,0
+3585,AUTOSAR Architecture,69,6,1,Pending,0,0
+3586,Software Components,69,6,2,Pending,0,0
+3587,RTE Configuration,69,6,3,Pending,0,0
+3588,AUTOSAR Architecture,69,7,1,Pending,0,0
+3589,Software Components,69,7,2,Pending,0,0
+3590,RTE Configuration,69,7,3,Pending,0,0
+3915,Rust Ownership Model,70,1,1,Pending,0,0
+3916,Rust Memory Safety,70,1,2,Pending,0,0
+3917,Rust for Embedded,70,1,3,Pending,0,0
+3918,Implement Rust no_std embedded firmware,70,2,1,Pending,0,0
+3919,Bare-Metal Rust,70,2,2,Pending,0,0
+3920,Rust Panic Handling,70,2,3,Pending,0,0
+3921,embedded-hal Trait,70,3,1,Pending,0,0
+3922,PAC and HAL Crates,70,3,2,Pending,0,0
+3923,Driver Development in Rust,70,3,3,Pending,0,0
+3609,Implement cycle-accurate timing routines using inline assembly,70,4,1,Pending,0,0
+3610,Profile SIMD optimizations for DSP algorithms in embedded context,70,4,2,Pending,0,0
+3611,Debug mixed C/Assembly functions with hardware breakpoints,70,4,3,Pending,0,0
+3594,Implement memory-safe buffer management using Rust ownership rules,70,5,1,Pending,0,0
+3595,Debug borrow checker errors in embedded peripheral access patterns,70,5,2,Pending,0,0
+3596,Build lifetime-annotated sensor driver with zero-copy data flow,70,5,3,Pending,0,0
+3600,Configure Rust no_std target and linker scripts for ARM Cortex-M,70,6,1,Pending,0,0
+3601,Implement interrupt handlers using cortex-m-rt exception macros,70,6,2,Pending,0,0
+3602,Debug startup code and vector table initialization in Rust,70,6,3,Pending,0,0
+3606,Generate PAC from SVD files using svd2rust for target MCU,70,7,1,Pending,0,0
+3607,Implement GPIO and UART drivers using embedded-hal traits,70,7,2,Pending,0,0
+3608,Build portable I2C sensor driver compatible with multiple HALs,70,7,3,Pending,0,0
+3612,"Review combinational logic: gates, multiplexers, decoders",71,1,1,Pending,0,0
+3613,"Implement flip-flop circuits: D, JK, T types",71,1,2,Pending,0,0
+3614,Design sequential logic circuits with state registers,71,1,3,Pending,0,0
+3618,Write Verilog module with ports and internal signals,71,2,1,Pending,0,0
+3619,Implement combinational logic in Verilog,71,2,2,Pending,0,0
+3620,Test Verilog module with simple testbench,71,2,3,Pending,0,0
+3624,Use SystemVerilog always_comb and always_ff,71,3,1,Pending,0,0
+3625,Build FSM in SystemVerilog with enumerated states,71,3,2,Pending,0,0
+3626,Write SystemVerilog assertions for verification,71,3,3,Pending,0,0
+3630,Write self-checking testbench for Verilog module,71,4,1,Pending,0,0
+3631,Generate test vectors for comprehensive coverage,71,4,2,Pending,0,0
+3632,Automate testbench with Makefile and waveform,71,4,3,Pending,0,0
+3615,Implement Q15/Q31 fixed-point representation,71,5,1,Pending,0,0
+3616,Build fixed-point multiplication with scaling,71,5,2,Pending,0,0
+3617,Handle fixed-point overflow and saturation,71,5,3,Pending,0,0
+3621,Build Q15 add/subtract with saturation,71,6,1,Pending,0,0
+3622,Implement Q15 multiply with rounding,71,6,2,Pending,0,0
+3623,Create Q15 division algorithm,71,6,3,Pending,0,0
+3627,Implement moving average filter with circular buffer,71,7,1,Pending,0,0
+3628,Design FIR filter with configurable taps,71,7,2,Pending,0,0
+3629,Build IIR filter with biquad sections,71,7,3,Pending,0,0
+
+=== RESOURCES ===
+ID,Title,Type,URL,Week,Phase,Notes
+3,Khan Academy electronics shorts,Video,https://www.khanacademy.org/science/electrical-engineering,1,Phase 1 – Hardware Foundations & Modern Embedded C++,5-minute refreshers before drills
+1,NPTEL Basic Electronics for Embedded Systems,Course,https://www.youtube.com/playlist?list=PL7987F30C41A9ADCB,1,Phase 1 – Hardware Foundations & Modern Embedded C++,Lectures 1-4 (IIT Madras YouTube playlist)
+2,Practical Electronics for Inventors,Book,https://www.mhprofessional.com/practical-electronics-for-inventors-fourth-edition-9781259587542-usa,1,Phase 1 – Hardware Foundations & Modern Embedded C++,Chapters 1-3 nightly reading
+164,Practical Electronics for Inventors (4th Ed) - Paul Scherz,Other,https://www.amazon.com/Practical-Electronics-Inventors-Fourth-Scherz/dp/1259587541,1,Phase 1 – Hardware Foundations & Modern Embedded C++,Essential reference for electronics fundamentals
+165,The Art of Electronics (3rd Ed) - Horowitz & Hill,Other,https://www.amazon.com/Art-Electronics-Paul-Horowitz/dp/0521809266,1,Phase 1 – Hardware Foundations & Modern Embedded C++,The bible of electronics - comprehensive reference
+5,All About Circuits power design series,Article,https://www.allaboutcircuits.com/technical-articles/,2,Phase 1 – Hardware Foundations & Modern Embedded C++,Ripple & regulation primers
+6,Arm Keil QEMU lab,Docs,https://docs.zephyrproject.org/latest/boards/qemu/index.html,2,Phase 1 – Hardware Foundations & Modern Embedded C++,Dry-run firmware without hardware
+4,Falstad circuit simulator,Tool,https://falstad.com/circuit/,2,Phase 1 – Hardware Foundations & Modern Embedded C++,Use for quick what-if experiments
+7,Coursera Digital Systems (Princeton),Course,https://www.coursera.org/learn/digital-systems,3,Phase 1 – Hardware Foundations & Modern Embedded C++,Audit Weeks 1-2
+167,Embedded C Coding Standard (Barr Group - Amazon),Other,https://www.amazon.in/Embedded-Coding-Standard-Michael-Barr/dp/1442164824,3,Phase 1 – Hardware Foundations & Modern Embedded C++,Industry coding standards for embedded C
+9,Logisim Evolution,Tool,https://github.com/logisim-evolution/logisim-evolution,3,Phase 1 – Hardware Foundations & Modern Embedded C++,Preferred simulator for FSMs
+166,The C Programming Language (K&R) - Kernighan & Ritchie,Other,https://www.amazon.com/Programming-Language-2nd-Brian-Kernighan/dp/0131103628,3,Phase 1 – Hardware Foundations & Modern Embedded C++,The definitive C language book by its creators
+8,Udemy Digital Electronics for Embedded,Course,https://www.udemy.com/course/crash-course-digital-electronics/,3,Phase 1 – Hardware Foundations & Modern Embedded C++,Use first 5 hours for Logisim labs
+12,ARM Cortex-M for Embedded Engineers,Book,https://www.arm.com/resources/education/books,4,Phase 1 – Hardware Foundations & Modern Embedded C++,Architecture primer
+11,Espressif Getting Started,Docs,https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/index.html,4,Phase 1 – Hardware Foundations & Modern Embedded C++,ESP-IDF CLI flow
+10,ST STM32 Step-by-Step series,Course,https://wiki.st.com/stm32mcu/wiki/STM32StepByStep:Getting_started_with_STM32_:_STM32_step_by_step,4,Phase 1 – Hardware Foundations & Modern Embedded C++,Videos on toolchains and flashing
+168,Definitive Guide to ARM Cortex-M3/M4 - Joseph Yiu,Other,https://www.amazon.com/Definitive-Guide-ARM-Cortex-M3/dp/0124080820,5,Phase 1 – Hardware Foundations & Modern Embedded C++,Essential ARM Cortex-M architecture reference
+14,Embedded C Programming (Book),Book,https://www.researchgate.net/publication/343889943_Embedded_C_Programming,5,Phase 1 – Hardware Foundations & Modern Embedded C++,Daily end-of-chapter drills
+15,HackerRank C track,Platform,https://www.hackerrank.com/domains/c,5,Phase 1 – Hardware Foundations & Modern Embedded C++,Target 50 easy problems over the phase
+169,Mastering STM32 (2nd Ed) - Carmine Noviello,Other,https://leanpub.com/mastering-stm32-2nd,5,Phase 1 – Hardware Foundations & Modern Embedded C++,Comprehensive STM32 development guide
+13,edX C Programming for Embedded Systems,Course,https://www.edx.org/learn/c-programming,5,Phase 1 – Hardware Foundations & Modern Embedded C++,Use Weeks 1-2
+17,Embedded C Coding Standards,Book,https://www.amazon.in/Embedded-Coding-Standard-Michael-Barr/dp/1442164824,6,Phase 1 – Hardware Foundations & Modern Embedded C++,Chapters on pointers & volatile
+18,STM32 reference manual GPIO chapter,Docs,https://www.st.com/en/microcontrollers-microprocessors/stm32f7-series/documentation.html,6,Phase 1 – Hardware Foundations & Modern Embedded C++,Register map practice
+16,Valgrind quickstart,Docs,https://valgrind.org/docs/manual/quick-start.html,6,Phase 1 – Hardware Foundations & Modern Embedded C++,Memory checking on Ubuntu
+207,I2C Protocol Deep Dive,Article,https://www.analog.com/en/resources/design-notes/i2c-primer-what-is-i2c.html,9,Phase 1 – Hardware Foundations & Modern Embedded C++,
+170,Making Embedded Systems - Elecia White,Other,https://www.amazon.com/Making-Embedded-Systems-Patterns-Software/dp/1098151542,9,Phase 1 – Hardware Foundations & Modern Embedded C++,Design patterns for embedded software
+208,SPI Protocol Tutorial,Article,https://www.analog.com/en/resources/design-notes/introduction-to-spi-interface.html,9,Phase 1 – Hardware Foundations & Modern Embedded C++,
+209,UART Communication Guide,Docs,https://www.ti.com/lit/an/slaa577/slaa577.pdf,9,Phase 1 – Hardware Foundations & Modern Embedded C++,
+19,I2C Bus Specification,Spec,https://www.nxp.com/docs/en/user-guide/UM10204.pdf,10,Phase 1 – Hardware Foundations & Modern Embedded C++,Fast-mode tables
+20,Saleae University,Video,https://www.youtube.com/playlist?list=PLUdiafhsYS1RD_4aqtbYda7RJ_amlbgY4,10,Phase 1 – Hardware Foundations & Modern Embedded C++,Logic analyzer workflow
+21,minicom cheat-sheet,Article,https://linux.die.net/man/1/minicom,10,Phase 1 – Hardware Foundations & Modern Embedded C++,Serial debug commands
+23,CMSIS-DSP Library Tutorial,Video,https://arm-software.github.io/CMSIS-DSP/latest/index.html,11,Phase 1 – Hardware Foundations & Modern Embedded C++,Polish demo videos
+22,GeeksforGeeks electronics quiz,Other,https://www.geeksforgeeks.org/electronics-engineering/,11,Phase 1 – Hardware Foundations & Modern Embedded C++,Target 80%+ score
+24,Notion weekly review template,Template,https://www.notion.so/templates/weekly-review,11,Phase 1 – Hardware Foundations & Modern Embedded C++,Structure retros
+27,Dynamic power management research snapshot,Paper,https://dl.acm.org/,12,Phase 1 – Hardware Foundations & Modern Embedded C++,Use as inspiration for DFS policies
+26,Otii scripting cookbook,Docs,https://www.qoitech.com/,12,Phase 1 – Hardware Foundations & Modern Embedded C++,Automation tips
+25,STM32 low-power appnote,Appnote,https://www.st.com/resource/en/application_note/an4749-ultra-low-power-with-stm32l4-series-and-stm32l4-series-mcus-stmicroelectronics.pdf,12,Phase 1 – Hardware Foundations & Modern Embedded C++,AN4749 decision tree
+29,ARM Trusted Firmware-M,Docs,https://www.trustedfirmware.org/projects/tf-m/,13,Phase 1 – Hardware Foundations & Modern Embedded C++,Secure boot reference
+28,MCUBoot design overview,Docs,https://mcuboot.com/documentation/,13,Phase 1 – Hardware Foundations & Modern Embedded C++,Borrow image manifest ideas
+30,NIST SP 800-90B,Spec,https://csrc.nist.gov/publications/detail/sp/800-90b/final,13,Phase 1 – Hardware Foundations & Modern Embedded C++,Entropy source validation
+31,Docker for Embedded Development,Article,https://interrupt.memfault.com/blog/,14,Phase 1 – Hardware Foundations & Modern Embedded C++,Containerization best practices
+34,ESP-IDF Docker image,Docs,https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/tools/idf-docker-image.html,14,Phase 1 – Hardware Foundations & Modern Embedded C++,Official containerized development environment
+33,GitHub Actions self-hosted runners,Docs,https://docs.github.com/actions/hosting-your-own-runners/managing-self-hosted-runners,14,Phase 1 – Hardware Foundations & Modern Embedded C++,Pi farm management
+32,Renode & Robot Framework guide,Article,https://interrupt.memfault.com/blog/,14,Phase 1 – Hardware Foundations & Modern Embedded C++,Simulation inspiration
+37,EMC troubleshooting handbook,Book,https://www.sae.org/publications/books/content/r-146/,15,Phase 1 – Hardware Foundations & Modern Embedded C++,Chapters on shielding
+35,ISO 26262 overview,Course,https://www.youtube.com/watch?v=9wcJuW9E0S8,15,Phase 1 – Hardware Foundations & Modern Embedded C++,Safety vocabulary
+36,NXP watchdog design guide,Appnote,https://www.nxp.com/search?keyword=watchdog&start=0,15,Phase 1 – Hardware Foundations & Modern Embedded C++,Best practices
+39,Notion project retrospective template,Template,https://www.notion.so/templates/,16,Phase 1 – Hardware Foundations & Modern Embedded C++,Frame retro meeting
+40,Obsidian publishing guide,Docs,https://help.obsidian.md/Publishing,16,Phase 1 – Hardware Foundations & Modern Embedded C++,Share notes publicly
+38,Technical writing checklist,Article,https://developers.google.com/tech-writing,16,Phase 1 – Hardware Foundations & Modern Embedded C++,Narrative polish
+171,Designing Embedded Hardware - John Catsoulis,Other,https://www.amazon.com/Designing-Embedded-Hardware-John-Catsoulis/dp/0596007558,17,Phase 2 – Real-Time Systems & Connected Firmware,Hardware design for embedded systems
+43,Memfault Zephyr bring-up checklist,Article,https://interrupt.memfault.com/blog/,17,Phase 2 – Real-Time Systems & Connected Firmware,Double-check porting steps
+41,Zephyr Devicetree primer,Docs,https://docs.zephyrproject.org/latest/build/dts/index.html,17,Phase 2 – Real-Time Systems & Connected Firmware,Overlay syntax refresher
+42,Zephyr tracing & logging guide,Docs,https://docs.zephyrproject.org/latest/services/tracing/index.html,17,Phase 2 – Real-Time Systems & Connected Firmware,Enable system view
+182,FreeRTOS Kernel Book (Official),Docs,https://www.freertos.org/Documentation/RTOS_book.html,18,Phase 2 – Real-Time Systems & Connected Firmware,
+183,FreeRTOS vs Zephyr,Article,https://zephyrproject.org/zephyr-vs-freertos/,18,Phase 2 – Real-Time Systems & Connected Firmware,
+44,Liu & Layland RMA paper,Paper,https://ieeexplore.ieee.org/document/1451669,19,Phase 2 – Real-Time Systems & Connected Firmware,Theory refresher
+45,SystemView tutorials,Video,https://www.youtube.com/playlist?list=PLDqLs4CjhqjHROsMT5eQpvavOuh0yUj6J,19,Phase 2 – Real-Time Systems & Connected Firmware,Visualization walkthrough
+46,Zephyr scheduling internals,Docs,https://docs.zephyrproject.org/latest/kernel/services/scheduling/index.html,19,Phase 2 – Real-Time Systems & Connected Firmware,Scheduler deep dive
+47,ST AN4031 DMA cookbook,Appnote,https://www.st.com/resource/en/application_note/an4031-using-the-stm32f2-stm32f4-and-stm32f7-series-dma-controller-stmicroelectronics.pdf,20,Phase 2 – Real-Time Systems & Connected Firmware,Linked list strategies
+48,Zephyr sensor subsystem,Docs,https://docs.zephyrproject.org/latest/reference/peripherals/sensor.html,20,Phase 2 – Real-Time Systems & Connected Firmware,Driver patterns
+49,pytest-benchmark documentation,Docs,https://pytest-benchmark.readthedocs.io/en/latest/,20,Phase 2 – Real-Time Systems & Connected Firmware,Profiling helpers
+52,CAN Physical Layer Design,Appnote,https://www.nxp.com/products/interfaces/can-transceivers:MC_53485,21,Phase 2 – Real-Time Systems & Connected Firmware,NXP TJA1050 application note
+50,LIN 2.1 Specification,Spec,https://www.lin-cia.org/standards/,21,Phase 2 – Real-Time Systems & Connected Firmware,Official LIN protocol reference
+53,STM32 CAN FD Tutorial,Docs,https://wiki.st.com/stm32mcu/wiki/Connectivity:Introduction_to_FDCAN,21,Phase 2 – Real-Time Systems & Connected Firmware,STM32 FDCAN configuration
+51,Vector LIN Basics,Article,https://www.vector.com/int/en/know-how/,21,Phase 2 – Real-Time Systems & Connected Firmware,Introduction to LIN networking
+54,ISO 15765-2 (ISO-TP) Overview,Article,https://www.csselectronics.com/pages/uds-protocol-tutorial-unified-diagnostic-services,22,Phase 2 – Real-Time Systems & Connected Firmware,Transport protocol for CAN diagnostics
+172,Real-Time Concepts for Embedded Systems - Qing Li,Other,https://www.amazon.com/Real-Time-Concepts-Embedded-Systems-Li/dp/1578201241,22,Phase 2 – Real-Time Systems & Connected Firmware,RTOS fundamentals and real-time programming
+55,UDS Protocol Tutorial,Article,https://www.csselectronics.com/pages/uds-protocol-tutorial-unified-diagnostic-services,22,Phase 2 – Real-Time Systems & Connected Firmware,Comprehensive UDS service reference
+57,cantools DBC/UDS guide,Docs,https://cantools.readthedocs.io/en/latest/,22,Phase 2 – Real-Time Systems & Connected Firmware,Automate DBC parsing and UDS encoding
+56,python-can library,Docs,https://python-can.readthedocs.io/en/stable/,22,Phase 2 – Real-Time Systems & Connected Firmware,Python CAN interface for testing
+210,MQTT for IoT Tutorial,Article,https://www.hivemq.com/mqtt-essentials/,23,Phase 2 – Real-Time Systems & Connected Firmware,
+60,OpenOCD RISC-V how-to,Article,https://interrupt.memfault.com/blog/,23,Phase 2 – Real-Time Systems & Connected Firmware,Debug setup
+58,RISC-V privileged spec,Spec,https://riscv.org/technical/specifications/,23,Phase 2 – Real-Time Systems & Connected Firmware,Anchor PMP and privilege model
+59,Zephyr RISC-V porting guide,Docs,https://docs.zephyrproject.org/latest/boards/,23,Phase 2 – Real-Time Systems & Connected Firmware,DeviceTree + Kconfig patterns
+64,ESP-IDF Wi-Fi/BLE coexistence,Docs,https://docs.espressif.com/projects/esp-idf/en/latest/esp32c3/api-guides/coexist.html,24,Phase 2 – Real-Time Systems & Connected Firmware,Dual-stack configuration
+211,LwIP Ethernet Stack,Docs,https://www.nongnu.org/lwip/2_1_x/index.html,24,Phase 2 – Real-Time Systems & Connected Firmware,
+63,TCP/IP Illustrated (Stevens),Book,https://www.kohala.com/start/tcpipiv1.html,24,Phase 2 – Real-Time Systems & Connected Firmware,Foundational networking reference
+61,Wireshark User Guide,Docs,https://www.wireshark.org/docs/wsug_html_chunked/,24,Phase 2 – Real-Time Systems & Connected Firmware,Essential network analysis tool
+62,lwIP Wiki & Architecture,Docs,https://savannah.nongnu.org/projects/lwip/,24,Phase 2 – Real-Time Systems & Connected Firmware,Lightweight IP stack internals
+66,Microchip ATECC608A design guide,Appnote,https://www.microchip.com/en-us/products/security/security-ics,25,Phase 2 – Real-Time Systems & Connected Firmware,Secure element patterns
+67,OWASP firmware security testing,Guide,https://owasp.org/www-project-internet-of-things/,25,Phase 2 – Real-Time Systems & Connected Firmware,Threat modeling prompts
+65,mbedTLS configuration manual,Docs,https://tls.mbed.org/kb/how-to/configure-mbedtls,25,Phase 2 – Real-Time Systems & Connected Firmware,Memory footprint tuning
+68,AWS IoT Jobs workshop,Hands-On,https://catalog.workshops.aws/iot-jobs/en-US,26,Phase 2 – Real-Time Systems & Connected Firmware,Rollout automation
+69,Azure Device Update patterns,Docs,https://learn.microsoft.com/azure/iot-hub-device-update/,26,Phase 2 – Real-Time Systems & Connected Firmware,Cohort design
+70,Grafana Loki logs for IoT,Article,https://grafana.com/docs/loki/latest/,26,Phase 2 – Real-Time Systems & Connected Firmware,Centralized telemetry
+174,Embedded Systems Security - David Kleidermacher,Other,https://www.amazon.com/Embedded-Systems-Security-Practical-Approaches/dp/1493939939,27,Phase 2 – Real-Time Systems & Connected Firmware,Security for embedded systems
+72,CBOR RFC 7049,Spec,https://www.rfc-editor.org/rfc/rfc7049,28,Phase 2 – Real-Time Systems & Connected Firmware,Encoding reference
+71,LittleFS design paper,Whitepaper,https://github.com/littlefs-project/littlefs/blob/master/DESIGN.md,28,Phase 2 – Real-Time Systems & Connected Firmware,Crash-consistency fundamentals
+73,TinyML anomaly detection sample,Repo,https://github.com/tinyMLx/courseware,28,Phase 2 – Real-Time Systems & Connected Firmware,Accelerate edge analytics
+75,Google Cloud logging structured fields,Docs,https://cloud.google.com/logging/docs/structured-logging,29,Phase 2 – Real-Time Systems & Connected Firmware,Schema inspiration
+74,Memfault diagnostic stack guides,Docs,https://docs.memfault.com/,29,Phase 2 – Real-Time Systems & Connected Firmware,Crash dump export reference
+76,OWASP access control cheat sheet,Article,https://cheatsheetseries.owasp.org/cheatsheets/Access_Control_Cheat_Sheet.html,29,Phase 2 – Real-Time Systems & Connected Firmware,Secure remote tooling
+78,MQTT essentials whitepaper,Whitepaper,https://mqtt.org/mqtt-specification/,30,Phase 2 – Real-Time Systems & Connected Firmware,Messaging semantics
+77,NVIDIA Jetson security best practices,Docs,https://docs.nvidia.com/jetson/archives/r34.1/DeveloperGuide/,30,Phase 2 – Real-Time Systems & Connected Firmware,Gateway hardening
+79,Podman on edge devices,Article,https://www.redhat.com/en/topics/containers/what-is-podman,30,Phase 2 – Real-Time Systems & Connected Firmware,Containerization tips
+80,ARM TrustZone for Cortex-M guide,Docs,https://www.arm.com/technologies/trustzone-for-cortex-m,31,Phase 2 – Real-Time Systems & Connected Firmware,Partitioning basics
+81,Jailhouse hypervisor overview,Docs,https://github.com/siemens/jailhouse,31,Phase 2 – Real-Time Systems & Connected Firmware,Mixed-criticality case studies
+82,Safety case patterns (SINTEF),Paper,https://www.iso.org/standard/68383.html,31,Phase 2 – Real-Time Systems & Connected Firmware,Argument structure
+84,Architecture Decision Record template,Template,https://adr.github.io/madr/,32,Phase 2 – Real-Time Systems & Connected Firmware,Ensure consistency
+213,Edge AI on STM32 (ST),Docs,https://www.st.com/content/st_com/en/stm32-ai.html,32,Phase 2 – Real-Time Systems & Connected Firmware,
+83,FreeRTOS Queue and Semaphore Tutorial,Video,https://www.freertos.org/Embedded-RTOS-Queues.html,32,Phase 2 – Real-Time Systems & Connected Firmware,Demo storytelling
+85,Roadmap retrospective worksheet,Worksheet,https://miro.com/miroverse/product-roadmap-retrospective/,32,Phase 2 – Real-Time Systems & Connected Firmware,Guide review meeting
+175,The Linux Command Line (2nd Ed) - William Shotts,Other,https://www.amazon.com/Linux-Command-Line-Complete-Introduction/dp/1593279523,32,Phase 2 – Real-Time Systems & Connected Firmware,Essential Linux command line reference
+87,Edge Impulse Documentation (TinyML),Docs,https://docs.edgeimpulse.com/docs/,33,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Chapters on MCU deployment
+86,Edge Impulse data operations,Docs,https://docs.edgeimpulse.com/docs,33,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Dataset versioning
+88,TensorFlow Lite Micro examples,Repo,https://github.com/tensorflow/tflite-micro,33,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Reference code
+89,CMSIS-NN optimization guide,Docs,https://arm-software.github.io/CMSIS_5/NN/html/index.html,34,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Kernel tuning
+91,MLPerf Tiny benchmark,Benchmark,https://mlcommons.org/benchmarks/inference-tiny/,34,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Compare targets
+90,TensorFlow Model Optimization Toolkit,Docs,https://www.tensorflow.org/model_optimization,34,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Quantization recipes
+94,Edge personalization case studies,Article,https://www.edge-ai-vision.com/2021/04/on-device-learning/,35,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Ideas for on-device learning
+93,SHAP explainability docs,Docs,https://shap.readthedocs.io/en/latest/,35,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Interpretation tools
+92,Sensor fusion architectures,Paper,https://arxiv.org/abs/2009.08264,35,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Combine model & Bayesian filters
+176,AUTOSAR Official Documentation,Docs,https://www.autosar.org/standards,37,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",
+177,AUTOSAR Tutorial - Vector,Video,https://www.vector.com/int/en/know-how/autosar/,37,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",
+178,EB Tresos Studio (Free Eval),Tool,https://www.elektrobit.com/products/ecu/eb-tresos/studio/,37,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",
+212,ISO 26262 Functional Safety Guide,Article,https://www.synopsys.com/automotive/what-is-iso-26262.html,38,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",
+184,USB in a NutShell,Article,https://www.beyondlogic.org/usbnutshell/usb1.shtml,38,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",
+97,MobileNetV3 paper,Paper,https://arxiv.org/abs/1905.02244,39,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Model characteristics
+95,OpenMV & STM32 camera app notes,Appnote,https://www.openmv.io/pages/download,39,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Camera bring-up tips
+96,TVM microTVM tutorial,Docs,https://tvm.apache.org/docs/,39,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Deploy optimized models
+173,TinyML - Pete Warden & Daniel Situnayake,Other,https://www.amazon.com/TinyML-Learning-TensorFlow-Ultra-Low-Micro-Controllers/dp/1492052043,39,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Machine learning on microcontrollers
+100,AbsInt MC/DC tooling overview,Docs,https://www.absint.com/,40,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Verification tooling
+99,Functional safety pocket guide,Article,https://www.sei.cmu.edu/,40,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Terminology refresher
+98,ISO 26262 part summaries,Guide,https://www.iso.org/standard/43464.html,40,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",High-level orientation
+102,ASIL decomposition reference,Docs,https://www.mathworks.com/solutions/automotive/standards/iso-26262.html,41,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Redundancy design
+101,Diagnostic coverage explained,Article,https://www.exida.com/resources,41,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Metrics refresher
+103,Firmware fault injection patterns,Article,https://interrupt.memfault.com/blog/,41,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Testing inspiration
+104,Android Automotive HAL overview,Docs,https://source.android.com/docs/automotive,42,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Understand VHAL plumbing
+105,Android Automotive OS architecture,Guide,https://developer.android.com/cars,42,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Map services & permissions
+106,CycloneDX CLI,Docs,https://cyclonedx.org/tool-center/,42,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Automate SBOMs
+107,Adafruit manufacturing fixture overview,Article,https://learn.adafruit.com/,43,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Fixture inspiration
+108,Boundary scan tutorial,Video,https://www.youtube.com/watch?v=TlWlLeC5BUs,43,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Automate JTAG tests
+179,DSP Fundamentals for Embedded,Video,https://www.youtube.com/playlist?list=PLUMWjy5jgHK1NC52DXXrriwihVrYZKqjk,43,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",
+181,Digital Filters Primer,Article,https://www.analog.com/en/design-center/landing-pages/001/beginners-guide-to-dsp.html,43,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",
+180,FFT Explained Simply,Article,https://www.dspguide.com/ch12.htm,43,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",
+109,SparkFun DFM checklist,Guide,https://learn.sparkfun.com/tutorials/designing-pcbs-smd-footprints/all,43,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Review before CM handoff
+110,Altium design review checklist,Checklist,https://www.altium.com/documentation/,44,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Schematic & PCB review
+111,Keysight impedance control guide,Guide,https://www.keysight.com/us/en/products.html,44,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Transmission line refresher
+112,Pre-compliance testing tips,Article,https://www.edn.com/designcenter/test-measurement/,44,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Plan lab sessions
+113,HALT/HASS fundamentals,Article,https://help.reliasoft.com/articles/content/basics/accelerated.htm,45,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Stress planning
+114,NI environmental testing primer,Article,https://www.ni.com/en/solutions.html,45,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Instrumentation guidance
+115,Weibull analysis tutorial,Guide,https://www.weibull.com/,45,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Reliability statistics
+188,Yocto Project Quick Build,Docs,https://docs.yoctoproject.org/brief-yoctoprojectqs/index.html,46,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",
+117,IPC-1754 supply chain data standard,Standard,https://www.ipc.org/ContentPage.aspx?pageid=Standards,47,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Traceability reference
+118,Manufacturing traceability best practices,Article,https://www.jamasoftware.com/requirements-management-guide/requirements-traceability/,47,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Serialization approaches
+116,SiliconExpert overview,Guide,https://www.siliconexpert.com/,47,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Monitor component health
+119,CE marking roadmap,Guide,https://ec.europa.eu/growth/single-market/ce-marking/,49,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",EU compliance steps
+121,RoHS/REACH compliance checklist,Checklist,https://ec.europa.eu/environment/topics/waste-and-recycling/rohs-directive_en,49,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Materials documentation
+120,UL certification overview,Article,https://www.ul.com/services/certification,49,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Testing preparation
+185,LwIP Wiki,Docs,https://sysprogs.com/VisualGDB/tutorials/stm32/lwip/,50,Phase 4 – Embedded Linux Bridge,
+186,Linux Device Drivers 3 (LDD3),Book,https://lwn.net/Kernel/LDD3/,51,Phase 4 – Embedded Linux Bridge,
+187,Device Tree Usage Guide (eLinux),Docs,https://elinux.org/Device_Tree_Usage,53,Phase 4 – Embedded Linux Bridge,
+123,Compliance documentation best practices,Article,https://www2.deloitte.com/us/en.html,54,"Phase 5 – Productization, Launch & Career Amplification",Organize evidence
+124,Retrospective facilitation guide,Article,https://www.mountaingoatsoftware.com/agile/scrum/sprint-retrospective,54,"Phase 5 – Productization, Launch & Career Amplification",Keep retro focused
+122,Unit Testing Embedded C with Ceedling,Course,https://github.com/ThrowTheSwitch/Ceedling,54,"Phase 5 – Productization, Launch & Career Amplification",Sharpen presentation
+125,Interview synthesis template,Template,https://www.notion.so/templates/,55,"Phase 5 – Productization, Launch & Career Amplification",Notion board
+126,Roman Pichler backlog guide,Article,https://www.romanpichler.com/blog/,55,"Phase 5 – Productization, Launch & Career Amplification",Product backlog tips
+127,Service design blueprint primer,Article,https://www.nngroup.com/articles/service-blueprints-definition/,55,"Phase 5 – Productization, Launch & Career Amplification",Journey mapping
+130,Embedded GPU profiling techniques,Article,https://developer.nvidia.com/embedded-computing,56,"Phase 5 – Productization, Launch & Career Amplification",Performance tuning
+129,NNGroup usability testing 101,Guide,https://www.nngroup.com/articles/usability-testing-101/,56,"Phase 5 – Productization, Launch & Career Amplification",Run efficient tests
+128,Qt for MCUs best practices,Docs,https://www.qt.io/development/develop-embedded-devices,56,"Phase 5 – Productization, Launch & Career Amplification",Optimize resource usage
+133,Grafana alerting walkthrough,Video,https://grafana.com/docs/grafana/latest/alerting/,57,"Phase 5 – Productization, Launch & Career Amplification",Set up actionable alerts
+132,ML monitoring best practices,Article,https://www.evidentlyai.com/ml-monitoring,57,"Phase 5 – Productization, Launch & Career Amplification",Edge + cloud drift tactics
+131,Metabase modeling guide,Docs,https://www.metabase.com/docs/latest/,57,"Phase 5 – Productization, Launch & Career Amplification",Dashboard fundamentals
+135,RMA process best practices,Article,https://www.ifixit.com/Guide,58,"Phase 5 – Productization, Launch & Career Amplification",Reduce turnaround
+134,SRE workbook,Book,https://sre.google/workbook/,58,"Phase 5 – Productization, Launch & Career Amplification",On-call excellence
+136,Zendesk knowledge base playbook,Guide,https://www.zendesk.com/service/help-center/,58,"Phase 5 – Productization, Launch & Career Amplification",Support tooling
+138,AWS IoT cost optimization,Guide,https://aws.amazon.com/iot/,59,"Phase 5 – Productization, Launch & Career Amplification",Cloud cost levers
+137,Embedded performance budget guide,Article,https://interrupt.memfault.com/blog/,59,"Phase 5 – Productization, Launch & Career Amplification",Budget templates
+139,Latency optimization playbook,Talk,https://www.youtube.com/watch?v=kpcVBogONmw,59,"Phase 5 – Productization, Launch & Career Amplification",Tuning inspiration
+140,OWASP ISVS checklist,Standard,https://owasp.org/www-project-iot-security-verification-standard/,60,"Phase 5 – Productization, Launch & Career Amplification",Audit baseline
+141,Red team playbook,Article,https://www.crowdstrike.com/cybersecurity-101/red-team-vs-blue-team/,60,"Phase 5 – Productization, Launch & Career Amplification",Simulation guidance
+142,Secure coding lunch-and-learn kit,Template,https://github.com/OWASP/DevSecOpsGuideline,60,"Phase 5 – Productization, Launch & Career Amplification",Training materials
+145,Enablement plan template,Template,https://miro.com/miroverse/sales-enablement-plan/,62,"Phase 5 – Productization, Launch & Career Amplification",Train stakeholders
+144,Microsoft style guide,Guide,https://learn.microsoft.com/style-guide/,62,"Phase 5 – Productization, Launch & Career Amplification",Consistency before freeze
+143,Release readiness checklist,Checklist,https://www.productplan.com/,62,"Phase 5 – Productization, Launch & Career Amplification",Ensure completeness
+146,AWS game day handbook,Guide,https://aws.amazon.com/gameday/,63,"Phase 5 – Productization, Launch & Career Amplification",Exercise ideas
+148,DORA metrics primer,Guide,https://www.devops-research.com/research.html,63,"Phase 5 – Productization, Launch & Career Amplification",Key KPIs
+147,Incident command system for tech,Article,https://www.usenix.org/conference/srecon19emea/presentation/murphy,63,"Phase 5 – Productization, Launch & Career Amplification",ICS adaptation
+149,How to Build an Impressive GitHub Profile,Article,https://www.freecodecamp.org/news/how-to-build-an-impressive-github-profile/,64,"Phase 5 – Productization, Launch & Career Amplification",Ensure completeness
+150,Loom storytelling tips,Video,https://www.loom.com/blog,64,"Phase 5 – Productization, Launch & Career Amplification",Record engaging clips
+151,Reference letter template,Template,https://www.indeed.com/career-advice/,64,"Phase 5 – Productization, Launch & Career Amplification",Consistent requests
+152,Embedded systems interview questions repo,Repo,https://github.com/search?q=embedded+systems+interview,65,"Phase 5 – Productization, Launch & Career Amplification",Practice prompts
+153,Interviewing.io firmware sessions,Platform,https://interviewing.io/,65,"Phase 5 – Productization, Launch & Career Amplification",Mock interviews
+154,STAR storytelling workbook,Worksheet,https://www.themuse.com/advice/star-interview-method,65,"Phase 5 – Productization, Launch & Career Amplification",Craft narratives
+157,Open source leadership guide,Guide,https://opensource.guide/leadership-and-governance/,66,"Phase 5 – Productization, Launch & Career Amplification",Structure mentorship
+156,Write the Docs talk tips,Article,https://www.writethedocs.org/conf/,66,"Phase 5 – Productization, Launch & Career Amplification",Talk preparation
+155,Zephyr contributing guide,Docs,https://docs.zephyrproject.org/latest/contribute/index.html,66,"Phase 5 – Productization, Launch & Career Amplification",Follow PR etiquette
+158,Final demo checklist,Checklist,https://www.atlassian.com/team-playbook,67,"Phase 5 – Productization, Launch & Career Amplification",No surprises
+160,Gratitude writing guide,Guide,https://www.grammarly.com/blog/,67,"Phase 5 – Productization, Launch & Career Amplification",Thoughtful thank-yous
+159,Retrospective celebration ideas,Article,https://www.atlassian.com/agile/teamwork/team-celebrations,67,"Phase 5 – Productization, Launch & Career Amplification",Mark the milestone
+162,Career-focused retro template,Worksheet,https://www.notion.so/templates/,68,"Phase 5 – Productization, Launch & Career Amplification",Guide reflection
+163,Continuous learning plan guide,Article,https://www.linkedin.com/learning/topics/learning-and-development,68,"Phase 5 – Productization, Launch & Career Amplification",Plan next steps
+161,Networking outreach templates,Article,https://www.themuse.com/advice,68,"Phase 5 – Productization, Launch & Career Amplification",Tailor messages
+189,AUTOSAR Official Documentation,Docs,https://www.autosar.org/standards,69,"Phase 5 – Productization, Launch & Career Amplification",
+190,AUTOSAR Tutorial - Vector,Video,https://www.vector.com/int/en/know-how/autosar/,69,"Phase 5 – Productization, Launch & Career Amplification",
+191,EB Tresos Studio (Free Eval),Tool,https://www.elektrobit.com/products/ecu/eb-tresos/studio/,69,"Phase 5 – Productization, Launch & Career Amplification",
+193,ARM Assembly Cheatsheet,Docs,https://developer.arm.com/documentation/dui0489/latest/arm-and-thumb-instructions/instruction-summary,70,"Phase 5 – Productization, Launch & Career Amplification",
+192,ARM Assembly Tutorial,Article,https://azeria-labs.com/writing-arm-assembly-part-1/,70,"Phase 5 – Productization, Launch & Career Amplification",
+194,ARM Cortex-M Programmer's Model,Docs,https://developer.arm.com/documentation/dui0553/latest/,70,"Phase 5 – Productization, Launch & Career Amplification",
+199,Discovery Book (STM32),Book,https://docs.rust-embedded.org/discovery/,70,"Phase 5 – Productization, Launch & Career Amplification",
+198,The Embedded Rust Book,Book,https://docs.rust-embedded.org/book/,70,"Phase 5 – Productization, Launch & Career Amplification",
+201,embassy Async Framework,Repo,https://embassy.dev/,70,"Phase 5 – Productization, Launch & Career Amplification",
+200,probe-rs Debugger,Tool,https://probe.rs/,70,"Phase 5 – Productization, Launch & Career Amplification",
+203,CMSIS-DSP Library,Docs,https://arm-software.github.io/CMSIS-DSP/main/index.html,71,"Phase 5 – Productization, Launch & Career Amplification",
+202,Fixed-Point Arithmetic Tutorial,Article,https://www.superkits.net/whitepapers/Fixed%20Point%20Representation%20&%20Fractional%20Math.pdf,71,"Phase 5 – Productization, Launch & Career Amplification",
+195,HDLBits - Interactive Verilog,Course,https://hdlbits.01xz.net/wiki/Main_Page,71,"Phase 5 – Productization, Launch & Career Amplification",
+206,Lock-Free Ring Buffer Implementation,Article,https://www.snellman.net/blog/archive/2016-12-13-ring-buffers/,71,"Phase 5 – Productization, Launch & Career Amplification",
+204,PID Controller Tutorial,Video,https://www.youtube.com/watch?v=wkfEZmsQqiA,71,"Phase 5 – Productization, Launch & Career Amplification",
+196,SystemVerilog Tutorial,Article,https://www.chipverify.com/systemverilog/systemverilog-tutorial,71,"Phase 5 – Productization, Launch & Career Amplification",
+205,The Scientist and Engineer's Guide to DSP,Book,https://www.dspguide.com/,71,"Phase 5 – Productization, Launch & Career Amplification",
+197,Verilator Intro,Tool,https://verilator.org/guide/latest/,71,"Phase 5 – Productization, Launch & Career Amplification",
+
+=== PROJECTS ===
+ID,Name,Status,Phase,Repo URL,Due Date
+15,Career Brand Launchpad,Planned,Phase 4 – Embedded Linux Bridge,https://github.com/khashyap0803/career-brand,2026-11-01
+3,Digital Logic Playground,Planned,Phase 1 – Hardware Foundations & Modern Embedded C++,https://github.com/khashyap0803/digital-logic-playground,2026-11-30
+8,Digital Twin Provisioning Portal,Planned,Phase 2 – Real-Time Systems & Connected Firmware,https://github.com/nanifour/digital-twin-portal,2026-05-03
+12,Edge DevOps Observability Pipeline,Planned,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",https://github.com/nanifour/edge-devops-pipeline,2026-08-09
+7,Fleet Diagnostics Telemetry Stack,Planned,Phase 2 – Real-Time Systems & Connected Firmware,https://github.com/nanifour/fleet-diagnostics-stack,2026-04-26
+2,Foundation Electronics Notebook,In Progress,Phase 1 – Hardware Foundations & Modern Embedded C++,https://github.com/khashyap0803/foundation-electronics-notebook,2026-11-16
+10,Functional Safety Automation Harness,Planned,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",https://github.com/nanifour/functional-safety-harness,2026-07-19
+14,Intelligence & Analytics Console,Planned,Phase 4 – Embedded Linux Bridge,https://github.com/khashyap0803/embedded-analytics-console,2026-09-27
+1,LabOps Automation Suite,In Progress,Phase 1 – Hardware Foundations & Modern Embedded C++,https://github.com/khashyap0803/embedded-labops,2026-11-23
+11,Manufacturing Test Automation Bench,Planned,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",https://github.com/nanifour/manufacturing-test-bench,2026-08-02
+13,Productization UX Polish,Planned,Phase 4 – Embedded Linux Bridge,https://github.com/khashyap0803/productization-ux,2026-09-06
+4,Protocol Explorer Pack,Planned,Phase 1 – Hardware Foundations & Modern Embedded C++,https://github.com/khashyap0803/protocol-explorer,2026-12-21
+6,Secure OTA Update Orchestrator,Planned,Phase 2 – Real-Time Systems & Connected Firmware,https://github.com/nanifour/secure-ota-orchestrator,2026-04-12
+9,TinyML Sensor Fusion Rig,In Progress,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",https://github.com/nanifour/tinyml-sensor-fusion,2026-06-28
+5,Zephyr Multi-Protocol Connectivity Gateway,In Progress,Phase 2 – Real-Time Systems & Connected Firmware,https://github.com/nanifour/zephyr-connectivity-gateway,2026-03-29
+
+=== CERTIFICATIONS ===
+ID,Name,Provider,Status,Progress,Due Date
+1,ST MCU Developer – Level 1,STMicroelectronics Academy,In Progress,0.35,2026-01-05
+2,FreeRTOS Certified Developer,AWS Training & Certification,Planned,0.0,2026-04-06
+3,Edge Impulse Expert,Edge Impulse,Planned,0.0,2026-06-29
+4,AWS IoT Specialty,AWS Training & Certification,Planned,0.0,2026-09-21
+
+=== APPLICATIONS ===
+ID,Company,Role,Status,Date Applied,Next Action
+8,Bosch Global Software,IoT Developer,Draft,2026-06-08,Share community talk + open-source contribution links for follow-up.
+1,Bosch India,Senior Embedded Engineer,Draft,2026-04-20,Finalize Zephyr mission computer write-up for batch #1 submissions (10 companies).
+4,Continental Automotive,Embedded Safety Engineer,Draft,2026-05-11,Highlight ASIL-B safety manager metrics in cover letter.
+7,NVIDIA Embedded,Edge AI Engineer,Draft,2026-06-01,Publish RTX 5060 Ti CUDA TinyML benchmark blog before applying.
+6,Ola Electric,IoT Platform Lead,Draft,2026-05-25,Schedule mock interview to stress-test fleet ops story.
+5,Qualcomm Hyderabad,Senior Firmware Engineer,Draft,2026-05-18,Benchmark throughput numbers on Ryzen rig for RF-heavy resume bullet.
+3,Tata Elxsi,Lead IoT Developer,Draft,2026-05-04,Ship OTA/fleet ops case study PDF and prepare HR intro.
+2,Texas Instruments,Firmware Engineer,Draft,2026-04-27,Record TinyML demo clip tailored to TI automotive group.
+
+=== HARDWARE ===
+ID,Name,Category,Status,Quantity,Price INR,Notes
+1,NUCLEO-L476RG,Board,Available,1,,Main STM32 development board with integrated debugger
+2,STM32F411 BlackPill,Board,Available,1,,Compact board for portable projects
+3,ESP32 DevKit,Board,Available,2,,WiFi/BLE enabled boards for IoT projects
+4,Arduino Uno,Board,Available,1,,Classic Arduino for simple prototyping
+5,MQ-135 Gas Sensor,Sensor,Available,1,,Air quality monitoring
+6,IR Sensor Module,Sensor,Available,1,,Object detection and line following
+7,LDR Sensor Module,Sensor,Available,1,,Light intensity detection
+8,PIR Sensor Module,Sensor,Available,1,,Motion detection for security/automation
+9,HC-SR04 Ultrasonic Sensor,Sensor,Available,1,,Distance measurement
+10,Touch Sensor Module,Sensor,Available,1,,Capacitive touch detection
+11,Relay Module,Module,Available,1,,AC/DC load switching
+12,Power Supply Module,Module,Available,1,,Breadboard power supply
+13,RTC Module (DS3231),Module,Available,1,,Real-time clock with battery backup
+14,ADC Module,Module,Available,1,,External ADC for higher precision
+15,MUX Module,Module,Available,1,,Analog/Digital multiplexer
+16,Encoder/Decoder HT/HD,Module,Available,1,,RF encoder/decoder pair
+17,Humidifier Piezo Module,Module,Available,1,,Piezoelectric disc for mist generation
+18,TJA1050 CAN Transceiver Module,Module,Available,2,,CRITICAL: Added per Red Team Audit - CAN controller requires external transceiver
+19,TJA1021 LIN Transceiver Module,Module,Available,2,,Added per Red Team Audit - LIN slave implementation
+20,USB-CAN Analyzer,Module,Available,1,,Added per Red Team Audit - verify CAN communication
+21,"Variable Bench Power Supply (0-30V, 0-5A)",Module,Available,1,,CRITICAL: Added per Red Team Audit - motors cause brownout on USB rail
+22,LoRa RA-02,Rf Module,Available,2,,Long range wireless for remote sensing projects
+23,433MHz TX/RX Module,Rf Module,Available,2,,Simple wireless communication pair
+24,OLED Display 0.96 inch,Display,Available,1,,Compact display for status/debug info
+25,Servo Motor SG90,Actuator,Available,1,,Micro servo for positioning
+26,DC Motor,Actuator,Available,1,,Small DC motor
+27,Buzzer (Active),Actuator,Available,1,,Audio feedback/alarms
+28,LED Pack (Assorted),Actuator,Available,20,,Various 5mm LEDs
+29,Digital Multimeter,Tool,Available,1,,Essential measurement tool
+30,Jumper Wires M-M,Tool,Available,40,,
+31,Jumper Wires M-F,Tool,Available,40,,
+32,Connecting Wires,Tool,Available,20,,Solid core wires for breadboarding
+33,24MHz 8-Channel Logic Analyzer (Saleae Clone),Tool,Available,1,,CRITICAL: Added per Red Team Audit - essential for debugging SPI/I2C protocols
+34,Rigol DS1054Z Oscilloscope,Other,Ordered,1,25000.0,Essential for debugging analog signals
+35,Hantek 6022BE USB Oscilloscope,Other,Ordered,1,8000.0,Budget alternative to Rigol
+36,MCP2551 CAN Transceiver,Other,Ordered,1,180.0,Alternative CAN transceiver
+37,TJA1020 LIN Transceiver,Other,Ordered,1,200.0,For LIN bus projects
+38,CAN Bus Development Kit,Other,Ordered,1,1500.0,Complete CAN learning kit
+39,Raspberry Pi 4 Model B (4GB),Other,Ordered,1,5500.0,For Embedded Linux Phase
+40,SD Card (32GB Class 10),Other,Ordered,2,600.0,For Linux Images
+

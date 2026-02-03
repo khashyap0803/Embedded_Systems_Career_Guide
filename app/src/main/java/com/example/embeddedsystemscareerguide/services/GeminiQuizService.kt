@@ -58,12 +58,30 @@ class GeminiQuizService {
             for (callIndex in 0 until callsNeeded) {
                 try {
                     val prompt = """
-Generate 5 unique MCQ questions about "$stageTitle" for embedded systems (batch ${callIndex + 1}).
+Generate 5 MCQ questions about "$stageTitle" for embedded systems (batch ${callIndex + 1}).
 
-Return ONLY valid JSON array:
-[{"question":"Q text?","options":["A","B","C","D"],"correctAnswerIndex":0,"explanation":"Short reason."}]
+CRITICAL REQUIREMENTS:
+- Questions must be SHORT (under 100 characters each)
+- NO code snippets or complex syntax in questions
+- Ask about CONCEPTS, not code details
+- Options are short (1-4 words each)
+- Explanation is ONE sentence (max 15 words)
 
-Keep explanations under 15 words. No markdown.
+⚠️ JSON FORMAT - MUST FOLLOW:
+1. Return ONLY valid JSON array - NO markdown, NO ``` code blocks
+2. Start with [ and end with ]
+3. Escape quotes with \"
+4. NO trailing commas
+
+✅ CORRECT:
+[{"question":"What prevents compiler optimization of hardware registers?","options":["static","const","volatile","register"],"correctAnswerIndex":2,"explanation":"volatile keyword prevents optimization."}]
+
+❌ WRONG:
+- Code snippets like: "Given `uint8_t x = 0xFF`..."
+- Long questions over 100 chars
+- ```json blocks
+
+Generate 5 SHORT questions now:
 """
                     val response = callGeminiAPI(prompt)
                     val parsed = parseQuizResponse(response)

@@ -1,0 +1,41 @@
+ID,Name,Category,Status,Quantity,Price INR,Notes
+1,NUCLEO-L476RG,Board,Available,1,,Main STM32 development board with integrated debugger
+2,STM32F411 BlackPill,Board,Available,1,,Compact board for portable projects
+3,ESP32 DevKit,Board,Available,2,,WiFi/BLE enabled boards for IoT projects
+4,Arduino Uno,Board,Available,1,,Classic Arduino for simple prototyping
+5,MQ-135 Gas Sensor,Sensor,Available,1,,Air quality monitoring
+6,IR Sensor Module,Sensor,Available,1,,Object detection and line following
+7,LDR Sensor Module,Sensor,Available,1,,Light intensity detection
+8,PIR Sensor Module,Sensor,Available,1,,Motion detection for security/automation
+9,HC-SR04 Ultrasonic Sensor,Sensor,Available,1,,Distance measurement
+10,Touch Sensor Module,Sensor,Available,1,,Capacitive touch detection
+11,Relay Module,Module,Available,1,,AC/DC load switching
+12,Power Supply Module,Module,Available,1,,Breadboard power supply
+13,RTC Module (DS3231),Module,Available,1,,Real-time clock with battery backup
+14,ADC Module,Module,Available,1,,External ADC for higher precision
+15,MUX Module,Module,Available,1,,Analog/Digital multiplexer
+16,Encoder/Decoder HT/HD,Module,Available,1,,RF encoder/decoder pair
+17,Humidifier Piezo Module,Module,Available,1,,Piezoelectric disc for mist generation
+18,TJA1050 CAN Transceiver Module,Module,Available,2,,CRITICAL: Added per Red Team Audit - CAN controller requires external transceiver
+19,TJA1021 LIN Transceiver Module,Module,Available,2,,Added per Red Team Audit - LIN slave implementation
+20,USB-CAN Analyzer,Module,Available,1,,Added per Red Team Audit - verify CAN communication
+21,"Variable Bench Power Supply (0-30V, 0-5A)",Module,Available,1,,CRITICAL: Added per Red Team Audit - motors cause brownout on USB rail
+22,LoRa RA-02,Rf Module,Available,2,,Long range wireless for remote sensing projects
+23,433MHz TX/RX Module,Rf Module,Available,2,,Simple wireless communication pair
+24,OLED Display 0.96 inch,Display,Available,1,,Compact display for status/debug info
+25,Servo Motor SG90,Actuator,Available,1,,Micro servo for positioning
+26,DC Motor,Actuator,Available,1,,Small DC motor
+27,Buzzer (Active),Actuator,Available,1,,Audio feedback/alarms
+28,LED Pack (Assorted),Actuator,Available,20,,Various 5mm LEDs
+29,Digital Multimeter,Tool,Available,1,,Essential measurement tool
+30,Jumper Wires M-M,Tool,Available,40,,
+31,Jumper Wires M-F,Tool,Available,40,,
+32,Connecting Wires,Tool,Available,20,,Solid core wires for breadboarding
+33,24MHz 8-Channel Logic Analyzer (Saleae Clone),Tool,Available,1,,CRITICAL: Added per Red Team Audit - essential for debugging SPI/I2C protocols
+34,Rigol DS1054Z Oscilloscope,Other,Ordered,1,25000.0,Essential for debugging analog signals
+35,Hantek 6022BE USB Oscilloscope,Other,Ordered,1,8000.0,Budget alternative to Rigol
+36,MCP2551 CAN Transceiver,Other,Ordered,1,180.0,Alternative CAN transceiver
+37,TJA1020 LIN Transceiver,Other,Ordered,1,200.0,For LIN bus projects
+38,CAN Bus Development Kit,Other,Ordered,1,1500.0,Complete CAN learning kit
+39,Raspberry Pi 4 Model B (4GB),Other,Ordered,1,5500.0,For Embedded Linux Phase
+40,SD Card (32GB Class 10),Other,Ordered,2,600.0,For Linux Images

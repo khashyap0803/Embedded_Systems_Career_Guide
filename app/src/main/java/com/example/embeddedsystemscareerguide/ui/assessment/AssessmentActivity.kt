@@ -35,6 +35,9 @@ class AssessmentActivity : AppCompatActivity() {
     private val geminiService = GeminiReportService()
     private val firestore = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
+    
+    // V2: Track if this is a retake (for regeneration with history)
+    private var isRetake = false
 
     private val speechRecognizerLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -53,6 +56,10 @@ class AssessmentActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityAssessmentBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        // V2: Check if this is a retake assessment
+        isRetake = intent.getBooleanExtra("is_retake", false)
+        Log.d("Assessment", "Assessment started, isRetake=$isRetake")
 
         // Handle system back to save answer first
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
@@ -235,8 +242,55 @@ class AssessmentActivity : AppCompatActivity() {
 
                 if (saveSuccess) {
                     // CLOUD-ONLY: Report saved to Firebase is the source of truth
-                    // No local flag needed - report existence is checked on other screens
-                    showCompletionState()
+                    // Now generate personalized learning stages based on assessment
+                    binding.progressText.text = "Generating your personalized learning path..."
+                    binding.progressSubstatus.text = "Creating AI-powered stages..."
+                    
+                    // Generate personalized stages
+                    val stageGenerator = com.example.embeddedsystemscareerguide.services.StageGeneratorService.getInstance(this@AssessmentActivity)
+                    
+                    // Calculate assessment result from answers
+                    val score = calculateAssessmentScore()
+                    val assessmentResult = com.example.embeddedsystemscareerguide.services.StageGeneratorService.AssessmentResult(
+                        totalScore = score,
+                        maxScore = 100,
+                        topicScores = mapOf()  // Will be categorized in the service
+                    )
+                    
+                    val stageCallback = object : com.example.embeddedsystemscareerguide.services.StageGeneratorService.GenerationCallback {
+                        override fun onProgress(phase: Int, message: String) {
+                            runOnUiThread {
+                                binding.progressSubstatus.text = message
+                            }
+                        }
+                        
+                        override fun onSuccess(stages: List<com.example.embeddedsystemscareerguide.services.PersonalizedStage>) {
+                            runOnUiThread {
+                                Log.d("Assessment", "Generated ${stages.size} personalized stages")
+                                showCompletionState()
+                            }
+                        }
+                        
+                        override fun onError(error: String) {
+                            runOnUiThread {
+                                // Stage generation failed, but report was saved - still proceed
+                                Log.e("Assessment", "Stage generation failed: $error")
+                                Toast.makeText(this@AssessmentActivity, 
+                                    "Learning path will be generated later", Toast.LENGTH_SHORT).show()
+                                showCompletionState()
+                            }
+                        }
+                    }
+                    
+                    // V2: Use regenerateStages for retakes (considers history),
+                    // or generatePersonalizedStages for first-time assessment
+                    if (isRetake) {
+                        Log.d("Assessment", "Using regenerateStages with history consideration")
+                        stageGenerator.regenerateStages(userName, assessmentResult, stageCallback)
+                    } else {
+                        Log.d("Assessment", "Using generatePersonalizedStages for first-time")
+                        stageGenerator.generatePersonalizedStages(userName, assessmentResult, stageCallback)
+                    }
                 } else {
                     throw Exception("Failed to save report to cloud")
                 }
@@ -332,5 +386,34 @@ class AssessmentActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Calculate assessment score based on answer quality
+     * Uses word count as a heuristic for effort/completeness
+     * Returns percentage score (0-100)
+     */
+    private fun calculateAssessmentScore(): Int {
+        if (questions.isEmpty()) return 50  // Default score
+        
+        var totalScore = 0
+        questions.forEach { question ->
+            val answer = answers[question.id] ?: ""
+            val wordCount = answer.trim().split("\\s+".toRegex()).filter { it.isNotEmpty() }.size
+            
+            // Score based on answer length (simple heuristic)
+            val questionScore = when {
+                wordCount >= 50 -> 100  // Detailed answer
+                wordCount >= 30 -> 80   // Good answer
+                wordCount >= 15 -> 60   // Adequate answer
+                wordCount >= 5 -> 40    // Brief answer
+                wordCount > 0 -> 20     // Minimal answer
+                else -> 0               // No answer
+            }
+            totalScore += questionScore
+        }
+        
+        return totalScore / questions.size
+    }
+
     // REMOVED: markAssessmentCompleted - report existence in Firebase is the source of truth
 }
+

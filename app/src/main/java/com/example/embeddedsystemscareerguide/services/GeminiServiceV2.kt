@@ -113,38 +113,125 @@ RESPOND WITH ONLY THIS JSON (no markdown, no explanation):
 
         /**
          * Generate learning content for a specific stage
+         * HIGH-QUALITY ACADEMIC CONTENT: Focused and Complete
          */
         fun stageContent(stageName: String, topics: List<String>): String = """
-You are an expert Embedded Systems instructor. Create comprehensive learning content for: "$stageName"
+You are an expert Embedded Systems professor creating focused learning content for: "$stageName"
 
 TOPICS TO COVER: ${topics.joinToString(", ")}
 
-Generate content in these sections (keep each section focused and clear):
+CRITICAL: Your response MUST be valid, complete JSON. Keep content concise but comprehensive.
 
-1. THEORY (400-500 words): Core concepts explained simply
-2. KEY_POINTS: 5-7 bullet points summarizing main takeaways
-3. CODE_EXAMPLE: A practical C code example with comments (30-50 lines)
-4. COMMON_MISTAKES: 3-4 mistakes beginners make and how to avoid
-5. PRO_TIPS: 3-4 industry best practices
-6. MINI_CHALLENGE: A small exercise for the student to try
+=== CONTENT REQUIREMENTS ===
 
-RESPOND WITH ONLY THIS JSON (no markdown wrapping):
+1. THEORY (600-800 words, well-structured):
+- Start with WHY this topic matters in embedded systems
+- Explain core concepts with practical context
+- Include register-level details where relevant
+- Add real-world application examples (automotive, IoT, medical)
+- Cover common pitfalls professionals encounter
+
+2. KEY_POINTS (5-7 actionable bullet points):
+- Each point must include specific details (numbers, timing values, etc.)
+- Focus on what learners MUST remember
+
+3. CODE_EXAMPLE (20-40 lines of practical C code):
+- Complete, runnable embedded C example
+- Include register definitions if applicable
+- Add clear comments explaining each section
+- Show best practices (volatile, proper initialization)
+
+4. CODE_EXPLANATION (3-4 paragraphs):
+- Explain line by line in SIMPLE words
+- Use analogies where helpful
+- Describe what happens when the code runs
+
+5. COMMON_MISTAKES (3-4 mistakes):
+- Specific mistake description
+- Why it's wrong technically
+- How to fix it
+
+6. PRO_TIPS (3-4 professional insights):
+- Practical advice from industry experience
+- Debugging tips, optimization strategies
+
+7. MINI_CHALLENGE:
+- A hands-on task to practice the concept
+- Include a helpful hint
+
+=== OUTPUT JSON FORMAT ===
 {
-  "theory": "Full theory content here...",
-  "keyPoints": ["Point 1", "Point 2", ...],
+  "theory": "Your 600-800 word explanation here...",
+  "keyPoints": ["Point 1", "Point 2", "Point 3", "Point 4", "Point 5"],
   "codeExample": {
     "language": "c",
-    "code": "// Code here",
-    "explanation": "What this code does"
+    "code": "// Your embedded C code here",
+    "explanation": "Detailed explanation of the code..."
   },
   "commonMistakes": [
-    {"mistake": "What they do wrong", "solution": "How to fix it"}
+    {"mistake": "Description", "solution": "How to fix"}
   ],
-  "proTips": ["Tip 1", "Tip 2", ...],
+  "proTips": ["Tip 1", "Tip 2", "Tip 3"],
   "miniChallenge": {
-    "task": "What to do",
-    "hint": "A helpful hint"
+    "task": "Challenge description",
+    "hint": "Helpful hint"
   }
+}
+"""
+
+        /**
+         * Regenerate personalized stages considering user's learning history
+         * Used when user retakes assessment - considers their previous progress
+         */
+        fun regenerateStagesWithHistory(
+            userName: String,
+            weakAreas: List<String>,
+            strongAreas: List<String>,
+            performanceData: UserPerformanceData,
+            targetStageCount: Int = 40
+        ): String = """
+You are an expert Embedded Systems curriculum designer. Create a NEW personalized learning path for $userName who is RETAKING their assessment.
+
+PREVIOUS LEARNING HISTORY:
+- Completed ${performanceData.completedStageIds.size} stages previously
+- Total XP earned: ${performanceData.totalXpEarned}
+- Average quiz score: ${performanceData.averageQuizScore}%
+- Previous weak topics: ${performanceData.weakTopics.joinToString(", ").ifEmpty { "None identified" }}
+- Previous strong topics: ${performanceData.strongTopics.joinToString(", ").ifEmpty { "None identified" }}
+${if (performanceData.wrongQuestions.isNotEmpty()) {
+    "- Topics with wrong answers: ${performanceData.wrongQuestions.map { it.topic }.distinct().joinToString(", ")}"
+} else ""}
+
+NEW ASSESSMENT RESULTS:
+- Current Weak Areas: ${weakAreas.joinToString(", ")}
+- Current Strong Areas: ${strongAreas.joinToString(", ")}
+
+TASK: Generate exactly $targetStageCount learning stages considering BOTH their history and new assessment.
+
+REGENERATION STRATEGY:
+1. Topics they struggled with previously (low stars, wrong answers) need MORE stages
+2. Topics they mastered before can have FEWER stages (they remember some)
+3. If same weakness appears in both old history and new assessment, prioritize heavily
+4. Strong areas from history need only brief review stages
+5. Include practical projects every 5-6 stages
+6. Progressive difficulty: beginner → intermediate → advanced
+7. Each stage should take 1-2 hours
+
+RESPOND WITH ONLY THIS JSON (no markdown, no explanation):
+{
+  "stages": [
+    {
+      "id": 1,
+      "title": "Stage Title",
+      "subtitle": "Brief description",
+      "description": "What student will learn in 2-3 sentences",
+      "topics": ["topic1", "topic2", "topic3"],
+      "difficulty": "beginner|intermediate|advanced",
+      "estimatedMinutes": 60,
+      "type": "theory|practical|project|review",
+      "xpReward": 100
+    }
+  ]
 }
 """
 

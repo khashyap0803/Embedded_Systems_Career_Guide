@@ -283,12 +283,27 @@ class HomeFragment : Fragment() {
             .show()
     }
 
+    /**
+     * V2: Enhanced retake confirmation with warning about learning progress loss
+     */
     private fun showRetakeConfirmationDialog() {
         com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext(), R.style.Theme_App_AlertDialog)
             .setTitle("⚠️ Retake Assessment")
-            .setMessage("Are you sure you want to retake the assessment? Your previous report will be replaced with a new one.")
+            .setMessage(
+                "Are you sure you want to retake the assessment?\n\n" +
+                "This will:\n" +
+                "• Replace your previous report with a new one\n" +
+                "• Generate a NEW personalized learning path\n" +
+                "• Reset all stage progress and stars ⭐\n\n" +
+                "However, your performance history will be considered when creating your new learning path " +
+                "(topics you struggled with will get more focus).\n\n" +
+                "This action cannot be undone."
+            )
             .setPositiveButton("Yes, Retake") { _, _ ->
+                // V2: Navigate to AssessmentActivity with retake flag
+                // The regeneration with history will happen after the new assessment
                 val intent = Intent(requireContext(), AssessmentActivity::class.java)
+                intent.putExtra("is_retake", true)
                 startActivity(intent)
             }
             .setNegativeButton("Cancel", null)

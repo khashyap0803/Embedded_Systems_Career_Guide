@@ -37,6 +37,7 @@
 
         <activity
             android:name=".MainActivity"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
             android:exported="true" />
 
         <activity
@@ -50,6 +51,12 @@
 
         <activity
             android:name=".ui.quiz.QuizActivity"
+            android:exported="false"
+            android:theme="@style/Theme.EmbeddedSystemsCareerGuide" />
+
+        <!-- V2: Content Reading Activity for Kindle-style learning -->
+        <activity
+            android:name=".ui.content.ContentReadingActivity"
             android:exported="false"
             android:theme="@style/Theme.EmbeddedSystemsCareerGuide" />
 

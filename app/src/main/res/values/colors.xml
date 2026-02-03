@@ -198,4 +198,11 @@
     <color name="warning_color">#FBBF24</color>
     <color name="info_color">#60A5FA</color>
 
+    <!-- V2: Content Reading UI Colors -->
+    <color name="surface_dark">@color/slate_900</color>
+    <color name="surface_elevated">@color/slate_750</color>
+    <color name="primary">@color/indigo_500</color>
+    <color name="primary_dark">@color/indigo_800</color>
+    <color name="error">@color/red_500</color>
+
 </resources>

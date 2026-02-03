@@ -531,4 +531,47 @@ class UserProgressSyncService(private val context: Context) {
             false
         }
     }
+    
+    /**
+     * V2: Reset stage progress in cloud when regenerating personalized stages
+     * Clears completedStages and stageStars but preserves XP and streak
+     * @return true if successful, false otherwise
+     */
+    suspend fun resetStageProgressInCloud(): Boolean {
+        val username = getCurrentUsername()
+        if (username == null) {
+            Log.e(TAG, "Cannot reset progress: Username not found")
+            return false
+        }
+
+        return try {
+            val currentProgress = loadProgressFromCloud() ?: UserProgress()
+            
+            // Reset only stage-related progress, preserve XP and streak
+            val resetProgress = currentProgress.copy(
+                currentStage = 1,
+                completedStages = emptyList(),
+                stageStars = emptyMap(),
+                lastUpdated = System.currentTimeMillis()
+            )
+            
+            // Save to cloud
+            firestore.collection(COLLECTION_USERS)
+                .document(username)
+                .collection(COLLECTION_DATA)
+                .document(DOCUMENT_PROGRESS)
+                .set(resetProgress.toMap(), SetOptions.merge())
+                .await()
+            
+            // Update local cache
+            saveLocalProgress(resetProgress)
+            
+            Log.d(TAG, "Stage progress reset in cloud for user: $username")
+            true
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to reset stage progress in cloud", e)
+            false
+        }
+    }
 }
+

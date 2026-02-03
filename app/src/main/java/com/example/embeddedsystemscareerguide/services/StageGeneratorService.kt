@@ -199,14 +199,25 @@ class StageGeneratorService(private val context: Context) {
 
     /**
      * Parse AI response into PersonalizedStage objects
+     * Enhanced with robust JSON error handling
      */
     private fun parseStagesFromResponse(response: String): List<PersonalizedStage> {
         return try {
             // Clean up response - remove markdown code blocks if present
-            val cleanedResponse = response
+            var cleanedResponse = response
                 .replace("```json", "")
                 .replace("```", "")
                 .trim()
+            
+            // Try to extract JSON object from response if wrapped in other text
+            val jsonStart = cleanedResponse.indexOf('{')
+            val jsonEnd = cleanedResponse.lastIndexOf('}')
+            if (jsonStart >= 0 && jsonEnd > jsonStart) {
+                cleanedResponse = cleanedResponse.substring(jsonStart, jsonEnd + 1)
+            }
+            
+            // Fix common malformed JSON issues
+            cleanedResponse = fixMalformedJson(cleanedResponse)
             
             // Try to parse as JSON object with "stages" array
             val jsonObject = gson.fromJson(cleanedResponse, JsonObject::class.java)
@@ -214,7 +225,7 @@ class StageGeneratorService(private val context: Context) {
             
             val stages = mutableListOf<PersonalizedStage>()
             
-            stagesArray.forEach { element ->
+            stagesArray?.forEach { element ->
                 try {
                     val obj = element.asJsonObject
                     val stage = PersonalizedStage(
@@ -222,7 +233,9 @@ class StageGeneratorService(private val context: Context) {
                         title = obj.get("title")?.asString ?: "Stage ${stages.size + 1}",
                         subtitle = obj.get("subtitle")?.asString ?: "",
                         description = obj.get("description")?.asString ?: "",
-                        topics = obj.getAsJsonArray("topics")?.map { it.asString } ?: emptyList(),
+                        topics = try { 
+                            obj.getAsJsonArray("topics")?.mapNotNull { it.asString?.trim() } ?: emptyList()
+                        } catch (e: Exception) { emptyList() },
                         difficulty = obj.get("difficulty")?.asString ?: "beginner",
                         estimatedMinutes = obj.get("estimatedMinutes")?.asInt ?: 60,
                         type = obj.get("type")?.asString ?: "theory",
@@ -244,6 +257,31 @@ class StageGeneratorService(private val context: Context) {
             Log.e(TAG, "Failed to parse stages response", e)
             emptyList()
         }
+    }
+
+    /**
+     * Attempt to fix common malformed JSON issues from AI responses
+     */
+    private fun fixMalformedJson(json: String): String {
+        var fixed = json
+        
+        // Count braces and brackets to check for balance
+        val openBraces = fixed.count { it == '{' }
+        val closeBraces = fixed.count { it == '}' }
+        val openBrackets = fixed.count { it == '[' }
+        val closeBrackets = fixed.count { it == ']' }
+        
+        // Add missing closing braces
+        if (openBraces > closeBraces) {
+            fixed = fixed + "}".repeat(openBraces - closeBraces)
+        }
+        
+        // Add missing closing brackets
+        if (openBrackets > closeBrackets) {
+            fixed = fixed + "]".repeat(openBrackets - closeBrackets)
+        }
+        
+        return fixed
     }
 
     /**
@@ -422,14 +460,103 @@ class StageGeneratorService(private val context: Context) {
     }
 
     /**
-     * Regenerate stages with updated assessment
+     * Regenerate stages with updated assessment, considering user's learning history
+     * 
+     * This method:
+     * 1. Collects user's previous performance data (completed stages, quiz scores, wrong answers)
+     * 2. Uses the regenerateStagesWithHistory prompt to create a smarter curriculum
+     * 3. Deletes old stages and saves new ones
+     * 
+     * @param userName Student's name for personalization
+     * @param assessmentResult New assessment results
+     * @param callback Progress callback
      */
     suspend fun regenerateStages(
         userName: String,
         assessmentResult: AssessmentResult,
         callback: GenerationCallback
-    ) {
-        // Simply call generatePersonalizedStages - it will overwrite existing stages
-        generatePersonalizedStages(userName, assessmentResult, callback)
+    ) = withContext(Dispatchers.IO) {
+        try {
+            Log.d(TAG, "Starting stage regeneration for $userName with history consideration")
+            callback.onProgress(1, "Collecting your learning history...")
+
+            // Collect user's previous performance data
+            val performanceData = firestoreManager.collectUserPerformanceData()
+            Log.d(TAG, "Performance data: ${performanceData.completedStageIds.size} completed, " +
+                    "weak: ${performanceData.weakTopics.size}, strong: ${performanceData.strongTopics.size}")
+
+            callback.onProgress(2, "Analyzing your assessment results...")
+
+            // Categorize topics from new assessment
+            val (weakAreas, strongAreas) = categorizeTopics(assessmentResult)
+            
+            callback.onProgress(3, "Creating your new personalized learning path...")
+
+            // Use the enhanced regeneration prompt that considers history
+            val prompt = GeminiServiceV2.PromptTemplates.regenerateStagesWithHistory(
+                userName = userName,
+                weakAreas = weakAreas,
+                strongAreas = strongAreas,
+                performanceData = performanceData,
+                targetStageCount = TARGET_STAGES
+            )
+
+            // Call Gemini API
+            val result = geminiService.generateContent(prompt, maxOutputTokens = 8192)
+            
+            if (result.isFailure) {
+                Log.e(TAG, "API call failed: ${result.exceptionOrNull()?.message}")
+                callback.onError("Failed to regenerate learning path. Please try again.")
+                return@withContext
+            }
+
+            callback.onProgress(4, "Processing AI response...")
+            
+            // Parse response
+            val responseText = result.getOrNull() ?: ""
+            val stages = parseStagesFromResponse(responseText)
+            
+            if (stages.isEmpty()) {
+                Log.e(TAG, "Failed to parse stages from response, using fallback")
+                // Use fallback stages with updated weak areas
+                val fallbackStages = createFallbackStages(weakAreas, strongAreas)
+                callback.onProgress(5, "Saving your learning path...")
+                firestoreManager.savePersonalizedStages(fallbackStages)
+                callback.onSuccess(fallbackStages)
+                return@withContext
+            }
+
+            callback.onProgress(5, "Deleting old stages and resetting progress...")
+            
+            // Delete old stages first
+            firestoreManager.deleteAllPersonalizedStages()
+            
+            // V2: Reset user's stage progress (completedStages, stageStars)
+            // This ensures old progress doesn't apply to new stages
+            val progressSyncService = UserProgressSyncService(context)
+            progressSyncService.resetStageProgressInCloud()
+            Log.d(TAG, "Reset user stage progress for new personalized stages")
+            
+            // Mark first stage as unlocked
+            val unlockedStages = stages.mapIndexed { index, stage ->
+                stage.copy(isUnlocked = index == 0)
+            }
+            
+            // Save new stages to Firestore
+            val saveResult = firestoreManager.savePersonalizedStages(unlockedStages)
+            if (saveResult.isFailure) {
+                Log.e(TAG, "Failed to save stages: ${saveResult.exceptionOrNull()?.message}")
+                callback.onError("Failed to save learning path. Please try again.")
+                return@withContext
+            }
+
+            Log.d(TAG, "Successfully regenerated and saved ${unlockedStages.size} stages")
+            callback.onSuccess(unlockedStages)
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error regenerating stages", e)
+            callback.onError("An error occurred: ${e.message}")
+        }
     }
 }
+

@@ -1,0 +1,214 @@
+ID,Title,Type,URL,Week,Phase,Notes
+3,Khan Academy electronics shorts,Video,https://www.khanacademy.org/science/electrical-engineering,1,Phase 1 – Hardware Foundations & Modern Embedded C++,5-minute refreshers before drills
+1,NPTEL Basic Electronics for Embedded Systems,Course,https://www.youtube.com/playlist?list=PL7987F30C41A9ADCB,1,Phase 1 – Hardware Foundations & Modern Embedded C++,Lectures 1-4 (IIT Madras YouTube playlist)
+2,Practical Electronics for Inventors,Book,https://www.mhprofessional.com/practical-electronics-for-inventors-fourth-edition-9781259587542-usa,1,Phase 1 – Hardware Foundations & Modern Embedded C++,Chapters 1-3 nightly reading
+164,Practical Electronics for Inventors (4th Ed) - Paul Scherz,Other,https://www.amazon.com/Practical-Electronics-Inventors-Fourth-Scherz/dp/1259587541,1,Phase 1 – Hardware Foundations & Modern Embedded C++,Essential reference for electronics fundamentals
+165,The Art of Electronics (3rd Ed) - Horowitz & Hill,Other,https://www.amazon.com/Art-Electronics-Paul-Horowitz/dp/0521809266,1,Phase 1 – Hardware Foundations & Modern Embedded C++,The bible of electronics - comprehensive reference
+5,All About Circuits power design series,Article,https://www.allaboutcircuits.com/technical-articles/,2,Phase 1 – Hardware Foundations & Modern Embedded C++,Ripple & regulation primers
+6,Arm Keil QEMU lab,Docs,https://docs.zephyrproject.org/latest/boards/qemu/index.html,2,Phase 1 – Hardware Foundations & Modern Embedded C++,Dry-run firmware without hardware
+4,Falstad circuit simulator,Tool,https://falstad.com/circuit/,2,Phase 1 – Hardware Foundations & Modern Embedded C++,Use for quick what-if experiments
+7,Coursera Digital Systems (Princeton),Course,https://www.coursera.org/learn/digital-systems,3,Phase 1 – Hardware Foundations & Modern Embedded C++,Audit Weeks 1-2
+167,Embedded C Coding Standard (Barr Group - Amazon),Other,https://www.amazon.in/Embedded-Coding-Standard-Michael-Barr/dp/1442164824,3,Phase 1 – Hardware Foundations & Modern Embedded C++,Industry coding standards for embedded C
+9,Logisim Evolution,Tool,https://github.com/logisim-evolution/logisim-evolution,3,Phase 1 – Hardware Foundations & Modern Embedded C++,Preferred simulator for FSMs
+166,The C Programming Language (K&R) - Kernighan & Ritchie,Other,https://www.amazon.com/Programming-Language-2nd-Brian-Kernighan/dp/0131103628,3,Phase 1 – Hardware Foundations & Modern Embedded C++,The definitive C language book by its creators
+8,Udemy Digital Electronics for Embedded,Course,https://www.udemy.com/course/crash-course-digital-electronics/,3,Phase 1 – Hardware Foundations & Modern Embedded C++,Use first 5 hours for Logisim labs
+12,ARM Cortex-M for Embedded Engineers,Book,https://www.arm.com/resources/education/books,4,Phase 1 – Hardware Foundations & Modern Embedded C++,Architecture primer
+11,Espressif Getting Started,Docs,https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/index.html,4,Phase 1 – Hardware Foundations & Modern Embedded C++,ESP-IDF CLI flow
+10,ST STM32 Step-by-Step series,Course,https://wiki.st.com/stm32mcu/wiki/STM32StepByStep:Getting_started_with_STM32_:_STM32_step_by_step,4,Phase 1 – Hardware Foundations & Modern Embedded C++,Videos on toolchains and flashing
+168,Definitive Guide to ARM Cortex-M3/M4 - Joseph Yiu,Other,https://www.amazon.com/Definitive-Guide-ARM-Cortex-M3/dp/0124080820,5,Phase 1 – Hardware Foundations & Modern Embedded C++,Essential ARM Cortex-M architecture reference
+14,Embedded C Programming (Book),Book,https://www.researchgate.net/publication/343889943_Embedded_C_Programming,5,Phase 1 – Hardware Foundations & Modern Embedded C++,Daily end-of-chapter drills
+15,HackerRank C track,Platform,https://www.hackerrank.com/domains/c,5,Phase 1 – Hardware Foundations & Modern Embedded C++,Target 50 easy problems over the phase
+169,Mastering STM32 (2nd Ed) - Carmine Noviello,Other,https://leanpub.com/mastering-stm32-2nd,5,Phase 1 – Hardware Foundations & Modern Embedded C++,Comprehensive STM32 development guide
+13,edX C Programming for Embedded Systems,Course,https://www.edx.org/learn/c-programming,5,Phase 1 – Hardware Foundations & Modern Embedded C++,Use Weeks 1-2
+17,Embedded C Coding Standards,Book,https://www.amazon.in/Embedded-Coding-Standard-Michael-Barr/dp/1442164824,6,Phase 1 – Hardware Foundations & Modern Embedded C++,Chapters on pointers & volatile
+18,STM32 reference manual GPIO chapter,Docs,https://www.st.com/en/microcontrollers-microprocessors/stm32f7-series/documentation.html,6,Phase 1 – Hardware Foundations & Modern Embedded C++,Register map practice
+16,Valgrind quickstart,Docs,https://valgrind.org/docs/manual/quick-start.html,6,Phase 1 – Hardware Foundations & Modern Embedded C++,Memory checking on Ubuntu
+207,I2C Protocol Deep Dive,Article,https://www.analog.com/en/resources/design-notes/i2c-primer-what-is-i2c.html,9,Phase 1 – Hardware Foundations & Modern Embedded C++,
+170,Making Embedded Systems - Elecia White,Other,https://www.amazon.com/Making-Embedded-Systems-Patterns-Software/dp/1098151542,9,Phase 1 – Hardware Foundations & Modern Embedded C++,Design patterns for embedded software
+208,SPI Protocol Tutorial,Article,https://www.analog.com/en/resources/design-notes/introduction-to-spi-interface.html,9,Phase 1 – Hardware Foundations & Modern Embedded C++,
+209,UART Communication Guide,Docs,https://www.ti.com/lit/an/slaa577/slaa577.pdf,9,Phase 1 – Hardware Foundations & Modern Embedded C++,
+19,I2C Bus Specification,Spec,https://www.nxp.com/docs/en/user-guide/UM10204.pdf,10,Phase 1 – Hardware Foundations & Modern Embedded C++,Fast-mode tables
+20,Saleae University,Video,https://www.youtube.com/playlist?list=PLUdiafhsYS1RD_4aqtbYda7RJ_amlbgY4,10,Phase 1 – Hardware Foundations & Modern Embedded C++,Logic analyzer workflow
+21,minicom cheat-sheet,Article,https://linux.die.net/man/1/minicom,10,Phase 1 – Hardware Foundations & Modern Embedded C++,Serial debug commands
+23,CMSIS-DSP Library Tutorial,Video,https://arm-software.github.io/CMSIS-DSP/latest/index.html,11,Phase 1 – Hardware Foundations & Modern Embedded C++,Polish demo videos
+22,GeeksforGeeks electronics quiz,Other,https://www.geeksforgeeks.org/electronics-engineering/,11,Phase 1 – Hardware Foundations & Modern Embedded C++,Target 80%+ score
+24,Notion weekly review template,Template,https://www.notion.so/templates/weekly-review,11,Phase 1 – Hardware Foundations & Modern Embedded C++,Structure retros
+27,Dynamic power management research snapshot,Paper,https://dl.acm.org/,12,Phase 1 – Hardware Foundations & Modern Embedded C++,Use as inspiration for DFS policies
+26,Otii scripting cookbook,Docs,https://www.qoitech.com/,12,Phase 1 – Hardware Foundations & Modern Embedded C++,Automation tips
+25,STM32 low-power appnote,Appnote,https://www.st.com/resource/en/application_note/an4749-ultra-low-power-with-stm32l4-series-and-stm32l4-series-mcus-stmicroelectronics.pdf,12,Phase 1 – Hardware Foundations & Modern Embedded C++,AN4749 decision tree
+29,ARM Trusted Firmware-M,Docs,https://www.trustedfirmware.org/projects/tf-m/,13,Phase 1 – Hardware Foundations & Modern Embedded C++,Secure boot reference
+28,MCUBoot design overview,Docs,https://mcuboot.com/documentation/,13,Phase 1 – Hardware Foundations & Modern Embedded C++,Borrow image manifest ideas
+30,NIST SP 800-90B,Spec,https://csrc.nist.gov/publications/detail/sp/800-90b/final,13,Phase 1 – Hardware Foundations & Modern Embedded C++,Entropy source validation
+31,Docker for Embedded Development,Article,https://interrupt.memfault.com/blog/,14,Phase 1 – Hardware Foundations & Modern Embedded C++,Containerization best practices
+34,ESP-IDF Docker image,Docs,https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/tools/idf-docker-image.html,14,Phase 1 – Hardware Foundations & Modern Embedded C++,Official containerized development environment
+33,GitHub Actions self-hosted runners,Docs,https://docs.github.com/actions/hosting-your-own-runners/managing-self-hosted-runners,14,Phase 1 – Hardware Foundations & Modern Embedded C++,Pi farm management
+32,Renode & Robot Framework guide,Article,https://interrupt.memfault.com/blog/,14,Phase 1 – Hardware Foundations & Modern Embedded C++,Simulation inspiration
+37,EMC troubleshooting handbook,Book,https://www.sae.org/publications/books/content/r-146/,15,Phase 1 – Hardware Foundations & Modern Embedded C++,Chapters on shielding
+35,ISO 26262 overview,Course,https://www.youtube.com/watch?v=9wcJuW9E0S8,15,Phase 1 – Hardware Foundations & Modern Embedded C++,Safety vocabulary
+36,NXP watchdog design guide,Appnote,https://www.nxp.com/search?keyword=watchdog&start=0,15,Phase 1 – Hardware Foundations & Modern Embedded C++,Best practices
+39,Notion project retrospective template,Template,https://www.notion.so/templates/,16,Phase 1 – Hardware Foundations & Modern Embedded C++,Frame retro meeting
+40,Obsidian publishing guide,Docs,https://help.obsidian.md/Publishing,16,Phase 1 – Hardware Foundations & Modern Embedded C++,Share notes publicly
+38,Technical writing checklist,Article,https://developers.google.com/tech-writing,16,Phase 1 – Hardware Foundations & Modern Embedded C++,Narrative polish
+171,Designing Embedded Hardware - John Catsoulis,Other,https://www.amazon.com/Designing-Embedded-Hardware-John-Catsoulis/dp/0596007558,17,Phase 2 – Real-Time Systems & Connected Firmware,Hardware design for embedded systems
+43,Memfault Zephyr bring-up checklist,Article,https://interrupt.memfault.com/blog/,17,Phase 2 – Real-Time Systems & Connected Firmware,Double-check porting steps
+41,Zephyr Devicetree primer,Docs,https://docs.zephyrproject.org/latest/build/dts/index.html,17,Phase 2 – Real-Time Systems & Connected Firmware,Overlay syntax refresher
+42,Zephyr tracing & logging guide,Docs,https://docs.zephyrproject.org/latest/services/tracing/index.html,17,Phase 2 – Real-Time Systems & Connected Firmware,Enable system view
+182,FreeRTOS Kernel Book (Official),Docs,https://www.freertos.org/Documentation/RTOS_book.html,18,Phase 2 – Real-Time Systems & Connected Firmware,
+183,FreeRTOS vs Zephyr,Article,https://zephyrproject.org/zephyr-vs-freertos/,18,Phase 2 – Real-Time Systems & Connected Firmware,
+44,Liu & Layland RMA paper,Paper,https://ieeexplore.ieee.org/document/1451669,19,Phase 2 – Real-Time Systems & Connected Firmware,Theory refresher
+45,SystemView tutorials,Video,https://www.youtube.com/playlist?list=PLDqLs4CjhqjHROsMT5eQpvavOuh0yUj6J,19,Phase 2 – Real-Time Systems & Connected Firmware,Visualization walkthrough
+46,Zephyr scheduling internals,Docs,https://docs.zephyrproject.org/latest/kernel/services/scheduling/index.html,19,Phase 2 – Real-Time Systems & Connected Firmware,Scheduler deep dive
+47,ST AN4031 DMA cookbook,Appnote,https://www.st.com/resource/en/application_note/an4031-using-the-stm32f2-stm32f4-and-stm32f7-series-dma-controller-stmicroelectronics.pdf,20,Phase 2 – Real-Time Systems & Connected Firmware,Linked list strategies
+48,Zephyr sensor subsystem,Docs,https://docs.zephyrproject.org/latest/reference/peripherals/sensor.html,20,Phase 2 – Real-Time Systems & Connected Firmware,Driver patterns
+49,pytest-benchmark documentation,Docs,https://pytest-benchmark.readthedocs.io/en/latest/,20,Phase 2 – Real-Time Systems & Connected Firmware,Profiling helpers
+52,CAN Physical Layer Design,Appnote,https://www.nxp.com/products/interfaces/can-transceivers:MC_53485,21,Phase 2 – Real-Time Systems & Connected Firmware,NXP TJA1050 application note
+50,LIN 2.1 Specification,Spec,https://www.lin-cia.org/standards/,21,Phase 2 – Real-Time Systems & Connected Firmware,Official LIN protocol reference
+53,STM32 CAN FD Tutorial,Docs,https://wiki.st.com/stm32mcu/wiki/Connectivity:Introduction_to_FDCAN,21,Phase 2 – Real-Time Systems & Connected Firmware,STM32 FDCAN configuration
+51,Vector LIN Basics,Article,https://www.vector.com/int/en/know-how/,21,Phase 2 – Real-Time Systems & Connected Firmware,Introduction to LIN networking
+54,ISO 15765-2 (ISO-TP) Overview,Article,https://www.csselectronics.com/pages/uds-protocol-tutorial-unified-diagnostic-services,22,Phase 2 – Real-Time Systems & Connected Firmware,Transport protocol for CAN diagnostics
+172,Real-Time Concepts for Embedded Systems - Qing Li,Other,https://www.amazon.com/Real-Time-Concepts-Embedded-Systems-Li/dp/1578201241,22,Phase 2 – Real-Time Systems & Connected Firmware,RTOS fundamentals and real-time programming
+55,UDS Protocol Tutorial,Article,https://www.csselectronics.com/pages/uds-protocol-tutorial-unified-diagnostic-services,22,Phase 2 – Real-Time Systems & Connected Firmware,Comprehensive UDS service reference
+57,cantools DBC/UDS guide,Docs,https://cantools.readthedocs.io/en/latest/,22,Phase 2 – Real-Time Systems & Connected Firmware,Automate DBC parsing and UDS encoding
+56,python-can library,Docs,https://python-can.readthedocs.io/en/stable/,22,Phase 2 – Real-Time Systems & Connected Firmware,Python CAN interface for testing
+210,MQTT for IoT Tutorial,Article,https://www.hivemq.com/mqtt-essentials/,23,Phase 2 – Real-Time Systems & Connected Firmware,
+60,OpenOCD RISC-V how-to,Article,https://interrupt.memfault.com/blog/,23,Phase 2 – Real-Time Systems & Connected Firmware,Debug setup
+58,RISC-V privileged spec,Spec,https://riscv.org/technical/specifications/,23,Phase 2 – Real-Time Systems & Connected Firmware,Anchor PMP and privilege model
+59,Zephyr RISC-V porting guide,Docs,https://docs.zephyrproject.org/latest/boards/,23,Phase 2 – Real-Time Systems & Connected Firmware,DeviceTree + Kconfig patterns
+64,ESP-IDF Wi-Fi/BLE coexistence,Docs,https://docs.espressif.com/projects/esp-idf/en/latest/esp32c3/api-guides/coexist.html,24,Phase 2 – Real-Time Systems & Connected Firmware,Dual-stack configuration
+211,LwIP Ethernet Stack,Docs,https://www.nongnu.org/lwip/2_1_x/index.html,24,Phase 2 – Real-Time Systems & Connected Firmware,
+63,TCP/IP Illustrated (Stevens),Book,https://www.kohala.com/start/tcpipiv1.html,24,Phase 2 – Real-Time Systems & Connected Firmware,Foundational networking reference
+61,Wireshark User Guide,Docs,https://www.wireshark.org/docs/wsug_html_chunked/,24,Phase 2 – Real-Time Systems & Connected Firmware,Essential network analysis tool
+62,lwIP Wiki & Architecture,Docs,https://savannah.nongnu.org/projects/lwip/,24,Phase 2 – Real-Time Systems & Connected Firmware,Lightweight IP stack internals
+66,Microchip ATECC608A design guide,Appnote,https://www.microchip.com/en-us/products/security/security-ics,25,Phase 2 – Real-Time Systems & Connected Firmware,Secure element patterns
+67,OWASP firmware security testing,Guide,https://owasp.org/www-project-internet-of-things/,25,Phase 2 – Real-Time Systems & Connected Firmware,Threat modeling prompts
+65,mbedTLS configuration manual,Docs,https://tls.mbed.org/kb/how-to/configure-mbedtls,25,Phase 2 – Real-Time Systems & Connected Firmware,Memory footprint tuning
+68,AWS IoT Jobs workshop,Hands-On,https://catalog.workshops.aws/iot-jobs/en-US,26,Phase 2 – Real-Time Systems & Connected Firmware,Rollout automation
+69,Azure Device Update patterns,Docs,https://learn.microsoft.com/azure/iot-hub-device-update/,26,Phase 2 – Real-Time Systems & Connected Firmware,Cohort design
+70,Grafana Loki logs for IoT,Article,https://grafana.com/docs/loki/latest/,26,Phase 2 – Real-Time Systems & Connected Firmware,Centralized telemetry
+174,Embedded Systems Security - David Kleidermacher,Other,https://www.amazon.com/Embedded-Systems-Security-Practical-Approaches/dp/1493939939,27,Phase 2 – Real-Time Systems & Connected Firmware,Security for embedded systems
+72,CBOR RFC 7049,Spec,https://www.rfc-editor.org/rfc/rfc7049,28,Phase 2 – Real-Time Systems & Connected Firmware,Encoding reference
+71,LittleFS design paper,Whitepaper,https://github.com/littlefs-project/littlefs/blob/master/DESIGN.md,28,Phase 2 – Real-Time Systems & Connected Firmware,Crash-consistency fundamentals
+73,TinyML anomaly detection sample,Repo,https://github.com/tinyMLx/courseware,28,Phase 2 – Real-Time Systems & Connected Firmware,Accelerate edge analytics
+75,Google Cloud logging structured fields,Docs,https://cloud.google.com/logging/docs/structured-logging,29,Phase 2 – Real-Time Systems & Connected Firmware,Schema inspiration
+74,Memfault diagnostic stack guides,Docs,https://docs.memfault.com/,29,Phase 2 – Real-Time Systems & Connected Firmware,Crash dump export reference
+76,OWASP access control cheat sheet,Article,https://cheatsheetseries.owasp.org/cheatsheets/Access_Control_Cheat_Sheet.html,29,Phase 2 – Real-Time Systems & Connected Firmware,Secure remote tooling
+78,MQTT essentials whitepaper,Whitepaper,https://mqtt.org/mqtt-specification/,30,Phase 2 – Real-Time Systems & Connected Firmware,Messaging semantics
+77,NVIDIA Jetson security best practices,Docs,https://docs.nvidia.com/jetson/archives/r34.1/DeveloperGuide/,30,Phase 2 – Real-Time Systems & Connected Firmware,Gateway hardening
+79,Podman on edge devices,Article,https://www.redhat.com/en/topics/containers/what-is-podman,30,Phase 2 – Real-Time Systems & Connected Firmware,Containerization tips
+80,ARM TrustZone for Cortex-M guide,Docs,https://www.arm.com/technologies/trustzone-for-cortex-m,31,Phase 2 – Real-Time Systems & Connected Firmware,Partitioning basics
+81,Jailhouse hypervisor overview,Docs,https://github.com/siemens/jailhouse,31,Phase 2 – Real-Time Systems & Connected Firmware,Mixed-criticality case studies
+82,Safety case patterns (SINTEF),Paper,https://www.iso.org/standard/68383.html,31,Phase 2 – Real-Time Systems & Connected Firmware,Argument structure
+84,Architecture Decision Record template,Template,https://adr.github.io/madr/,32,Phase 2 – Real-Time Systems & Connected Firmware,Ensure consistency
+213,Edge AI on STM32 (ST),Docs,https://www.st.com/content/st_com/en/stm32-ai.html,32,Phase 2 – Real-Time Systems & Connected Firmware,
+83,FreeRTOS Queue and Semaphore Tutorial,Video,https://www.freertos.org/Embedded-RTOS-Queues.html,32,Phase 2 – Real-Time Systems & Connected Firmware,Demo storytelling
+85,Roadmap retrospective worksheet,Worksheet,https://miro.com/miroverse/product-roadmap-retrospective/,32,Phase 2 – Real-Time Systems & Connected Firmware,Guide review meeting
+175,The Linux Command Line (2nd Ed) - William Shotts,Other,https://www.amazon.com/Linux-Command-Line-Complete-Introduction/dp/1593279523,32,Phase 2 – Real-Time Systems & Connected Firmware,Essential Linux command line reference
+87,Edge Impulse Documentation (TinyML),Docs,https://docs.edgeimpulse.com/docs/,33,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Chapters on MCU deployment
+86,Edge Impulse data operations,Docs,https://docs.edgeimpulse.com/docs,33,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Dataset versioning
+88,TensorFlow Lite Micro examples,Repo,https://github.com/tensorflow/tflite-micro,33,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Reference code
+89,CMSIS-NN optimization guide,Docs,https://arm-software.github.io/CMSIS_5/NN/html/index.html,34,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Kernel tuning
+91,MLPerf Tiny benchmark,Benchmark,https://mlcommons.org/benchmarks/inference-tiny/,34,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Compare targets
+90,TensorFlow Model Optimization Toolkit,Docs,https://www.tensorflow.org/model_optimization,34,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Quantization recipes
+94,Edge personalization case studies,Article,https://www.edge-ai-vision.com/2021/04/on-device-learning/,35,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Ideas for on-device learning
+93,SHAP explainability docs,Docs,https://shap.readthedocs.io/en/latest/,35,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Interpretation tools
+92,Sensor fusion architectures,Paper,https://arxiv.org/abs/2009.08264,35,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Combine model & Bayesian filters
+176,AUTOSAR Official Documentation,Docs,https://www.autosar.org/standards,37,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",
+177,AUTOSAR Tutorial - Vector,Video,https://www.vector.com/int/en/know-how/autosar/,37,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",
+178,EB Tresos Studio (Free Eval),Tool,https://www.elektrobit.com/products/ecu/eb-tresos/studio/,37,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",
+212,ISO 26262 Functional Safety Guide,Article,https://www.synopsys.com/automotive/what-is-iso-26262.html,38,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",
+184,USB in a NutShell,Article,https://www.beyondlogic.org/usbnutshell/usb1.shtml,38,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",
+97,MobileNetV3 paper,Paper,https://arxiv.org/abs/1905.02244,39,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Model characteristics
+95,OpenMV & STM32 camera app notes,Appnote,https://www.openmv.io/pages/download,39,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Camera bring-up tips
+96,TVM microTVM tutorial,Docs,https://tvm.apache.org/docs/,39,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Deploy optimized models
+173,TinyML - Pete Warden & Daniel Situnayake,Other,https://www.amazon.com/TinyML-Learning-TensorFlow-Ultra-Low-Micro-Controllers/dp/1492052043,39,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Machine learning on microcontrollers
+100,AbsInt MC/DC tooling overview,Docs,https://www.absint.com/,40,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Verification tooling
+99,Functional safety pocket guide,Article,https://www.sei.cmu.edu/,40,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Terminology refresher
+98,ISO 26262 part summaries,Guide,https://www.iso.org/standard/43464.html,40,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",High-level orientation
+102,ASIL decomposition reference,Docs,https://www.mathworks.com/solutions/automotive/standards/iso-26262.html,41,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Redundancy design
+101,Diagnostic coverage explained,Article,https://www.exida.com/resources,41,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Metrics refresher
+103,Firmware fault injection patterns,Article,https://interrupt.memfault.com/blog/,41,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Testing inspiration
+104,Android Automotive HAL overview,Docs,https://source.android.com/docs/automotive,42,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Understand VHAL plumbing
+105,Android Automotive OS architecture,Guide,https://developer.android.com/cars,42,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Map services & permissions
+106,CycloneDX CLI,Docs,https://cyclonedx.org/tool-center/,42,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Automate SBOMs
+107,Adafruit manufacturing fixture overview,Article,https://learn.adafruit.com/,43,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Fixture inspiration
+108,Boundary scan tutorial,Video,https://www.youtube.com/watch?v=TlWlLeC5BUs,43,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Automate JTAG tests
+179,DSP Fundamentals for Embedded,Video,https://www.youtube.com/playlist?list=PLUMWjy5jgHK1NC52DXXrriwihVrYZKqjk,43,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",
+181,Digital Filters Primer,Article,https://www.analog.com/en/design-center/landing-pages/001/beginners-guide-to-dsp.html,43,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",
+180,FFT Explained Simply,Article,https://www.dspguide.com/ch12.htm,43,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",
+109,SparkFun DFM checklist,Guide,https://learn.sparkfun.com/tutorials/designing-pcbs-smd-footprints/all,43,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Review before CM handoff
+110,Altium design review checklist,Checklist,https://www.altium.com/documentation/,44,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Schematic & PCB review
+111,Keysight impedance control guide,Guide,https://www.keysight.com/us/en/products.html,44,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Transmission line refresher
+112,Pre-compliance testing tips,Article,https://www.edn.com/designcenter/test-measurement/,44,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Plan lab sessions
+113,HALT/HASS fundamentals,Article,https://help.reliasoft.com/articles/content/basics/accelerated.htm,45,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Stress planning
+114,NI environmental testing primer,Article,https://www.ni.com/en/solutions.html,45,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Instrumentation guidance
+115,Weibull analysis tutorial,Guide,https://www.weibull.com/,45,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Reliability statistics
+188,Yocto Project Quick Build,Docs,https://docs.yoctoproject.org/brief-yoctoprojectqs/index.html,46,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",
+117,IPC-1754 supply chain data standard,Standard,https://www.ipc.org/ContentPage.aspx?pageid=Standards,47,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Traceability reference
+118,Manufacturing traceability best practices,Article,https://www.jamasoftware.com/requirements-management-guide/requirements-traceability/,47,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Serialization approaches
+116,SiliconExpert overview,Guide,https://www.siliconexpert.com/,47,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Monitor component health
+119,CE marking roadmap,Guide,https://ec.europa.eu/growth/single-market/ce-marking/,49,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",EU compliance steps
+121,RoHS/REACH compliance checklist,Checklist,https://ec.europa.eu/environment/topics/waste-and-recycling/rohs-directive_en,49,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Materials documentation
+120,UL certification overview,Article,https://www.ul.com/services/certification,49,"Phase 3 – Edge Intelligence, Safety & Manufacturing Readiness",Testing preparation
+185,LwIP Wiki,Docs,https://sysprogs.com/VisualGDB/tutorials/stm32/lwip/,50,Phase 4 – Embedded Linux Bridge,
+186,Linux Device Drivers 3 (LDD3),Book,https://lwn.net/Kernel/LDD3/,51,Phase 4 – Embedded Linux Bridge,
+187,Device Tree Usage Guide (eLinux),Docs,https://elinux.org/Device_Tree_Usage,53,Phase 4 – Embedded Linux Bridge,
+123,Compliance documentation best practices,Article,https://www2.deloitte.com/us/en.html,54,"Phase 5 – Productization, Launch & Career Amplification",Organize evidence
+124,Retrospective facilitation guide,Article,https://www.mountaingoatsoftware.com/agile/scrum/sprint-retrospective,54,"Phase 5 – Productization, Launch & Career Amplification",Keep retro focused
+122,Unit Testing Embedded C with Ceedling,Course,https://github.com/ThrowTheSwitch/Ceedling,54,"Phase 5 – Productization, Launch & Career Amplification",Sharpen presentation
+125,Interview synthesis template,Template,https://www.notion.so/templates/,55,"Phase 5 – Productization, Launch & Career Amplification",Notion board
+126,Roman Pichler backlog guide,Article,https://www.romanpichler.com/blog/,55,"Phase 5 – Productization, Launch & Career Amplification",Product backlog tips
+127,Service design blueprint primer,Article,https://www.nngroup.com/articles/service-blueprints-definition/,55,"Phase 5 – Productization, Launch & Career Amplification",Journey mapping
+130,Embedded GPU profiling techniques,Article,https://developer.nvidia.com/embedded-computing,56,"Phase 5 – Productization, Launch & Career Amplification",Performance tuning
+129,NNGroup usability testing 101,Guide,https://www.nngroup.com/articles/usability-testing-101/,56,"Phase 5 – Productization, Launch & Career Amplification",Run efficient tests
+128,Qt for MCUs best practices,Docs,https://www.qt.io/development/develop-embedded-devices,56,"Phase 5 – Productization, Launch & Career Amplification",Optimize resource usage
+133,Grafana alerting walkthrough,Video,https://grafana.com/docs/grafana/latest/alerting/,57,"Phase 5 – Productization, Launch & Career Amplification",Set up actionable alerts
+132,ML monitoring best practices,Article,https://www.evidentlyai.com/ml-monitoring,57,"Phase 5 – Productization, Launch & Career Amplification",Edge + cloud drift tactics
+131,Metabase modeling guide,Docs,https://www.metabase.com/docs/latest/,57,"Phase 5 – Productization, Launch & Career Amplification",Dashboard fundamentals
+135,RMA process best practices,Article,https://www.ifixit.com/Guide,58,"Phase 5 – Productization, Launch & Career Amplification",Reduce turnaround
+134,SRE workbook,Book,https://sre.google/workbook/,58,"Phase 5 – Productization, Launch & Career Amplification",On-call excellence
+136,Zendesk knowledge base playbook,Guide,https://www.zendesk.com/service/help-center/,58,"Phase 5 – Productization, Launch & Career Amplification",Support tooling
+138,AWS IoT cost optimization,Guide,https://aws.amazon.com/iot/,59,"Phase 5 – Productization, Launch & Career Amplification",Cloud cost levers
+137,Embedded performance budget guide,Article,https://interrupt.memfault.com/blog/,59,"Phase 5 – Productization, Launch & Career Amplification",Budget templates
+139,Latency optimization playbook,Talk,https://www.youtube.com/watch?v=kpcVBogONmw,59,"Phase 5 – Productization, Launch & Career Amplification",Tuning inspiration
+140,OWASP ISVS checklist,Standard,https://owasp.org/www-project-iot-security-verification-standard/,60,"Phase 5 – Productization, Launch & Career Amplification",Audit baseline
+141,Red team playbook,Article,https://www.crowdstrike.com/cybersecurity-101/red-team-vs-blue-team/,60,"Phase 5 – Productization, Launch & Career Amplification",Simulation guidance
+142,Secure coding lunch-and-learn kit,Template,https://github.com/OWASP/DevSecOpsGuideline,60,"Phase 5 – Productization, Launch & Career Amplification",Training materials
+145,Enablement plan template,Template,https://miro.com/miroverse/sales-enablement-plan/,62,"Phase 5 – Productization, Launch & Career Amplification",Train stakeholders
+144,Microsoft style guide,Guide,https://learn.microsoft.com/style-guide/,62,"Phase 5 – Productization, Launch & Career Amplification",Consistency before freeze
+143,Release readiness checklist,Checklist,https://www.productplan.com/,62,"Phase 5 – Productization, Launch & Career Amplification",Ensure completeness
+146,AWS game day handbook,Guide,https://aws.amazon.com/gameday/,63,"Phase 5 – Productization, Launch & Career Amplification",Exercise ideas
+148,DORA metrics primer,Guide,https://www.devops-research.com/research.html,63,"Phase 5 – Productization, Launch & Career Amplification",Key KPIs
+147,Incident command system for tech,Article,https://www.usenix.org/conference/srecon19emea/presentation/murphy,63,"Phase 5 – Productization, Launch & Career Amplification",ICS adaptation
+149,How to Build an Impressive GitHub Profile,Article,https://www.freecodecamp.org/news/how-to-build-an-impressive-github-profile/,64,"Phase 5 – Productization, Launch & Career Amplification",Ensure completeness
+150,Loom storytelling tips,Video,https://www.loom.com/blog,64,"Phase 5 – Productization, Launch & Career Amplification",Record engaging clips
+151,Reference letter template,Template,https://www.indeed.com/career-advice/,64,"Phase 5 – Productization, Launch & Career Amplification",Consistent requests
+152,Embedded systems interview questions repo,Repo,https://github.com/search?q=embedded+systems+interview,65,"Phase 5 – Productization, Launch & Career Amplification",Practice prompts
+153,Interviewing.io firmware sessions,Platform,https://interviewing.io/,65,"Phase 5 – Productization, Launch & Career Amplification",Mock interviews
+154,STAR storytelling workbook,Worksheet,https://www.themuse.com/advice/star-interview-method,65,"Phase 5 – Productization, Launch & Career Amplification",Craft narratives
+157,Open source leadership guide,Guide,https://opensource.guide/leadership-and-governance/,66,"Phase 5 – Productization, Launch & Career Amplification",Structure mentorship
+156,Write the Docs talk tips,Article,https://www.writethedocs.org/conf/,66,"Phase 5 – Productization, Launch & Career Amplification",Talk preparation
+155,Zephyr contributing guide,Docs,https://docs.zephyrproject.org/latest/contribute/index.html,66,"Phase 5 – Productization, Launch & Career Amplification",Follow PR etiquette
+158,Final demo checklist,Checklist,https://www.atlassian.com/team-playbook,67,"Phase 5 – Productization, Launch & Career Amplification",No surprises
+160,Gratitude writing guide,Guide,https://www.grammarly.com/blog/,67,"Phase 5 – Productization, Launch & Career Amplification",Thoughtful thank-yous
+159,Retrospective celebration ideas,Article,https://www.atlassian.com/agile/teamwork/team-celebrations,67,"Phase 5 – Productization, Launch & Career Amplification",Mark the milestone
+162,Career-focused retro template,Worksheet,https://www.notion.so/templates/,68,"Phase 5 – Productization, Launch & Career Amplification",Guide reflection
+163,Continuous learning plan guide,Article,https://www.linkedin.com/learning/topics/learning-and-development,68,"Phase 5 – Productization, Launch & Career Amplification",Plan next steps
+161,Networking outreach templates,Article,https://www.themuse.com/advice,68,"Phase 5 – Productization, Launch & Career Amplification",Tailor messages
+189,AUTOSAR Official Documentation,Docs,https://www.autosar.org/standards,69,"Phase 5 – Productization, Launch & Career Amplification",
+190,AUTOSAR Tutorial - Vector,Video,https://www.vector.com/int/en/know-how/autosar/,69,"Phase 5 – Productization, Launch & Career Amplification",
+191,EB Tresos Studio (Free Eval),Tool,https://www.elektrobit.com/products/ecu/eb-tresos/studio/,69,"Phase 5 – Productization, Launch & Career Amplification",
+193,ARM Assembly Cheatsheet,Docs,https://developer.arm.com/documentation/dui0489/latest/arm-and-thumb-instructions/instruction-summary,70,"Phase 5 – Productization, Launch & Career Amplification",
+192,ARM Assembly Tutorial,Article,https://azeria-labs.com/writing-arm-assembly-part-1/,70,"Phase 5 – Productization, Launch & Career Amplification",
+194,ARM Cortex-M Programmer's Model,Docs,https://developer.arm.com/documentation/dui0553/latest/,70,"Phase 5 – Productization, Launch & Career Amplification",
+199,Discovery Book (STM32),Book,https://docs.rust-embedded.org/discovery/,70,"Phase 5 – Productization, Launch & Career Amplification",
+198,The Embedded Rust Book,Book,https://docs.rust-embedded.org/book/,70,"Phase 5 – Productization, Launch & Career Amplification",
+201,embassy Async Framework,Repo,https://embassy.dev/,70,"Phase 5 – Productization, Launch & Career Amplification",
+200,probe-rs Debugger,Tool,https://probe.rs/,70,"Phase 5 – Productization, Launch & Career Amplification",
+203,CMSIS-DSP Library,Docs,https://arm-software.github.io/CMSIS-DSP/main/index.html,71,"Phase 5 – Productization, Launch & Career Amplification",
+202,Fixed-Point Arithmetic Tutorial,Article,https://www.superkits.net/whitepapers/Fixed%20Point%20Representation%20&%20Fractional%20Math.pdf,71,"Phase 5 – Productization, Launch & Career Amplification",
+195,HDLBits - Interactive Verilog,Course,https://hdlbits.01xz.net/wiki/Main_Page,71,"Phase 5 – Productization, Launch & Career Amplification",
+206,Lock-Free Ring Buffer Implementation,Article,https://www.snellman.net/blog/archive/2016-12-13-ring-buffers/,71,"Phase 5 – Productization, Launch & Career Amplification",
+204,PID Controller Tutorial,Video,https://www.youtube.com/watch?v=wkfEZmsQqiA,71,"Phase 5 – Productization, Launch & Career Amplification",
+196,SystemVerilog Tutorial,Article,https://www.chipverify.com/systemverilog/systemverilog-tutorial,71,"Phase 5 – Productization, Launch & Career Amplification",
+205,The Scientist and Engineer's Guide to DSP,Book,https://www.dspguide.com/,71,"Phase 5 – Productization, Launch & Career Amplification",
+197,Verilator Intro,Tool,https://verilator.org/guide/latest/,71,"Phase 5 – Productization, Launch & Career Amplification",
