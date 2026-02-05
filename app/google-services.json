@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "484952243047",
+    "firebase_url": "https://embedded-systems-career-guide-default-rtdb.firebaseio.com",
     "project_id": "embedded-systems-career-guide",
     "storage_bucket": "embedded-systems-career-guide.firebasestorage.app"
   },

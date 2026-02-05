@@ -60,6 +60,45 @@
             android:exported="false"
             android:theme="@style/Theme.EmbeddedSystemsCareerGuide" />
 
+        <!-- Pre-Release Event Challenge Activities -->
+        <activity
+            android:name=".ui.challenge.ChallengeLoginActivity"
+            android:exported="false"
+            android:theme="@style/Theme.EmbeddedSystemsCareerGuide" />
+
+        <activity
+            android:name=".ui.challenge.RollNumberEntryActivity"
+            android:exported="false"
+            android:theme="@style/Theme.EmbeddedSystemsCareerGuide" />
+
+        <activity
+            android:name=".ui.challenge.Challenge1Activity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.EmbeddedSystemsCareerGuide" />
+
+        <activity
+            android:name=".ui.challenge.Challenge2Activity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.EmbeddedSystemsCareerGuide" />
+
+        <activity
+            android:name=".ui.challenge.Challenge3Activity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.EmbeddedSystemsCareerGuide" />
+
+        <activity
+            android:name=".ui.challenge.RankingDashboardActivity"
+            android:exported="false"
+            android:theme="@style/Theme.EmbeddedSystemsCareerGuide" />
+
+        <activity
+            android:name=".ui.challenge.AdminDashboardActivity"
+            android:exported="false"
+            android:theme="@style/Theme.EmbeddedSystemsCareerGuide" />
+
     </application>
 
 </manifest>
