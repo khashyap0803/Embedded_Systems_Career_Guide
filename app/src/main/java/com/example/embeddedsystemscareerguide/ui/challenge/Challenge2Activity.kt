@@ -16,6 +16,7 @@ import com.example.embeddedsystemscareerguide.services.Challenge2QuestionInterna
 import com.example.embeddedsystemscareerguide.services.GeminiChallengeService
 import com.example.embeddedsystemscareerguide.services.PreReleaseEventService
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -37,7 +38,11 @@ class Challenge2Activity : AppCompatActivity() {
     private var timer: CountDownTimer? = null
     private var timeRemainingMs: Long = ChallengeConstants.CHALLENGE_2_TIME_MS
     private var warningCount: Int = 0
+    private var timerStartRealtime: Long = 0L  // C-07: wall-clock tracking
+    private var challengeStartRealtime: Long = 0L  // BUG#1-FIX: track total elapsed for time bonus
+    private var isSubmitting: Boolean = false   // H-01: prevent false positive warnings during submit
     private var lastKnownExtraTime: Long = 0L
+    private var timerRunning: Boolean = false  // BUG#7-FIX: prevent duplicate timer starts
     private var extraTimeListener: com.google.firebase.database.ValueEventListener? = null
     
     // ========== MULTI-QUESTION SUPPORT ==========
@@ -64,6 +69,7 @@ class Challenge2Activity : AppCompatActivity() {
         android.util.Log.i("Challenge2", "Starting Challenge 2 for $rollNumber, isResume=$isResume")
         
         setupUI()
+        setupBackPressHandler()
         loadQuestions()
     }
     
@@ -88,7 +94,10 @@ class Challenge2Activity : AppCompatActivity() {
         binding.btnPrevQuestion.setOnClickListener { navigateToQuestion(currentQuestionIndex - 1) }
         binding.btnNextQuestion.setOnClickListener { navigateToQuestion(currentQuestionIndex + 1) }
         binding.btnSubmit.setOnClickListener { confirmFinalSubmit() }
-        binding.btnSaveProgress.setOnClickListener { saveCurrentAnswer() }
+        binding.btnSaveProgress.setOnClickListener { 
+            saveCurrentAnswer()
+            Toast.makeText(this, "💾 Answer saved!", Toast.LENGTH_SHORT).show()
+        }
         
         // Progress dots
         binding.dot1.setOnClickListener { navigateToQuestion(0) }
@@ -116,9 +125,28 @@ class Challenge2Activity : AppCompatActivity() {
                             var resumeTimeMs = ChallengeConstants.CHALLENGE_2_TIME_MS
                             var resumeQuestionIndex = 0
                             
-                            if (savedState != null) {
+                            // Check if user has EXTRA TIME GRANTED (for timed-out users)
+                            // If yes, use ONLY the extra time, not the original timer
+                            val extraTimeInfo = eventService.getExtraTimeInfo(rollNumber)
+                            val hasExtraTime = extraTimeInfo != null && extraTimeInfo.first == 2 && extraTimeInfo.second > 0
+                            
+                            if (hasExtraTime) {
+                                // User timed out and admin granted extra time - use ONLY the extra time
+                                resumeTimeMs = extraTimeInfo!!.second
+                                // CRITICAL: Set lastKnownExtraTime so listenForExtraTime won't double-add this time
+                                lastKnownExtraTime = extraTimeInfo.second
+                                android.util.Log.i("Challenge2", "Using EXTRA TIME ONLY: ${resumeTimeMs}ms (${resumeTimeMs / 60000} minutes), lastKnownExtraTime set")
+                            } else if (savedState != null) {
+                                // Normal resume (terminated user) - use saved remaining time
                                 val (stateJson, savedTimeMs, savedQuestionIdx) = savedState
                                 resumeTimeMs = if (savedTimeMs > 0) savedTimeMs else ChallengeConstants.CHALLENGE_2_TIME_MS
+                                resumeQuestionIndex = savedQuestionIdx
+                                android.util.Log.i("Challenge2", "Using saved time: ${resumeTimeMs}ms")
+                            }
+                            
+                            // Restore answers from saved state regardless of timer source
+                            if (savedState != null) {
+                                val (stateJson, _, savedQuestionIdx) = savedState
                                 resumeQuestionIndex = savedQuestionIdx
                                 
                                 // Parse and restore all answers
@@ -156,11 +184,11 @@ class Challenge2Activity : AppCompatActivity() {
             }
             
             // NEW CHALLENGE MODE: Generate new questions via Gemini
-            showLoading(true, "Generating 3 code completion questions via Gemini AI...")
+            showLoading(true, "Generating 3 code completion questions...")
             
             eventService.startChallenge2(rollNumber)
             
-            // Generate questions via Gemini API (cloud-only, no local fallback)
+            // Generate questions via API (cloud-only, no local fallback)
             val geminiResult = geminiService.generateChallenge2Questions()
             
             if (geminiResult.isSuccess && geminiResult.getOrNull()?.size == 3) {
@@ -200,6 +228,8 @@ class Challenge2Activity : AppCompatActivity() {
                 put("preCode", q.preCode)
                 put("postCode", q.postCode)
                 put("missingLineCount", q.missingLineCount)
+                // BUG#6-FIX: Keep correctAnswer for fair evaluation on resume
+                // Firebase security rules already restrict read access
                 put("correctAnswer", q.correctAnswer)
                 put("hints", JSONArray(q.hints))
             })
@@ -241,7 +271,7 @@ class Challenge2Activity : AppCompatActivity() {
     private fun showGeminiErrorDialog(errorMessage: String) {
         AlertDialog.Builder(this)
             .setTitle("⚠️ Connection Error")
-            .setMessage("Failed to generate questions from Gemini AI.\n\nError: $errorMessage\n\nPlease check your internet connection and try again.")
+            .setMessage("Failed to generate questions.\n\nError: $errorMessage\n\nPlease check your internet connection and try again.")
             .setPositiveButton("🔄 Retry") { _, _ ->
                 questions.clear()
                 questionAnswers.clear()
@@ -259,8 +289,11 @@ class Challenge2Activity : AppCompatActivity() {
     private fun displayQuestion(index: Int) {
         if (index < 0 || index >= questions.size) return
         
-        // Save current answer before switching
-        saveCurrentAnswer()
+        // Only save current answer when navigating AWAY from current question
+        // (not on initial display, which would overwrite restored answers with empty text)
+        if (index != currentQuestionIndex && currentQuestionIndex < questionAnswers.size) {
+            saveCurrentAnswer()
+        }
         
         currentQuestionIndex = index
         val question = questions[index]
@@ -302,7 +335,7 @@ class Challenge2Activity : AppCompatActivity() {
         if (currentQuestionIndex < questionAnswers.size) {
             questionAnswers[currentQuestionIndex] = binding.etMissingCode.text.toString()
         }
-        Toast.makeText(this, "Progress saved", Toast.LENGTH_SHORT).show()
+        // M-10: Removed toast spam — this is called automatically on every navigation
     }
     
     private fun navigateToQuestion(index: Int) {
@@ -312,28 +345,44 @@ class Challenge2Activity : AppCompatActivity() {
     }
     
     private fun startTimer() {
-        // Listen for extra time added by admin
-        listenForExtraTime()
+        // Listen for extra time added by admin (only on first start)
+        if (!timerRunning) listenForExtraTime()
+        
+        // C-07: Record wall-clock start time
+        timerStartRealtime = android.os.SystemClock.elapsedRealtime()
+        // BUG#1-FIX: Record challenge start only once (for accurate time bonus)
+        if (challengeStartRealtime == 0L) challengeStartRealtime = timerStartRealtime
+        
+        timer?.cancel()  // BUG#7-FIX: Cancel any existing timer before starting new one
+        timerRunning = true
         
         timer = object : CountDownTimer(timeRemainingMs, 1000) {
             override fun onTick(millisUntilFinished: Long) {
                 timeRemainingMs = millisUntilFinished
                 updateTimerDisplay()
-                
-                when {
-                    millisUntilFinished < 60000 -> {
-                        binding.timerCard.setCardBackgroundColor(getColor(android.R.color.holo_red_light))
-                    }
-                    millisUntilFinished < 300000 -> {
-                        binding.timerCard.setCardBackgroundColor(getColor(android.R.color.holo_orange_light))
-                    }
-                }
+                updateTimerColor()  // BUG#3/9-FIX: Use helper
             }
             
             override fun onFinish() {
+                timerRunning = false
                 timeoutAndSubmit()
             }
         }.start()
+    }
+    
+    // BUG#3/9-FIX: Extracted timer color logic into helper to eliminate duplication
+    private fun updateTimerColor() {
+        when {
+            timeRemainingMs < 60000 -> {
+                binding.timerCard.setCardBackgroundColor(getColor(android.R.color.holo_red_light))
+            }
+            timeRemainingMs < 300000 -> {
+                binding.timerCard.setCardBackgroundColor(getColor(android.R.color.holo_orange_light))
+            }
+            else -> {
+                binding.timerCard.setCardBackgroundColor(getColor(R.color.indigo_600))
+            }
+        }
     }
     
     private fun listenForExtraTime() {
@@ -348,27 +397,8 @@ class Challenge2Activity : AppCompatActivity() {
                     // Add extra time to remaining time
                     timeRemainingMs += additionalTime
                     
-                    // Restart timer with new time
-                    timer?.cancel()
-                    timer = object : CountDownTimer(timeRemainingMs, 1000) {
-                        override fun onTick(millisUntilFinished: Long) {
-                            timeRemainingMs = millisUntilFinished
-                            updateTimerDisplay()
-                            
-                            when {
-                                millisUntilFinished < 60000 -> {
-                                    binding.timerCard.setCardBackgroundColor(getColor(android.R.color.holo_red_light))
-                                }
-                                millisUntilFinished < 300000 -> {
-                                    binding.timerCard.setCardBackgroundColor(getColor(android.R.color.holo_orange_light))
-                                }
-                            }
-                        }
-                        
-                        override fun onFinish() {
-                            timeoutAndSubmit()
-                        }
-                    }.start()
+                    // Restart timer with new time — reuse startTimer() logic (BUG#3-FIX)
+                    startTimer()
                     
                     Toast.makeText(this@Challenge2Activity, "⏰ Admin added ${additionalTime / 60000} minutes!", Toast.LENGTH_LONG).show()
                 }
@@ -388,6 +418,7 @@ class Challenge2Activity : AppCompatActivity() {
     }
     
     private fun updateProgress() {
+        if (questions.isEmpty()) return  // BUG#10-FIX: Guard against division by zero
         val answered = questionAnswers.count { it.isNotEmpty() }
         binding.tvProgress.text = "$answered/${questions.size} questions answered"
         binding.progressBarCompletion.progress = (answered * 100 / questions.size)
@@ -433,9 +464,10 @@ class Challenge2Activity : AppCompatActivity() {
             .show()
     }
     
-    private fun submitChallenge() {
-        showLoading(true, "Evaluating all 3 questions...")
+    private fun submitChallenge(isTimeout: Boolean = false) {
+        showLoading(true, "Evaluating your submissions...")
         timer?.cancel()
+        isSubmitting = true  // H-01: prevent anti-cheat during submission
         
         lifecycleScope.launch {
             // Build questions with answers
@@ -443,20 +475,52 @@ class Challenge2Activity : AppCompatActivity() {
                 q.copy(userAnswer = questionAnswers.getOrElse(i) { "" })
             }
             
-            // Calculate time bonus
-            val timeUsedMs = ChallengeConstants.CHALLENGE_2_TIME_MS - timeRemainingMs
+            // BUG#1-FIX: Use actual elapsed wall-clock time, not constant-based calculation
+            val actualElapsedMs = if (challengeStartRealtime > 0L)
+                android.os.SystemClock.elapsedRealtime() - challengeStartRealtime
+            else
+                maxOf(0L, ChallengeConstants.CHALLENGE_2_TIME_MS - timeRemainingMs)
+            val timeUsedMs = maxOf(0L, actualElapsedMs)
             val timeBonus = calculateTimeBonus(timeUsedMs)
             
-            // Evaluate
-            val evaluation = evaluateSubmission(submittedQuestions, timeBonus)
+            // Evaluate with retry (no local fallback)
+            val evaluation = try {
+                val evalResult = geminiService.evaluateChallenge2(submittedQuestions)
+                
+                if (evalResult.isSuccess) {
+                    android.util.Log.i("Challenge2", "Evaluation successful")
+                    val result = evalResult.getOrThrow()
+                    // Apply time bonus: 80% evaluation + 20% time bonus
+                    val adjustedScore = (result.totalScore * 0.8 + timeBonus * 0.2).toInt().coerceIn(0, 100)
+                    result.copy(
+                        totalScore = adjustedScore,
+                        percentage = adjustedScore.toDouble(),
+                        weightedScore = (adjustedScore * ChallengeConstants.CHALLENGE_2_WEIGHT).toInt()
+                    )
+                } else {
+                    android.util.Log.w("Challenge2", "Evaluation failed", evalResult.exceptionOrNull())
+                    null
+                }
+            } catch (e: Exception) {
+                android.util.Log.w("Challenge2", "Evaluation exception", e)
+                null
+            }
+            
+            if (evaluation == null) {
+                showLoading(false)
+                isSubmitting = false
+                Toast.makeText(this@Challenge2Activity, "⚠️ Evaluation failed. Please check your internet and try again.", Toast.LENGTH_LONG).show()
+                return@launch
+            }
             
             // Submit to Firebase
-            val success = eventService.submitChallenge2(rollNumber, submittedQuestions, evaluation)
+            val success = eventService.submitChallenge2(rollNumber, submittedQuestions, evaluation, isTimeout)
             
             if (success) {
                 navigateToRankingDashboard()
             } else {
                 showLoading(false)
+                isSubmitting = false
                 Toast.makeText(this@Challenge2Activity, "Submission failed", Toast.LENGTH_SHORT).show()
             }
         }
@@ -468,72 +532,24 @@ class Challenge2Activity : AppCompatActivity() {
         return maxOf(0, bonus)
     }
     
-    private fun evaluateSubmission(submittedQuestions: List<Challenge2QuestionInternal>, timeBonus: Int): EvaluationResult {
-        var totalScore = 0
-        var hasAnyAttempt = false
-        
-        submittedQuestions.forEach { question ->
-            val answer = question.userAnswer ?: ""
-            
-            if (answer.isNotEmpty()) {
-                hasAnyAttempt = true
-                // Basic scoring: check for key elements
-                var questionScore = 20 // Base attempt score
-                
-                // Check for control structures
-                if (answer.contains("if")) questionScore += 20
-                if (answer.contains("digitalWrite") || answer.contains("digitalRead")) questionScore += 20
-                if (answer.contains("HIGH") || answer.contains("LOW")) questionScore += 15
-                if (answer.lines().size >= question.missingLineCount) questionScore += 25
-                
-                totalScore += minOf(questionScore, 100) / questions.size
-            }
-        }
-        
-        // If no attempt was made, return 0 score
-        if (!hasAnyAttempt) {
-            return EvaluationResult(
-                attemptCompleteness = EvaluationCategory(0, 20, "No attempt made"),
-                syntaxCorrectness = EvaluationCategory(0, 20, "No code submitted"),
-                logicAccuracy = EvaluationCategory(0, 25, "No solution provided"),
-                criticalElements = EvaluationCategory(0, 15, "No code written"),
-                codeQuality = EvaluationCategory(0, 10, "No code provided"),
-                errorCount = EvaluationCategory(0, 10, "N/A"),
-                totalScore = 0,
-                maxScore = 100,
-                percentage = 0.0,
-                weightedScore = 0,
-                feedback = "No attempt was made. Please fill in the missing code lines.",
-                evaluatedAt = System.currentTimeMillis()
-            )
-        }
-        
-        // Apply time bonus only if user attempted something
-        val finalScore = (totalScore * 0.8 + timeBonus * 0.2).toInt()
-        
-        return EvaluationResult(
-            attemptCompleteness = EvaluationCategory(18, 20, ""),
-            syntaxCorrectness = EvaluationCategory(16, 20, ""),
-            logicAccuracy = EvaluationCategory(22, 25, ""),
-            criticalElements = EvaluationCategory(12, 15, ""),
-            codeQuality = EvaluationCategory(8, 10, ""),
-            errorCount = EvaluationCategory(7, 10, ""),
-            totalScore = finalScore,
-            maxScore = 100,
-            percentage = finalScore.toDouble(),
-            weightedScore = (finalScore * ChallengeConstants.CHALLENGE_2_WEIGHT).toInt(),
-            feedback = "Evaluated ${questions.size} code completion questions. Time bonus: $timeBonus points.",
-            evaluatedAt = System.currentTimeMillis()
-        )
-    }
-    
     private fun timeoutAndSubmit() {
         Toast.makeText(this, "Time's up! Auto-submitting...", Toast.LENGTH_LONG).show()
         saveCurrentAnswer()
         
         lifecycleScope.launch {
+            // CRITICAL: Save state to Firebase BEFORE timeout so user can resume with their answers
+            val stateJson = serializeCurrentState()
+            eventService.saveChallengeState(
+                rollNumber = rollNumber,
+                challengeNumber = 2,
+                stateJson = stateJson,
+                timeRemainingMs = 0L, // Timed out, no time remaining
+                currentProblemIndex = currentQuestionIndex
+            )
+            android.util.Log.i("Challenge2", "Saved challenge state to Firebase before timeout")
+            
             eventService.timeoutChallenge(rollNumber, 2)
-            submitChallenge()
+            submitChallenge(isTimeout = true)
         }
     }
     
@@ -552,12 +568,17 @@ class Challenge2Activity : AppCompatActivity() {
     
     override fun onStop() {
         super.onStop()
-        if (!isFinishing) handleAppBackground()
+        // H-01: Don't trigger anti-cheat during submission or when finishing
+        if (!isFinishing && !isSubmitting) handleAppBackground()
     }
     
     private var isTerminated = false
     
     private fun handleAppBackground() {
+        // C-07: Pause timer when going to background
+        timer?.cancel()
+        timerRunning = false  // BUG#7-FIX: mark timer as stopped
+        
         warningCount++
         lifecycleScope.launch {
             // Save current answer first
@@ -631,11 +652,39 @@ class Challenge2Activity : AppCompatActivity() {
     
     override fun onResume() {
         super.onResume()
-        if (isTerminated) {
-            // Show termination dialog and redirect to login
-            showTerminationDialog()
-        } else if (warningCount == 1) {
-            showWarningDialog()
+        
+        // BUG#4-FIX: Sync warningCount FIRST, then decide what to show
+        lifecycleScope.launch {
+            try {
+                val snapshot = eventService.getParticipantRef(rollNumber)
+                    .child("status/warningCount").get().await()
+                val firebaseCount = snapshot.getValue(Int::class.java) ?: 0
+                if (firebaseCount > warningCount) {
+                    warningCount = firebaseCount
+                    android.util.Log.i("Challenge2", "Synced warningCount from Firebase: $warningCount")
+                }
+            } catch (e: Exception) {
+                android.util.Log.w("Challenge2", "Failed to sync warningCount", e)
+            }
+            
+            // BUG#4-FIX: All decisions now happen AFTER warningCount sync completes
+            if (isTerminated) {
+                showTerminationDialog()
+            } else if (warningCount >= 1 && !timerRunning) {
+                // BUG#2-FIX: Deduct background time before restarting timer
+                if (timerStartRealtime > 0) {
+                    val backgroundTimeMs = android.os.SystemClock.elapsedRealtime() - timerStartRealtime
+                    if (backgroundTimeMs > 1000) {
+                        timeRemainingMs = maxOf(0L, timeRemainingMs - backgroundTimeMs)
+                        android.util.Log.i("Challenge2", "Deducted ${backgroundTimeMs}ms background time, remaining=${timeRemainingMs}ms")
+                    }
+                }
+                showWarningDialog()
+                if (timerStartRealtime > 0) {
+                    startTimer()
+                }
+            }
+            // BUG#7-FIX: Removed warningCount==0 branch — initial timer is started by loadQuestions()
         }
     }
     
@@ -678,13 +727,21 @@ class Challenge2Activity : AppCompatActivity() {
         }
     }
     
-    override fun onBackPressed() {
-        AlertDialog.Builder(this)
-            .setTitle("Exit Challenge?")
-            .setMessage("If you exit, you will receive a warning and may be terminated.")
-            .setPositiveButton("Exit") { _, _ -> super.onBackPressed() }
-            .setNegativeButton("Stay", null)
-            .show()
+    // H-06: Use OnBackPressedCallback instead of deprecated onBackPressed
+    private fun setupBackPressHandler() {
+        onBackPressedDispatcher.addCallback(this, object : androidx.activity.OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                AlertDialog.Builder(this@Challenge2Activity)
+                    .setTitle("Exit Challenge?")
+                    .setMessage("If you exit, you will receive a warning and may be terminated.")
+                    .setPositiveButton("Exit") { _, _ ->
+                        isEnabled = false
+                        onBackPressedDispatcher.onBackPressed()
+                    }
+                    .setNegativeButton("Stay", null)
+                    .show()
+            }
+        })
     }
     
     // Block keyboard paste shortcuts (Ctrl+V) for tablets/ChromeOS

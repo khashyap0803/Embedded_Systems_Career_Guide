@@ -38,6 +38,7 @@ class AdminDashboardActivity : AppCompatActivity() {
     private lateinit var participantsAdapter: ParticipantsAdapter
     private var allParticipants: List<ParticipantStatus> = emptyList()
     private var currentFilter: String = "All"
+    private var participantsJob: kotlinx.coroutines.Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -88,11 +89,13 @@ class AdminDashboardActivity : AppCompatActivity() {
         // Swipe to refresh
         binding.swipeRefresh.setOnRefreshListener {
             observeParticipants()
-            binding.swipeRefresh.isRefreshing = false
+            // M-04: isRefreshing is now dismissed inside observeParticipants() callback
         }
         
         // Logout button
         binding.btnLogout.setOnClickListener {
+            // Cancel participants observer BEFORE signing out to prevent Firebase permission error
+            participantsJob?.cancel()
             auth.signOut()
             val intent = Intent(this, com.example.embeddedsystemscareerguide.ui.auth.LoginActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
@@ -111,9 +114,13 @@ class AdminDashboardActivity : AppCompatActivity() {
     private fun observeParticipants() {
         binding.loadingOverlay.visibility = View.VISIBLE
         
-        lifecycleScope.launch {
+        // Cancel any existing observer before starting a new one
+        participantsJob?.cancel()
+        participantsJob = lifecycleScope.launch {
             eventService.observeAllParticipants().collectLatest { participants ->
                 binding.loadingOverlay.visibility = View.GONE
+                // M-04: Dismiss refresh spinner after data arrives
+                binding.swipeRefresh.isRefreshing = false
                 allParticipants = participants
                 updateStats(participants)
                 applyFilter()
@@ -216,11 +223,16 @@ class AdminDashboardActivity : AppCompatActivity() {
             return
         }
 
-        val statusText = if (participant.isTerminated) "terminated" else "timed out"
+        // For timed-out users, show Add Extra Time dialog first
+        if (isTimedOut) {
+            showAddExtraTimeDialog(participant)
+            return
+        }
         
+        // For terminated users, show regular resume dialog
         AlertDialog.Builder(this)
             .setTitle("🔄 Resume Session")
-            .setMessage("Resume session for ${participant.rollNumber}?\n\nThis user was $statusText.\n\nThis will:\n• Clear ${if (participant.isTerminated) "termination" else "timeout"} status\n• Reset warning count\n• Allow them to continue from where they left off")
+            .setMessage("Resume session for ${participant.rollNumber}?\n\nThis user was terminated.\n\nThis will:\n• Clear termination status\n• Reset warning count\n• Allow them to continue from where they left off")
             .setPositiveButton("Resume") { _, _ ->
                 performResumeSession(participant)
             }
@@ -253,8 +265,7 @@ class AdminDashboardActivity : AppCompatActivity() {
         val timeValues = arrayOf(5, 10, 15, 20, -1)
 
         AlertDialog.Builder(this)
-            .setTitle("⏰ Add Extra Time")
-            .setMessage("Add extra time for ${participant.rollNumber}")
+            .setTitle("⏰ Add Extra Time for ${participant.rollNumber}")
             .setItems(options) { _, which ->
                 val minutes = timeValues[which]
                 if (minutes == -1) {

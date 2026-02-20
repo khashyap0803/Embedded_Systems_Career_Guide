@@ -42,6 +42,7 @@
 
         <activity
             android:name=".ui.assessment.AssessmentActivity"
+            android:configChanges="uiMode"
             android:exported="false" />
 
         <activity
@@ -51,6 +52,7 @@
 
         <activity
             android:name=".ui.quiz.QuizActivity"
+            android:configChanges="uiMode"
             android:exported="false"
             android:theme="@style/Theme.EmbeddedSystemsCareerGuide" />
 
@@ -73,18 +75,21 @@
 
         <activity
             android:name=".ui.challenge.Challenge1Activity"
+            android:configChanges="uiMode"
             android:exported="false"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.EmbeddedSystemsCareerGuide" />
 
         <activity
             android:name=".ui.challenge.Challenge2Activity"
+            android:configChanges="uiMode"
             android:exported="false"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.EmbeddedSystemsCareerGuide" />
 
         <activity
             android:name=".ui.challenge.Challenge3Activity"
+            android:configChanges="uiMode"
             android:exported="false"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.EmbeddedSystemsCareerGuide" />

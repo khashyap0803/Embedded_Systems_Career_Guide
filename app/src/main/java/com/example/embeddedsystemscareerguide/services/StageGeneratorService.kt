@@ -6,6 +6,7 @@ import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 
 /**
@@ -23,6 +24,8 @@ class StageGeneratorService(private val context: Context) {
     companion object {
         private const val TAG = "StageGeneratorService"
         private const val TARGET_STAGES = 40  // Target number of stages
+        private const val MAX_RETRIES = 3     // Maximum API retry attempts
+        private const val INITIAL_RETRY_DELAY_MS = 1000L  // 1 second initial delay
         
         @Volatile
         private var instance: StageGeneratorService? = null
@@ -85,36 +88,74 @@ class StageGeneratorService(private val context: Context) {
             
             callback.onProgress(2, "Creating your personalized learning path...")
 
-            // Generate prompt using template
-            val prompt = GeminiServiceV2.PromptTemplates.personalizedStages(
-                userName = userName,
-                weakAreas = weakAreas,
-                strongAreas = strongAreas,
-                targetStageCount = TARGET_STAGES
-            )
-
-            // Call Gemini API
-            val result = geminiService.generateContent(prompt, maxOutputTokens = 8192)
+            // Retry loop with exponential backoff
+            var lastError: String? = null
+            var stages: List<PersonalizedStage> = emptyList()
             
-            if (result.isFailure) {
-                Log.e(TAG, "API call failed: ${result.exceptionOrNull()?.message}")
-                callback.onError("Failed to generate learning path. Please try again.")
-                return@withContext
+            for (attempt in 1..MAX_RETRIES) {
+                Log.d(TAG, "API attempt $attempt of $MAX_RETRIES")
+                
+                // Generate prompt using template (add retry hint on subsequent attempts)
+                val prompt = if (attempt == 1) {
+                    GeminiServiceV2.PromptTemplates.personalizedStages(
+                        userName = userName,
+                        weakAreas = weakAreas,
+                        strongAreas = strongAreas,
+                        targetStageCount = TARGET_STAGES
+                    )
+                } else {
+                    // On retry, add explicit instruction for cleaner JSON
+                    GeminiServiceV2.PromptTemplates.personalizedStages(
+                        userName = userName,
+                        weakAreas = weakAreas,
+                        strongAreas = strongAreas,
+                        targetStageCount = TARGET_STAGES
+                    ) + "\n\nIMPORTANT: Ensure valid, complete JSON. Close all arrays and objects properly."
+                }
+
+                // Call Gemini API
+                val result = geminiService.generateContent(prompt, maxOutputTokens = 8192)
+                
+                if (result.isFailure) {
+                    lastError = result.exceptionOrNull()?.message ?: "API call failed"
+                    Log.e(TAG, "API call failed on attempt $attempt: $lastError")
+                    
+                    if (attempt < MAX_RETRIES) {
+                        val delayMs = INITIAL_RETRY_DELAY_MS * (1 shl (attempt - 1)) // Exponential backoff
+                        callback.onProgress(2, "Retrying... (attempt ${attempt + 1}/$MAX_RETRIES)")
+                        delay(delayMs)
+                        continue
+                    }
+                    callback.onError("Failed to generate learning path after $MAX_RETRIES attempts. Please try again later.")
+                    return@withContext
+                }
+
+                callback.onProgress(3, "Processing AI response...")
+                
+                // Parse response
+                val responseText = result.getOrNull() ?: ""
+                stages = parseStagesFromResponse(responseText)
+                
+                if (stages.isNotEmpty()) {
+                    Log.d(TAG, "Successfully parsed ${stages.size} stages on attempt $attempt")
+                    break // Success!
+                }
+                
+                // Parsing failed, retry
+                lastError = "Failed to parse JSON response"
+                Log.w(TAG, "Parse failed on attempt $attempt, ${if (attempt < MAX_RETRIES) "retrying..." else "giving up"}")
+                
+                if (attempt < MAX_RETRIES) {
+                    val delayMs = INITIAL_RETRY_DELAY_MS * (1 shl (attempt - 1))
+                    callback.onProgress(2, "Response parsing failed. Retrying... (attempt ${attempt + 1}/$MAX_RETRIES)")
+                    delay(delayMs)
+                }
             }
-
-            callback.onProgress(3, "Processing AI response...")
             
-            // Parse response
-            val responseText = result.getOrNull() ?: ""
-            val stages = parseStagesFromResponse(responseText)
-            
+            // Check if we got valid stages after all retries
             if (stages.isEmpty()) {
-                Log.e(TAG, "Failed to parse stages from response")
-                // Use fallback stages
-                val fallbackStages = createFallbackStages(weakAreas, strongAreas)
-                callback.onProgress(4, "Saving your learning path...")
-                firestoreManager.savePersonalizedStages(fallbackStages)
-                callback.onSuccess(fallbackStages)
+                Log.e(TAG, "Failed to generate valid stages after $MAX_RETRIES attempts")
+                callback.onError("Failed to generate learning path. The AI response could not be parsed. Please try again.")
                 return@withContext
             }
 
@@ -261,9 +302,60 @@ class StageGeneratorService(private val context: Context) {
 
     /**
      * Attempt to fix common malformed JSON issues from AI responses
+     * Enhanced with smart truncation repair for incomplete stage objects
      */
     private fun fixMalformedJson(json: String): String {
-        var fixed = json
+        var fixed = json.trim()
+        
+        // Remove trailing commas before closing brackets/braces (Android ICU compatible)
+        // Simple loop-based approach instead of regex for compatibility
+        fixed = removeTrailingCommas(fixed, ']')
+        fixed = removeTrailingCommas(fixed, '}')
+        
+        // If JSON is truncated mid-object, try to find the last complete stage
+        // Look for pattern where a stage object is incomplete
+        val stagesStart = fixed.indexOf("\"stages\"")
+        if (stagesStart >= 0) {
+            val arrayStart = fixed.indexOf('[', stagesStart)
+            if (arrayStart >= 0) {
+                // Find all complete stage objects (those with closing brace)
+                val stagesSection = fixed.substring(arrayStart)
+                var depth = 0
+                var lastCompleteObjectEnd = -1
+                var inString = false
+                var escaped = false
+                
+                for ((i, char) in stagesSection.withIndex()) {
+                    if (escaped) {
+                        escaped = false
+                        continue
+                    }
+                    when {
+                        char == '\\' -> escaped = true
+                        char == '"' -> inString = !inString
+                        !inString && char == '{' -> depth++
+                        !inString && char == '}' -> {
+                            depth--
+                            if (depth == 0) {
+                                lastCompleteObjectEnd = arrayStart + i
+                            }
+                        }
+                    }
+                }
+                
+                // If we found complete objects but JSON is unbalanced, truncate at last complete object
+                if (lastCompleteObjectEnd > 0) {
+                    val remainder = fixed.substring(lastCompleteObjectEnd + 1).trim()
+                    // Check if remainder looks like incomplete object or just closing brackets
+                    if (remainder.contains('{') && !remainder.contains('}')) {
+                        // Truncate the incomplete object
+                        fixed = fixed.substring(0, lastCompleteObjectEnd + 1) + "]}"
+                        Log.d(TAG, "Truncated incomplete stage object at position $lastCompleteObjectEnd")
+                        return fixed
+                    }
+                }
+            }
+        }
         
         // Count braces and brackets to check for balance
         val openBraces = fixed.count { it == '{' }
@@ -271,179 +363,47 @@ class StageGeneratorService(private val context: Context) {
         val openBrackets = fixed.count { it == '[' }
         val closeBrackets = fixed.count { it == ']' }
         
-        // Add missing closing braces
-        if (openBraces > closeBraces) {
-            fixed = fixed + "}".repeat(openBraces - closeBraces)
-        }
-        
-        // Add missing closing brackets
+        // Add missing closing brackets first (inner)
         if (openBrackets > closeBrackets) {
             fixed = fixed + "]".repeat(openBrackets - closeBrackets)
+        }
+        
+        // Add missing closing braces (outer)
+        if (openBraces > closeBraces) {
+            fixed = fixed + "}".repeat(openBraces - closeBraces)
         }
         
         return fixed
     }
 
     /**
-     * Create fallback stages if AI generation fails
+     * Remove trailing commas before a specific closing character (Android ICU compatible)
+     * e.g., [item1, item2,] -> [item1, item2]
      */
-    private fun createFallbackStages(
-        weakAreas: List<String>,
-        strongAreas: List<String>
-    ): List<PersonalizedStage> {
-        val stages = mutableListOf<PersonalizedStage>()
-        
-        // Foundation stages (stages 1-10)
-        val foundationTopics = listOf(
-            "Introduction to Embedded Systems" to "Learn what embedded systems are and their applications",
-            "C Programming Essentials" to "Master C syntax, data types, and control structures",
-            "Pointers and Memory" to "Understanding pointers, addresses, and memory management",
-            "Functions and Modular Programming" to "Writing reusable and maintainable code",
-            "Structures and Unions" to "Organizing complex data in C",
-            "Bit Manipulation" to "Working with individual bits for hardware control",
-            "File I/O Basics" to "Reading and writing data for embedded applications",
-            "Preprocessor Directives" to "Using macros and conditional compilation",
-            "Building a Mini Project" to "Apply C fundamentals in a practical project",
-            "C Programming Assessment" to "Test your C programming knowledge"
-        )
-        
-        // Microcontroller stages (stages 11-20)
-        val microcontrollerTopics = listOf(
-            "Microcontroller Architecture" to "Understanding CPU, memory, and peripherals",
-            "GPIO Programming" to "Controlling digital inputs and outputs",
-            "Interrupts and Timers" to "Event-driven programming techniques",
-            "PWM and Analog Signals" to "Generating and measuring analog signals",
-            "ADC and DAC" to "Converting between analog and digital",
-            "Memory Types" to "Flash, SRAM, EEPROM usage patterns",
-            "Clock and Power Management" to "Optimizing power consumption",
-            "Watchdog Timers" to "Ensuring system reliability",
-            "LED Blinker Project" to "Your first microcontroller project",
-            "Microcontroller Assessment" to "Test your MCU knowledge"
-        )
-        
-        // Protocol stages (stages 21-28)
-        val protocolTopics = listOf(
-            "UART Communication" to "Serial communication fundamentals",
-            "SPI Protocol" to "High-speed peripheral communication",
-            "I2C Protocol" to "Two-wire sensor interfacing",
-            "CAN Bus Basics" to "Automotive and industrial communication",
-            "USB Fundamentals" to "Universal Serial Bus concepts",
-            "Wireless Protocols" to "Bluetooth, WiFi, and Zigbee",
-            "Protocol Selection Guide" to "Choosing the right protocol",
-            "Multi-Protocol Project" to "Integrate multiple protocols"
-        )
-        
-        // RTOS stages (stages 29-35)
-        val rtosTopics = listOf(
-            "RTOS Concepts" to "Tasks, scheduling, and real-time requirements",
-            "Task Management" to "Creating and managing tasks",
-            "Synchronization" to "Semaphores, mutexes, and queues",
-            "Memory Management in RTOS" to "Dynamic allocation strategies",
-            "Inter-task Communication" to "Message passing and shared resources",
-            "FreeRTOS Hands-on" to "Practical RTOS implementation",
-            "RTOS Project" to "Build a multi-tasking application"
-        )
-        
-        // Advanced stages (stages 36-40)
-        val advancedTopics = listOf(
-            "Debugging Techniques" to "Using JTAG, SWD, and logic analyzers",
-            "Power Optimization" to "Low-power design strategies",
-            "IoT Integration" to "Connecting embedded devices to cloud",
-            "Industry Best Practices" to "Professional development workflows",
-            "Capstone Project" to "Complete end-to-end embedded project"
-        )
-        
-        var stageId = 1
-        
-        // Add foundation stages
-        foundationTopics.forEach { (title, desc) ->
-            stages.add(PersonalizedStage(
-                id = stageId++,
-                title = title,
-                subtitle = if (stageId <= 10) "C Fundamentals" else "Assessment",
-                description = desc,
-                topics = listOf(title.split(" ").take(2).joinToString(" ")),
-                difficulty = if (stageId <= 5) "beginner" else "intermediate",
-                estimatedMinutes = if (title.contains("Project") || title.contains("Assessment")) 90 else 60,
-                type = when {
-                    title.contains("Project") -> "project"
-                    title.contains("Assessment") -> "quiz"
-                    else -> "theory"
-                },
-                xpReward = if (title.contains("Project") || title.contains("Assessment")) 150 else 100,
-                isCompleted = false,
-                starsEarned = 0,
-                isUnlocked = stageId == 2  // First stage unlocked
-            ))
+    private fun removeTrailingCommas(json: String, closingChar: Char): String {
+        val result = StringBuilder()
+        var i = 0
+        while (i < json.length) {
+            if (json[i] == ',') {
+                // Look ahead for whitespace followed by closing char
+                var j = i + 1
+                while (j < json.length && json[j].isWhitespace()) {
+                    j++
+                }
+                if (j < json.length && json[j] == closingChar) {
+                    // Skip the comma, keep whitespace and closing char
+                    i++
+                    continue
+                }
+            }
+            result.append(json[i])
+            i++
         }
-        
-        // Add microcontroller stages
-        microcontrollerTopics.forEach { (title, desc) ->
-            stages.add(PersonalizedStage(
-                id = stageId++,
-                title = title,
-                subtitle = "Microcontrollers",
-                description = desc,
-                topics = listOf(title.split(" ").take(2).joinToString(" ")),
-                difficulty = "intermediate",
-                estimatedMinutes = if (title.contains("Project") || title.contains("Assessment")) 90 else 60,
-                type = when {
-                    title.contains("Project") -> "project"
-                    title.contains("Assessment") -> "quiz"
-                    else -> "theory"
-                },
-                xpReward = if (title.contains("Project") || title.contains("Assessment")) 150 else 100
-            ))
-        }
-        
-        // Add protocol stages
-        protocolTopics.forEach { (title, desc) ->
-            stages.add(PersonalizedStage(
-                id = stageId++,
-                title = title,
-                subtitle = "Protocols",
-                description = desc,
-                topics = listOf(title.split(" ").take(2).joinToString(" ")),
-                difficulty = "intermediate",
-                estimatedMinutes = if (title.contains("Project")) 90 else 60,
-                type = if (title.contains("Project")) "project" else "theory",
-                xpReward = if (title.contains("Project")) 150 else 100
-            ))
-        }
-        
-        // Add RTOS stages
-        rtosTopics.forEach { (title, desc) ->
-            stages.add(PersonalizedStage(
-                id = stageId++,
-                title = title,
-                subtitle = "RTOS",
-                description = desc,
-                topics = listOf(title.split(" ").take(2).joinToString(" ")),
-                difficulty = "advanced",
-                estimatedMinutes = if (title.contains("Project")) 120 else 75,
-                type = if (title.contains("Project")) "project" else "theory",
-                xpReward = if (title.contains("Project")) 200 else 125
-            ))
-        }
-        
-        // Add advanced stages
-        advancedTopics.forEach { (title, desc) ->
-            stages.add(PersonalizedStage(
-                id = stageId++,
-                title = title,
-                subtitle = "Advanced",
-                description = desc,
-                topics = listOf(title.split(" ").take(2).joinToString(" ")),
-                difficulty = "advanced",
-                estimatedMinutes = if (title.contains("Project")) 180 else 90,
-                type = if (title.contains("Project")) "project" else "theory",
-                xpReward = if (title.contains("Project")) 300 else 150
-            ))
-        }
-        
-        Log.d(TAG, "Created ${stages.size} fallback stages")
-        return stages
+        return result.toString()
     }
+
+    // NOTE: Fallback stages removed - app is 100% cloud-only
+    // All stage generation must succeed via AI or return an error
 
     /**
      * Check if user has personalized stages
@@ -492,37 +452,76 @@ class StageGeneratorService(private val context: Context) {
             
             callback.onProgress(3, "Creating your new personalized learning path...")
 
-            // Use the enhanced regeneration prompt that considers history
-            val prompt = GeminiServiceV2.PromptTemplates.regenerateStagesWithHistory(
-                userName = userName,
-                weakAreas = weakAreas,
-                strongAreas = strongAreas,
-                performanceData = performanceData,
-                targetStageCount = TARGET_STAGES
-            )
-
-            // Call Gemini API
-            val result = geminiService.generateContent(prompt, maxOutputTokens = 8192)
+            // Retry loop with exponential backoff
+            var lastError: String? = null
+            var stages: List<PersonalizedStage> = emptyList()
             
-            if (result.isFailure) {
-                Log.e(TAG, "API call failed: ${result.exceptionOrNull()?.message}")
-                callback.onError("Failed to regenerate learning path. Please try again.")
-                return@withContext
+            for (attempt in 1..MAX_RETRIES) {
+                Log.d(TAG, "Regeneration API attempt $attempt of $MAX_RETRIES")
+                
+                // Use the enhanced regeneration prompt that considers history
+                val prompt = if (attempt == 1) {
+                    GeminiServiceV2.PromptTemplates.regenerateStagesWithHistory(
+                        userName = userName,
+                        weakAreas = weakAreas,
+                        strongAreas = strongAreas,
+                        performanceData = performanceData,
+                        targetStageCount = TARGET_STAGES
+                    )
+                } else {
+                    // On retry, add explicit instruction for cleaner JSON
+                    GeminiServiceV2.PromptTemplates.regenerateStagesWithHistory(
+                        userName = userName,
+                        weakAreas = weakAreas,
+                        strongAreas = strongAreas,
+                        performanceData = performanceData,
+                        targetStageCount = TARGET_STAGES
+                    ) + "\n\nIMPORTANT: Ensure valid, complete JSON. Close all arrays and objects properly."
+                }
+
+                // Call Gemini API
+                val result = geminiService.generateContent(prompt, maxOutputTokens = 8192)
+                
+                if (result.isFailure) {
+                    lastError = result.exceptionOrNull()?.message ?: "API call failed"
+                    Log.e(TAG, "API call failed on attempt $attempt: $lastError")
+                    
+                    if (attempt < MAX_RETRIES) {
+                        val delayMs = INITIAL_RETRY_DELAY_MS * (1 shl (attempt - 1))
+                        callback.onProgress(3, "Retrying... (attempt ${attempt + 1}/$MAX_RETRIES)")
+                        delay(delayMs)
+                        continue
+                    }
+                    callback.onError("Failed to regenerate learning path after $MAX_RETRIES attempts. Please try again later.")
+                    return@withContext
+                }
+
+                callback.onProgress(4, "Processing AI response...")
+                
+                // Parse response
+                val responseText = result.getOrNull() ?: ""
+                stages = parseStagesFromResponse(responseText)
+                
+                if (stages.isNotEmpty()) {
+                    Log.d(TAG, "Successfully parsed ${stages.size} stages on attempt $attempt")
+                    break // Success!
+                }
+                
+                // Parsing failed, retry
+                lastError = "Failed to parse JSON response"
+                Log.w(TAG, "Parse failed on attempt $attempt, ${if (attempt < MAX_RETRIES) "retrying..." else "giving up"}")
+                
+                if (attempt < MAX_RETRIES) {
+                    val delayMs = INITIAL_RETRY_DELAY_MS * (1 shl (attempt - 1))
+                    callback.onProgress(3, "Response parsing failed. Retrying... (attempt ${attempt + 1}/$MAX_RETRIES)")
+                    delay(delayMs)
+                }
             }
-
-            callback.onProgress(4, "Processing AI response...")
             
-            // Parse response
-            val responseText = result.getOrNull() ?: ""
-            val stages = parseStagesFromResponse(responseText)
-            
+            // Check if we got valid stages after all retries
             if (stages.isEmpty()) {
-                Log.e(TAG, "Failed to parse stages from response, using fallback")
-                // Use fallback stages with updated weak areas
-                val fallbackStages = createFallbackStages(weakAreas, strongAreas)
-                callback.onProgress(5, "Saving your learning path...")
-                firestoreManager.savePersonalizedStages(fallbackStages)
-                callback.onSuccess(fallbackStages)
+                Log.e(TAG, "Failed to regenerate valid stages after $MAX_RETRIES attempts")
+                callback.onError("Failed to regenerate learning path. The AI response could not be parsed. Please try again.")
                 return@withContext
             }
 

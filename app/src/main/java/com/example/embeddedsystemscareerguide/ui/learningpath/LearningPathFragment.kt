@@ -55,6 +55,9 @@ class LearningPathFragment : Fragment() {
     
     // Flag to prevent onResume from overwriting optimistic UI updates during stage completion
     private var stageCompletionInProgress = false
+    
+    // Flag to prevent duplicate stage loading (onViewCreated + onResume both fire on initial load)
+    private var isLoadingStages = false
 
 
     // M4 fix: Constants delegate to PrefsKeys for centralization
@@ -107,6 +110,12 @@ class LearningPathFragment : Fragment() {
             return
         }
         
+        // Skip if already loading (prevents duplicate calls from onViewCreated + onResume)
+        if (isLoadingStages) {
+            Log.d("LearningPath", "Skipping reload - already loading stages")
+            return
+        }
+        
         if (stages.isEmpty()) {
             // First time or after rotation - load stages first
             loadStagesFromFirestore()
@@ -125,6 +134,13 @@ class LearningPathFragment : Fragment() {
      * NO FALLBACK TO 16 HARDCODED STAGES
      */
     private fun loadStagesFromFirestore() {
+        // Prevent duplicate calls
+        if (isLoadingStages) {
+            Log.d("LearningPath", "loadStagesFromFirestore skipped - already loading")
+            return
+        }
+        isLoadingStages = true
+        
         lifecycleScope.launch {
             try {
                 Log.d("LearningPath", "Checking for personalized stages in Firestore...")
@@ -166,6 +182,7 @@ class LearningPathFragment : Fragment() {
                             
                             // Now load progress and render
                             loadProgressFromCloud()
+                            isLoadingStages = false
                             return@launch
                         }
                     }
@@ -186,6 +203,7 @@ class LearningPathFragment : Fragment() {
                 
             } catch (e: Exception) {
                 Log.e("LearningPath", "Error loading from Firestore", e)
+                isLoadingStages = false
                 // On error, check for report
                 try {
                     val firestoreManager = com.example.embeddedsystemscareerguide.services.FirestoreManager.getInstance(requireContext())
@@ -240,6 +258,8 @@ class LearningPathFragment : Fragment() {
                                 Log.d("LearningPath", "Successfully generated ${stages.size} stages")
                                 activity?.runOnUiThread {
                                     Toast.makeText(context, "Learning path regenerated!", Toast.LENGTH_SHORT).show()
+                                    // Reset flag before reloading
+                                    isLoadingStages = false
                                     // Reload stages from Firestore (they're now saved)
                                     loadStagesFromFirestore()
                                 }
@@ -247,6 +267,7 @@ class LearningPathFragment : Fragment() {
                             
                             override fun onError(error: String) {
                                 Log.e("LearningPath", "Stage generation failed: $error")
+                                isLoadingStages = false
                                 activity?.runOnUiThread {
                                     Toast.makeText(context, "Failed to generate stages: $error", Toast.LENGTH_LONG).show()
                                     // Redirect to assessment as fallback
@@ -257,10 +278,12 @@ class LearningPathFragment : Fragment() {
                     )
                 } else {
                     Log.e("LearningPath", "Failed to get report data, redirecting to assessment")
+                    isLoadingStages = false
                     redirectToAssessment()
                 }
             } catch (e: Exception) {
                 Log.e("LearningPath", "Error regenerating stages", e)
+                isLoadingStages = false
                 redirectToAssessment()
             }
         }

@@ -99,7 +99,7 @@ data class Challenge1Submission(
     var selectedComponents: List<String> = emptyList(),
     
     @get:PropertyName("codeBlocks") @set:PropertyName("codeBlocks")
-    var codeBlocks: List<String> = emptyList(),
+    var codeBlocks: Map<String, String> = emptyMap(),
     
     @get:PropertyName("submittedAt") @set:PropertyName("submittedAt")
     var submittedAt: Long = 0
@@ -244,7 +244,7 @@ data class UniversalRanking(
     var totalWeightedScore: Int = 0,
     
     @get:PropertyName("maxPossibleScore") @set:PropertyName("maxPossibleScore")
-    var maxPossibleScore: Int = 450, // 100 + 150 + 200
+    var maxPossibleScore: Int = ChallengeConstants.MAX_TOTAL_SCORE, // L-04: Computed from constants
     
     @get:PropertyName("percentage") @set:PropertyName("percentage")
     var percentage: Double = 0.0,

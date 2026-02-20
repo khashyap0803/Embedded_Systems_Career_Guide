@@ -26,6 +26,7 @@ import com.example.embeddedsystemscareerguide.services.GeminiChallengeService
 import com.example.embeddedsystemscareerguide.services.PreReleaseEventService
 import com.google.android.material.card.MaterialCardView
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.Collections
@@ -48,8 +49,13 @@ class Challenge1Activity : AppCompatActivity() {
     private var timer: CountDownTimer? = null
     private var timeRemainingMs: Long = ChallengeConstants.CHALLENGE_1_TIME_MS
     private var warningCount: Int = 0
+    private var timerStartRealtime: Long = 0L  // C-07: wall-clock tracking
+    private var isSubmitting: Boolean = false   // H-01: prevent false positive warnings during submit
     private var lastKnownExtraTime: Long = 0L
+    private var timerRunning: Boolean = false  // BUG-FIX: prevent duplicate timer starts
     private var extraTimeListener: com.google.firebase.database.ValueEventListener? = null
+    private var challengeStartTime: Long = 0L   // BUG-H2: actual start time for time bonus
+    private var backgroundEnteredRealtime: Long = 0L // BUG-M4: track when app goes to background
     
     // ========== MULTI-PROBLEM SUPPORT ==========
     private var currentProblemIndex: Int = 0
@@ -85,6 +91,7 @@ class Challenge1Activity : AppCompatActivity() {
         android.util.Log.i("Challenge1", "Starting Challenge 1 for $rollNumber, isResume=$isResume")
         
         setupUI()
+        setupBackPressHandler()
         loadProblems()
     }
     
@@ -115,9 +122,10 @@ class Challenge1Activity : AppCompatActivity() {
     
     private fun loadBoardImageFromAssets(fileName: String, imageView: android.widget.ImageView) {
         try {
-            val inputStream = assets.open("components/boards/$fileName")
-            val bitmap = android.graphics.BitmapFactory.decodeStream(inputStream)
-            inputStream.close()
+            // L-08: Use use{} to ensure InputStream is closed even if decodeStream throws
+            val bitmap = assets.open("components/boards/$fileName").use { inputStream ->
+                android.graphics.BitmapFactory.decodeStream(inputStream)
+            }
             imageView.setImageBitmap(bitmap)
         } catch (e: Exception) {
             // Keep default placeholder if loading fails
@@ -148,9 +156,27 @@ class Challenge1Activity : AppCompatActivity() {
                             var resumeTimeMs = ChallengeConstants.CHALLENGE_1_TIME_MS
                             var resumeProblemIndex = 0
                             
-                            if (savedState != null) {
+                            // Check if user has EXTRA TIME GRANTED (for timed-out users)
+                            // If yes, use ONLY the extra time, not the original timer
+                            val extraTimeInfo = eventService.getExtraTimeInfo(rollNumber)
+                            val hasExtraTime = extraTimeInfo != null && extraTimeInfo.first == 1 && extraTimeInfo.second > 0
+                            
+                            if (hasExtraTime) {
+                                // User timed out and admin granted extra time - use ONLY the extra time
+                                resumeTimeMs = extraTimeInfo!!.second
+                                // CRITICAL: Set lastKnownExtraTime so listenForExtraTime won't double-add this time
+                                lastKnownExtraTime = extraTimeInfo.second
+                                android.util.Log.i("Challenge1", "Using EXTRA TIME ONLY: ${resumeTimeMs}ms (${resumeTimeMs / 60000} minutes), lastKnownExtraTime set to prevent double-add")
+                            } else if (savedState != null) {
+                                // Normal resume (terminated user) - use saved remaining time
                                 val (stateJson, savedTimeMs, savedProblemIdx) = savedState
                                 resumeTimeMs = if (savedTimeMs > 0) savedTimeMs else ChallengeConstants.CHALLENGE_1_TIME_MS
+                                android.util.Log.i("Challenge1", "Using saved time: ${resumeTimeMs}ms")
+                            }
+                            
+                            // Restore answers from saved state regardless of timer source
+                            if (savedState != null) {
+                                val (stateJson, _, savedProblemIdx) = savedState
                                 resumeProblemIndex = savedProblemIdx
                                 
                                 // Parse and restore all problem answers
@@ -161,7 +187,7 @@ class Challenge1Activity : AppCompatActivity() {
                                 android.util.Log.i("Challenge1", "Restored state: timeRemaining=${resumeTimeMs}ms, problemIndex=$resumeProblemIndex")
                             }
                             
-                            // Set timer to saved value
+                            // Set timer to calculated value
                             timeRemainingMs = resumeTimeMs
                             currentProblemIndex = resumeProblemIndex
                             
@@ -171,8 +197,20 @@ class Challenge1Activity : AppCompatActivity() {
                             // Restore UI state after display
                             restoreCurrentProblemFromAnswer()
                             
+                            // BUG-M2: Sync warningCount from Firebase BEFORE starting timer
+                            try {
+                                val warnSnapshot = eventService.getParticipantRef(rollNumber)
+                                    .child("status/warningCount").get().await()
+                                val firebaseCount = warnSnapshot.getValue(Int::class.java) ?: 0
+                                warningCount = firebaseCount
+                                android.util.Log.i("Challenge1", "Init synced warningCount=$warningCount from Firebase")
+                            } catch (e: Exception) {
+                                android.util.Log.w("Challenge1", "Failed to sync initial warningCount", e)
+                            }
+                            
+                            challengeStartTime = System.currentTimeMillis() - (ChallengeConstants.CHALLENGE_1_TIME_MS - resumeTimeMs)
                             startTimer()
-                            android.util.Log.i("Challenge1", "Successfully resumed with ${problems.size} problems at index $currentProblemIndex")
+                            android.util.Log.i("Challenge1", "Successfully resumed with ${problems.size} problems at index $currentProblemIndex, timer=${resumeTimeMs}ms")
                             return@launch
                         }
                     } catch (e: Exception) {
@@ -185,23 +223,23 @@ class Challenge1Activity : AppCompatActivity() {
                 isResume = false // Reset flag since we couldn't resume
             }
             
-            // NEW CHALLENGE MODE: Generate new problems via Gemini
-            showLoading(true, "Generating 3 unique problems via Gemini AI...")
+            // NEW CHALLENGE MODE: Generate new problems
+            showLoading(true, "Generating 3 unique problems...")
             
             // Register challenge start
             eventService.startChallenge1(rollNumber)
             
-            // Generate problems via Gemini API (cloud-only, no local fallback)
+            // Generate problems via API (cloud-only, no local fallback)
             val geminiResult = geminiService.generateChallenge1Problems()
             
             if (geminiResult.isSuccess && geminiResult.getOrNull()?.size == 3) {
                 val generatedProblems = geminiResult.getOrNull()!!
                 
-                // Generate code blocks for each problem using Gemini API with retry
+                // Generate code blocks for each problem using API with retry
                 showLoading(true, "Generating intelligent code blocks for each problem...")
                 
                 for (p in generatedProblems) {
-                    // Use Gemini API to generate problem-specific code blocks with retry
+                    // Use API to generate problem-specific code blocks with retry
                     var codeBlocksList: List<CodeBlock>? = null
                     var lastError: Exception? = null
                     
@@ -237,9 +275,13 @@ class Challenge1Activity : AppCompatActivity() {
                     problems.add(Challenge1Problem(
                         id = p.id,
                         statement = "🎯 ${p.category}: ${p.problemStatement}",
+                        problemStatement = p.problemStatement, // N1-FIX: copy raw statement for evaluation
                         expectedMcu = p.expectedMcu,
+                        expectedComponents = p.expectedComponents, // N1-FIX: copy expected components
                         requiredComponents = p.expectedComponents,
-                        codeBlocks = codeBlocksList
+                        codeBlocks = codeBlocksList,
+                        difficulty = p.difficulty, // N1-FIX: copy difficulty
+                        category = p.category // N1-FIX: copy category
                     ))
                 }
                 
@@ -255,6 +297,7 @@ class Challenge1Activity : AppCompatActivity() {
                 
                 showLoading(false)
                 displayProblem(0)
+                challengeStartTime = System.currentTimeMillis() // BUG-H2: record actual start
                 startTimer()
             } else {
                 // Show error dialog and allow retry
@@ -273,8 +316,12 @@ class Challenge1Activity : AppCompatActivity() {
             val jsonObj = JSONObject().apply {
                 put("id", problem.id)
                 put("statement", problem.statement)
+                put("problemStatement", problem.problemStatement) // BUG-C1: save raw statement for evaluation
                 put("expectedMcu", problem.expectedMcu)
                 put("requiredComponents", JSONArray(problem.requiredComponents))
+                put("expectedComponents", JSONArray(problem.expectedComponents)) // BUG-C1
+                put("difficulty", problem.difficulty) // BUG-C1
+                put("category", problem.category) // BUG-C1
                 
                 val codeBlocksArray = JSONArray()
                 problem.codeBlocks.forEach { block ->
@@ -318,12 +365,36 @@ class Challenge1Activity : AppCompatActivity() {
                 ))
             }
             
+            // BUG-C1: Restore ALL fields including problemStatement for evaluation
+            val rawStatement = obj.optString("problemStatement", "")
+            val displayStatement = obj.getString("statement")
+            
+            // Parse expectedComponents separately (may differ from requiredComponents)
+            val expectedCompArray = obj.optJSONArray("expectedComponents")
+            val expectedComps = mutableListOf<String>()
+            if (expectedCompArray != null) {
+                for (j in 0 until expectedCompArray.length()) {
+                    expectedComps.add(expectedCompArray.getString(j))
+                }
+            } else {
+                expectedComps.addAll(components) // fallback for older saved data
+            }
+            
             result.add(Challenge1Problem(
                 id = obj.getInt("id"),
-                statement = obj.getString("statement"),
+                statement = displayStatement,
+                // BUG-C1: If problemStatement was never saved, extract from display statement
+                problemStatement = rawStatement.ifEmpty {
+                    // Strip emoji prefix "🎯 Category: " to recover raw statement
+                    val colonIdx = displayStatement.indexOf(": ")
+                    if (colonIdx > 0) displayStatement.substring(colonIdx + 2) else displayStatement
+                },
                 expectedMcu = obj.optString("expectedMcu", "ESP32"),
+                expectedComponents = expectedComps,
                 requiredComponents = components,
-                codeBlocks = codeBlocks
+                codeBlocks = codeBlocks,
+                difficulty = obj.optString("difficulty", "Easy"),
+                category = obj.optString("category", "")
             ))
         }
         
@@ -351,6 +422,7 @@ class Challenge1Activity : AppCompatActivity() {
                     put("selectedMcu", answer.selectedMcu)
                     put("selectedComponents", JSONArray(answer.selectedComponents))
                     put("codeBlockIdOrder", JSONArray(answer.codeBlockIdOrder))
+                    put("codeBlockOrder", JSONArray(answer.codeBlockOrder))
                     put("isComplete", answer.isComplete)
                 })
             }
@@ -398,6 +470,13 @@ class Challenge1Activity : AppCompatActivity() {
                             ansBlockIds.add(blockArr.getInt(j))
                         }
                     }
+                    val ansBlockOrder = mutableListOf<String>()
+                    val blockOrderArr = ansObj.optJSONArray("codeBlockOrder")
+                    if (blockOrderArr != null) {
+                        for (j in 0 until blockOrderArr.length()) {
+                            ansBlockOrder.add(blockOrderArr.getString(j))
+                        }
+                    }
                     val ansComplete = ansObj.optBoolean("isComplete", false)
                     
                     // Update problemAnswers if index exists
@@ -406,24 +485,34 @@ class Challenge1Activity : AppCompatActivity() {
                             selectedMcu = ansMcu,
                             selectedComponents = ansComponents,
                             codeBlockIdOrder = ansBlockIds,
+                            codeBlockOrder = ansBlockOrder,
                             isComplete = ansComplete
                         )
                     }
                 }
             }
             
-            // Set current state from the answer for current problem
+            // Set current state from the answer for current problem (restore even if incomplete)
             val currentAnswer = problemAnswers.getOrNull(currentProblemIndex)
-            if (currentAnswer != null && currentAnswer.isComplete) {
-                selectedMcu = currentAnswer.selectedMcu
-                selectedComponents.clear()
-                selectedComponents.addAll(currentAnswer.selectedComponents)
-                savedCodeBlockOrder = currentAnswer.codeBlockIdOrder
+            if (currentAnswer != null) {
+                // Restore MCU if selected
+                if (currentAnswer.selectedMcu.isNotEmpty()) {
+                    selectedMcu = currentAnswer.selectedMcu
+                }
+                // Restore components if any selected
+                if (currentAnswer.selectedComponents.isNotEmpty()) {
+                    selectedComponents.clear()
+                    selectedComponents.addAll(currentAnswer.selectedComponents)
+                }
+                // Restore code block order if arranged
+                if (currentAnswer.codeBlockIdOrder.isNotEmpty()) {
+                    savedCodeBlockOrder = currentAnswer.codeBlockIdOrder
+                }
             }
             
             android.util.Log.i("Challenge1", "Restored state: problemIndex=$savedProblemIndex, answers restored=${allAnswersArray?.length() ?: 0}")
             problemAnswers.forEachIndexed { idx, ans ->
-                android.util.Log.i("Challenge1", "  Answer $idx: mcu=${ans.selectedMcu}, components=${ans.selectedComponents.size}, complete=${ans.isComplete}")
+                android.util.Log.i("Challenge1", "  Answer $idx: mcu=${ans.selectedMcu}, components=${ans.selectedComponents.size}, blocks=${ans.codeBlockIdOrder.size}, complete=${ans.isComplete}")
             }
             
         } catch (e: Exception) {
@@ -443,16 +532,50 @@ class Challenge1Activity : AppCompatActivity() {
         // Sync components to adapters
         updateComponentsUI()
         
-        // Restore code block order if saved
-        if (savedCodeBlockOrder.isNotEmpty() && codeBlocks.isNotEmpty()) {
-            android.util.Log.i("Challenge1", "Restoring code block order: saved=${savedCodeBlockOrder}, current IDs=${codeBlocks.map { it.id }}")
+        // Restore code block order from saved content strings (primary) or IDs (fallback)
+        val currentAnswer = problemAnswers.getOrNull(currentProblemIndex)
+        val savedContentOrder = currentAnswer?.codeBlockOrder ?: emptyList()
+        
+        if (savedContentOrder.isNotEmpty() && codeBlocks.isNotEmpty() && savedContentOrder.size == codeBlocks.size) {
+            // PRIMARY: Content-string-based restore (most reliable — matches exactly what user saw)
+            android.util.Log.i("Challenge1", "Restoring by CONTENT: ${savedContentOrder.size} saved strings, ${codeBlocks.size} blocks")
             
-            // Create a map of ID to block for O(1) lookup
+            val blockByContent = mutableMapOf<String, MutableList<CodeBlock>>()
+            codeBlocks.forEach { block ->
+                blockByContent.getOrPut(block.content) { mutableListOf() }.add(block)
+            }
+            
+            val orderedBlocks = mutableListOf<CodeBlock>()
+            val usedBlocks = mutableSetOf<Int>() // track by object identity via id
+            
+            savedContentOrder.forEach { content ->
+                val candidates = blockByContent[content]
+                val block = candidates?.firstOrNull { it.id !in usedBlocks }
+                if (block != null) {
+                    orderedBlocks.add(block)
+                    usedBlocks.add(block.id)
+                }
+            }
+            
+            // Add any remaining blocks not matched (shouldn't happen if sizes match)
+            codeBlocks.filter { it.id !in usedBlocks }
+                .forEach { orderedBlocks.add(it) }
+            
+            codeBlocks.clear()
+            codeBlocks.addAll(orderedBlocks)
+            if (::codeBlocksAdapter.isInitialized) {
+                codeBlocksAdapter.notifyDataSetChanged()
+            }
+            
+            android.util.Log.i("Challenge1", "Content-restore result: IDs=${orderedBlocks.map { it.id }}, first3=${orderedBlocks.take(3).map { it.content.take(25) }}")
+        } else if (savedCodeBlockOrder.isNotEmpty() && codeBlocks.isNotEmpty()) {
+            // FALLBACK: ID-based restore (for sessions saved before content-string fix)
+            android.util.Log.i("Challenge1", "Restoring by IDs (fallback): saved=${savedCodeBlockOrder}, current IDs=${codeBlocks.map { it.id }}")
+            
             val blockById = codeBlocks.associateBy { it.id }
             val orderedBlocks = mutableListOf<CodeBlock>()
             val usedIds = mutableSetOf<Int>()
             
-            // First add blocks in saved order
             savedCodeBlockOrder.forEach { blockId ->
                 blockById[blockId]?.let { block ->
                     if (!usedIds.contains(block.id)) {
@@ -462,12 +585,9 @@ class Challenge1Activity : AppCompatActivity() {
                 }
             }
             
-            // Add any remaining blocks not in saved order (sorted by ID for consistency)
             codeBlocks.filter { !usedIds.contains(it.id) }
                 .sortedBy { it.id }
-                .forEach { block ->
-                    orderedBlocks.add(block)
-                }
+                .forEach { block -> orderedBlocks.add(block) }
             
             codeBlocks.clear()
             codeBlocks.addAll(orderedBlocks)
@@ -475,7 +595,7 @@ class Challenge1Activity : AppCompatActivity() {
                 codeBlocksAdapter.notifyDataSetChanged()
             }
             
-            android.util.Log.i("Challenge1", "Restored code block order: result IDs=${orderedBlocks.map { it.id }}")
+            android.util.Log.i("Challenge1", "ID-restore result: IDs=${orderedBlocks.map { it.id }}")
         }
         
         android.util.Log.i("Challenge1", "Restored UI for problem $currentProblemIndex: mcu=$selectedMcu, components=${selectedComponents.size}, blocks=${codeBlocks.size}")
@@ -493,8 +613,8 @@ class Challenge1Activity : AppCompatActivity() {
     
     private fun showGeminiErrorDialog(errorMessage: String) {
         AlertDialog.Builder(this)
-            .setTitle("⚠️ Connection Error")
-            .setMessage("Failed to generate problems from Gemini AI.\n\nError: $errorMessage\n\nPlease check your internet connection and try again.")
+            .setTitle("⚠️ Generation Failed")
+            .setMessage("Failed to generate problems.\n\nError: $errorMessage\n\nPlease check your internet connection and try again.")
             .setPositiveButton("🔄 Retry") { _, _ ->
                 problems.clear()
                 problemAnswers.clear()
@@ -512,8 +632,8 @@ class Challenge1Activity : AppCompatActivity() {
     private fun displayProblem(index: Int) {
         if (index < 0 || index >= problems.size) return
         
-        // Save current answer before switching
-        if (currentProblemIndex < problemAnswers.size) {
+        // BUG-C2: Only save if codeBlocks are loaded (prevents saving empty state during resume)
+        if (currentProblemIndex < problemAnswers.size && codeBlocks.isNotEmpty()) {
             saveCurrentAnswer()
         }
         
@@ -523,7 +643,7 @@ class Challenge1Activity : AppCompatActivity() {
         // Update UI
         binding.tvProblemNumber.text = "Problem ${index + 1} of ${problems.size}"
         binding.tvProblemStatement.text = problem.statement
-        binding.tvComponentsRequired.text = "Required: ${problem.requiredComponents.joinToString(", ")}"
+        // Note: requiredComponents removed - showing them would give away the answer
         
         // Update navigation buttons
         binding.btnPrevProblem.isEnabled = index > 0
@@ -536,7 +656,13 @@ class Challenge1Activity : AppCompatActivity() {
         // FIRST: Load code blocks for this problem (original order from problem)
         codeBlocks.clear()
         codeBlocks.addAll(problem.codeBlocks)
+        
+        // BUG-L1: Debug logging removed for production
         codeBlocksAdapter.notifyDataSetChanged()
+        
+        
+        // L-03: Removed unnecessary requestLayout()/invalidate() calls
+        // RecyclerView handles layout automatically after adapter notifications
         
         // THEN: Load saved answer which will restore user's MCU, components, and CODE BLOCK ORDER
         loadSavedAnswer(index)
@@ -563,6 +689,9 @@ class Challenge1Activity : AppCompatActivity() {
             val currentBlockIds = codeBlocks.map { it.id }
             val wasCodeReordered = originalOrder != currentOrder
             
+            // Debug: log the actual content being saved for verification
+            android.util.Log.d("Challenge1", "saveCurrentAnswer p$currentProblemIndex: ids=${currentBlockIds.take(5)}..., contents=${currentOrder.take(3).map { it.take(25) }}...")
+            
             problemAnswers[currentProblemIndex] = Challenge1ProblemAnswer(
                 selectedMcu = selectedMcu,
                 selectedComponents = selectedComponents.toList(),
@@ -582,14 +711,22 @@ class Challenge1Activity : AppCompatActivity() {
         binding.cardEsp32.strokeWidth = 0
         binding.cardArduino.strokeWidth = 0
         
-        if (saved != null && saved.isComplete) {
-            // Restore MCU and components
-            selectedMcu = saved.selectedMcu
-            selectedComponents.addAll(saved.selectedComponents)
-            selectMcu(selectedMcu)
+        // BUG-H3: Restore unconditionally (not gated on isComplete) — partial answers should restore too
+        if (saved != null) {
+            // Restore MCU if selected
+            if (saved.selectedMcu.isNotEmpty()) {
+                selectedMcu = saved.selectedMcu
+                selectMcu(selectedMcu)
+            }
+            // Restore components if any selected
+            if (saved.selectedComponents.isNotEmpty()) {
+                selectedComponents.addAll(saved.selectedComponents)
+            }
             
-            // Restore code block order from saved answer
-            if (saved.codeBlockIdOrder.isNotEmpty() && codeBlocks.isNotEmpty()) {
+            // Restore code block order: prefer content strings, fallback to IDs
+            if (saved.codeBlockOrder.isNotEmpty() && codeBlocks.isNotEmpty() && saved.codeBlockOrder.size == codeBlocks.size) {
+                reorderCodeBlocksByContent(saved.codeBlockOrder)
+            } else if (saved.codeBlockIdOrder.isNotEmpty() && codeBlocks.isNotEmpty()) {
                 reorderCodeBlocksByIds(saved.codeBlockIdOrder)
             }
         }
@@ -628,6 +765,38 @@ class Challenge1Activity : AppCompatActivity() {
         if (::codeBlocksAdapter.isInitialized) {
             codeBlocksAdapter.notifyDataSetChanged()
         }
+    }
+    
+    private fun reorderCodeBlocksByContent(savedContentOrder: List<String>) {
+        // Build a map of content → list of blocks (handles duplicates like "}")
+        val blockByContent = mutableMapOf<String, MutableList<CodeBlock>>()
+        codeBlocks.forEach { block ->
+            blockByContent.getOrPut(block.content) { mutableListOf() }.add(block)
+        }
+        
+        val orderedBlocks = mutableListOf<CodeBlock>()
+        val usedBlockIds = mutableSetOf<Int>()
+        
+        savedContentOrder.forEach { content ->
+            val candidates = blockByContent[content]
+            val block = candidates?.firstOrNull { it.id !in usedBlockIds }
+            if (block != null) {
+                orderedBlocks.add(block)
+                usedBlockIds.add(block.id)
+            }
+        }
+        
+        // Add any unmatched blocks at the end
+        codeBlocks.filter { it.id !in usedBlockIds }
+            .forEach { orderedBlocks.add(it) }
+        
+        codeBlocks.clear()
+        codeBlocks.addAll(orderedBlocks)
+        if (::codeBlocksAdapter.isInitialized) {
+            codeBlocksAdapter.notifyDataSetChanged()
+        }
+        
+        android.util.Log.i("Challenge1", "reorderByContent: matched ${usedBlockIds.size}/${savedContentOrder.size}, first3=${orderedBlocks.take(3).map { it.content.take(25) }}")
     }
     
     private fun navigateToProblem(index: Int) {
@@ -707,7 +876,12 @@ class Challenge1Activity : AppCompatActivity() {
     private fun setupCodeBlocksRecyclerView() {
         codeBlocksAdapter = CodeBlockAdapter(codeBlocks)
         binding.rvCodeBlocks.adapter = codeBlocksAdapter
+        
+        // NestedScrollView properly handles wrap_content RecyclerView, 
+        // so we can use a standard LinearLayoutManager
         binding.rvCodeBlocks.layoutManager = LinearLayoutManager(this)
+        binding.rvCodeBlocks.isNestedScrollingEnabled = false
+        binding.rvCodeBlocks.setHasFixedSize(false)
         
         val touchHelper = ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(
             ItemTouchHelper.UP or ItemTouchHelper.DOWN, 0
@@ -730,28 +904,42 @@ class Challenge1Activity : AppCompatActivity() {
     }
     
     private fun startTimer() {
-        // Listen for extra time added by admin
-        listenForExtraTime()
+        // BUG-FIX: Listen for extra time only on first start (prevents duplicate listeners)
+        if (!timerRunning) listenForExtraTime()
+        
+        // C-07: Record wall-clock start time for accurate background time tracking
+        timerStartRealtime = android.os.SystemClock.elapsedRealtime()
+        
+        timer?.cancel()  // BUG-FIX: Cancel any existing timer before starting new one
+        timerRunning = true
         
         timer = object : CountDownTimer(timeRemainingMs, 1000) {
             override fun onTick(millisUntilFinished: Long) {
                 timeRemainingMs = millisUntilFinished
                 updateTimerDisplay()
-                
-                when {
-                    millisUntilFinished < 60000 -> {
-                        binding.timerCard.setCardBackgroundColor(getColor(android.R.color.holo_red_light))
-                    }
-                    millisUntilFinished < 300000 -> {
-                        binding.timerCard.setCardBackgroundColor(getColor(android.R.color.holo_orange_light))
-                    }
-                }
+                updateTimerColor(millisUntilFinished) // L4-FIX: extracted helper
             }
             
             override fun onFinish() {
+                timerRunning = false  // BUG-FIX: mark timer as stopped
                 timeoutAndSubmit()
             }
         }.start()
+    }
+    
+    /** L4-FIX: Extracted shared timer color logic */
+    private fun updateTimerColor(millisUntilFinished: Long) {
+        when {
+            millisUntilFinished < 60000 -> {
+                binding.timerCard.setCardBackgroundColor(getColor(android.R.color.holo_red_light))
+            }
+            millisUntilFinished < 300000 -> {
+                binding.timerCard.setCardBackgroundColor(getColor(android.R.color.holo_orange_light))
+            }
+            else -> {
+                binding.timerCard.setCardBackgroundColor(getColor(R.color.indigo_600))
+            }
+        }
     }
     
     private fun listenForExtraTime() {
@@ -766,27 +954,8 @@ class Challenge1Activity : AppCompatActivity() {
                     // Add extra time to remaining time
                     timeRemainingMs += additionalTime
                     
-                    // Restart timer with new time
-                    timer?.cancel()
-                    timer = object : CountDownTimer(timeRemainingMs, 1000) {
-                        override fun onTick(millisUntilFinished: Long) {
-                            timeRemainingMs = millisUntilFinished
-                            updateTimerDisplay()
-                            
-                            when {
-                                millisUntilFinished < 60000 -> {
-                                    binding.timerCard.setCardBackgroundColor(getColor(android.R.color.holo_red_light))
-                                }
-                                millisUntilFinished < 300000 -> {
-                                    binding.timerCard.setCardBackgroundColor(getColor(android.R.color.holo_orange_light))
-                                }
-                            }
-                        }
-                        
-                        override fun onFinish() {
-                            timeoutAndSubmit()
-                        }
-                    }.start()
+                    // BUG-FIX: Reuse startTimer() instead of duplicating timer logic
+                    startTimer()
                     
                     Toast.makeText(this@Challenge1Activity, "⏰ Admin added ${additionalTime / 60000} minutes!", Toast.LENGTH_LONG).show()
                 }
@@ -809,7 +978,8 @@ class Challenge1Activity : AppCompatActivity() {
         var complete = 0
         if (selectedMcu.isNotEmpty()) complete++
         if (selectedComponents.isNotEmpty()) complete++
-        if (codeBlocks.isNotEmpty()) complete++
+        // M-09: Only count code blocks as complete if user has actually interacted with them
+        if (codeBlocks.isNotEmpty() && problemAnswers.getOrNull(currentProblemIndex)?.isComplete == true) complete++
         
         binding.tvProgress.text = "Progress: $complete/3 sections"
         binding.progressBarCompletion.progress = (complete * 33.33).toInt()
@@ -842,13 +1012,16 @@ class Challenge1Activity : AppCompatActivity() {
     }
     
     private fun showReviewScreen() {
-        // Create review dialog showing all answers
+        // BUG-M1: Enhanced review dialog showing code block status
         val reviewText = buildString {
             problems.forEachIndexed { i, problem ->
                 val answer = problemAnswers.getOrNull(i)
                 appendLine("━━━ Problem ${i + 1} ━━━")
-                appendLine("MCU: ${answer?.selectedMcu ?: "Not selected"}")
-                appendLine("Components: ${answer?.selectedComponents?.joinToString() ?: "None"}")
+                appendLine("MCU: ${answer?.selectedMcu?.ifEmpty { "Not selected" } ?: "Not selected"}")
+                appendLine("Components: ${answer?.selectedComponents?.takeIf { it.isNotEmpty() }?.joinToString() ?: "None"}")
+                val blockCount = answer?.codeBlockOrder?.size ?: 0
+                val codeStatus = if (blockCount > 0) "$blockCount blocks arranged" else "Not arranged"
+                appendLine("Code Blocks: $codeStatus")
                 appendLine("Status: ${if (answer?.isComplete == true) "✅ Complete" else "⚠️ Incomplete"}")
                 appendLine()
             }
@@ -862,37 +1035,106 @@ class Challenge1Activity : AppCompatActivity() {
             .show()
     }
     
-    private fun submitChallenge() {
-        showLoading(true, "Evaluating all 3 problems...")
+    private fun submitChallenge(isTimeout: Boolean = false) {
+        showLoading(true, "Evaluating your submissions...")
         timer?.cancel()
+        isSubmitting = true  // H-01: prevent anti-cheat from triggering during submission
         
         lifecycleScope.launch {
             // Build full submission
             val submissions = problems.mapIndexed { i, problem ->
                 val answer = problemAnswers.getOrNull(i) ?: Challenge1ProblemAnswer()
+                // Build codeBlocks as position→content map (e.g., {"1": "#include...", "2": "#define..."})
+                val codeBlocksMap = answer.codeBlockOrder.mapIndexed { idx, content ->
+                    "${idx + 1}" to content
+                }.toMap()
                 Challenge1Submission(
                     selectedMcu = answer.selectedMcu,
                     selectedComponents = answer.selectedComponents.toList(),
-                    codeBlocks = answer.codeBlockOrder,
+                    codeBlocks = codeBlocksMap,
                     submittedAt = System.currentTimeMillis()
                 )
             }
             
-            // Calculate time used and time bonus
-            val timeUsedMs = ChallengeConstants.CHALLENGE_1_TIME_MS - timeRemainingMs
-            val timeBonus = calculateTimeBonus(timeUsedMs)
+            // BUG-H2: Use actual elapsed time for accurate time bonus (accounts for extra time)
+            val actualTimeUsedMs = if (challengeStartTime > 0) {
+                maxOf(0L, System.currentTimeMillis() - challengeStartTime)
+            } else {
+                maxOf(0L, ChallengeConstants.CHALLENGE_1_TIME_MS - timeRemainingMs)
+            }
+            val timeBonus = calculateTimeBonus(actualTimeUsedMs)
             
-            // Evaluate
-            val evaluation = evaluateAllSubmissions(submissions, timeBonus)
+            // C-01 + R-02: Evaluate ALL problems with retry
+            val evaluation = try {
+                // Evaluate each problem, retrying individually on failure
+                val perProblemResults = mutableListOf<EvaluationResult>()
+                
+                for (i in submissions.indices) {
+                    val submission = submissions[i]
+                    val problemStatement = problems.getOrNull(i)?.problemStatement ?: continue
+                    
+                    // Detect if user actually modified code blocks from default shuffled order
+                    val originalCodeOrder = problems.getOrNull(i)?.codeBlocks?.map { it.content } ?: emptyList()
+                    val codeBlockContentList = submission.codeBlocks.entries.sortedBy { it.key.toIntOrNull() ?: 0 }.map { it.value }
+                    val codeModified = codeBlockContentList != originalCodeOrder && codeBlockContentList.isNotEmpty()
+                    
+                    var geminiResult: Result<EvaluationResult>? = null
+                    val maxPerProblemRetries = 3
+                    
+                    for (retry in 1..maxPerProblemRetries) {
+                        geminiResult = geminiService.evaluateChallenge1(
+                            problemStatement = problemStatement,
+                            selectedMcu = submission.selectedMcu,
+                            selectedComponents = submission.selectedComponents,
+                            codeBlocks = codeBlockContentList,
+                            codeModified = codeModified
+                        )
+                        
+                        if (geminiResult.isSuccess) {
+                            perProblemResults.add(geminiResult.getOrThrow())
+                            break
+                        } else {
+                            android.util.Log.w("Challenge1", 
+                                "Gemini failed for problem ${i+1} (attempt $retry/$maxPerProblemRetries): ${geminiResult.exceptionOrNull()?.message}")
+                            if (retry < maxPerProblemRetries) {
+                                kotlinx.coroutines.delay(1000L * retry)
+                            }
+                        }
+                    }
+                }
+                
+                if (perProblemResults.isNotEmpty()) {
+                    android.util.Log.i("Challenge1", "Evaluation successful for ${perProblemResults.size}/${submissions.size} problems")
+                    averageEvaluationResults(perProblemResults, timeBonus)
+                } else {
+                    // All problems failed — cannot submit without evaluation
+                    android.util.Log.e("Challenge1", "All Gemini evaluations failed after retries")
+                    null
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("Challenge1", "Gemini evaluation exception", e)
+                null
+            }
             
-            // Submit to Firebase (use first submission for compatibility)
-            val mainSubmission = submissions.firstOrNull() ?: Challenge1Submission()
-            val success = eventService.submitChallenge1(rollNumber, mainSubmission, evaluation)
+            if (evaluation == null) {
+                showLoading(false)
+                isSubmitting = false
+                Toast.makeText(
+                    this@Challenge1Activity,
+                    "⚠️ Evaluation failed. Please check your internet connection and try again.",
+                    Toast.LENGTH_LONG
+                ).show()
+                return@launch
+            }
+            
+            // Submit ALL problem submissions to Firebase (stored as p1, p2, p3 map)
+            val success = eventService.submitChallenge1(rollNumber, submissions, evaluation, isTimeout)
             
             if (success) {
                 navigateToRankingDashboard()
             } else {
                 showLoading(false)
+                isSubmitting = false
                 Toast.makeText(this@Challenge1Activity, "Submission failed", Toast.LENGTH_SHORT).show()
             }
         }
@@ -905,84 +1147,50 @@ class Challenge1Activity : AppCompatActivity() {
         return maxOf(0, bonus)
     }
     
-    private fun evaluateAllSubmissions(submissions: List<Challenge1Submission>, timeBonus: Int): EvaluationResult {
-        var totalScore = 0
-        var hasAnyAttempt = false
-        
-        submissions.forEachIndexed { i, submission ->
-            val problem = problems.getOrNull(i) ?: return@forEachIndexed
-            
-            // Check if user actually attempted this problem (MCU or components selected)
-            // Note: Code block reordering is checked separately since codeBlocks are always pre-populated
-            val hasAttempt = submission.selectedMcu.isNotEmpty() || 
-                             submission.selectedComponents.isNotEmpty()
-            if (hasAttempt) hasAnyAttempt = true
-            
-            // MCU score (30 pts per problem for correct MCU)
-            val mcuScore = if (submission.selectedMcu == problem.expectedMcu) 30 else 0
-            
-            // Component score (30 pts per problem, proportional to correct matches)
-            val matchedComponents = submission.selectedComponents.count { 
-                problem.requiredComponents.contains(it) 
-            }
-            val componentScore = if (problem.requiredComponents.isNotEmpty()) {
-                (matchedComponents.toFloat() / problem.requiredComponents.size * 30).toInt()
-            } else 0
-            
-            // Code order score (40 pts per problem) - check if user actually reordered
-            // Compare current order with original order (blocks are created with incrementing originalOrder)
-            val originalOrder = problem.codeBlocks.map { it.content }
-            val userOrder = submission.codeBlocks
-            val wasReordered = originalOrder != userOrder && userOrder.isNotEmpty()
-            
-            // Give points only if user made an attempt AND reordered code correctly
-            // Check if the first block is an #include (correct structure)
-            val hasCorrectStructure = userOrder.firstOrNull()?.startsWith("#include") == true ||
-                                      userOrder.firstOrNull()?.startsWith("#define") == true
-            val codeScore = if (wasReordered && hasCorrectStructure) 40 else 0
-            
-            // Count code reordering as an attempt too
-            if (wasReordered) hasAnyAttempt = true
-            
-            totalScore += mcuScore + componentScore + codeScore
-        }
-        
-        // If no attempt was made, return 0 score
-        if (!hasAnyAttempt) {
-            return EvaluationResult(
-                attemptCompleteness = EvaluationCategory(0, 20, "No attempt made"),
-                syntaxCorrectness = EvaluationCategory(0, 20, "No code submitted"),
-                logicAccuracy = EvaluationCategory(0, 25, "No solution provided"),
-                criticalElements = EvaluationCategory(0, 15, "No components selected"),
-                codeQuality = EvaluationCategory(0, 10, "No code provided"),
-                errorCount = EvaluationCategory(0, 10, "N/A"),
-                totalScore = 0,
-                maxScore = 100,
-                percentage = 0.0,
-                weightedScore = 0,
-                feedback = "No attempt was made. Please select MCU, components, and arrange code blocks.",
-                evaluatedAt = System.currentTimeMillis()
-            )
-        }
-        
-        // Average across 3 problems
-        val avgScore = totalScore / problems.size
-        
-        // Apply time bonus only if user attempted something (20% weight as per spec)
-        val finalScore = (avgScore * 0.8 + timeBonus * 0.2).toInt()
+
+    /** R-02: Average multiple evaluation results into a single result */
+    private fun averageEvaluationResults(results: List<EvaluationResult>, timeBonus: Int): EvaluationResult {
+        val n = results.size
+        // BUG-H1: Use double division to avoid losing precision via integer truncation
+        val avgTotal = (results.sumOf { it.totalScore }.toDouble() / n).toInt()
+        val finalScore = (avgTotal * 0.8 + timeBonus * 0.2).toInt()
         
         return EvaluationResult(
-            attemptCompleteness = EvaluationCategory(18, 20, ""),
-            syntaxCorrectness = EvaluationCategory(16, 20, ""),
-            logicAccuracy = EvaluationCategory(22, 25, ""),
-            criticalElements = EvaluationCategory(12, 15, ""),
-            codeQuality = EvaluationCategory(8, 10, ""),
-            errorCount = EvaluationCategory(7, 10, ""),
+            attemptCompleteness = EvaluationCategory(
+                (results.sumOf { it.attemptCompleteness.score }.toDouble() / n).toInt(), // N2-FIX: float division
+                results.first().attemptCompleteness.maxScore,
+                "Averaged over $n problems"
+            ),
+            syntaxCorrectness = EvaluationCategory(
+                (results.sumOf { it.syntaxCorrectness.score }.toDouble() / n).toInt(),
+                results.first().syntaxCorrectness.maxScore,
+                "Averaged over $n problems"
+            ),
+            logicAccuracy = EvaluationCategory(
+                (results.sumOf { it.logicAccuracy.score }.toDouble() / n).toInt(),
+                results.first().logicAccuracy.maxScore,
+                "Averaged over $n problems"
+            ),
+            criticalElements = EvaluationCategory(
+                (results.sumOf { it.criticalElements.score }.toDouble() / n).toInt(),
+                results.first().criticalElements.maxScore,
+                "Averaged over $n problems"
+            ),
+            codeQuality = EvaluationCategory(
+                (results.sumOf { it.codeQuality.score }.toDouble() / n).toInt(),
+                results.first().codeQuality.maxScore,
+                "Averaged over $n problems"
+            ),
+            errorCount = EvaluationCategory(
+                (results.sumOf { it.errorCount.score }.toDouble() / n).toInt(),
+                results.first().errorCount.maxScore,
+                "Averaged over $n problems"
+            ),
             totalScore = finalScore,
             maxScore = 100,
             percentage = finalScore.toDouble(),
             weightedScore = (finalScore * ChallengeConstants.CHALLENGE_1_WEIGHT).toInt(),
-            feedback = "Evaluated ${problems.size} problems. Time bonus: $timeBonus points.",
+            feedback = results.mapIndexed { i, r -> "Problem ${i+1}: ${r.feedback}" }.joinToString(" | "),
             evaluatedAt = System.currentTimeMillis()
         )
     }
@@ -992,8 +1200,19 @@ class Challenge1Activity : AppCompatActivity() {
         saveCurrentAnswer()
         
         lifecycleScope.launch {
+            // CRITICAL: Save state to Firebase BEFORE timeout so user can resume with their selections
+            val stateJson = serializeCurrentState()
+            eventService.saveChallengeState(
+                rollNumber = rollNumber,
+                challengeNumber = 1,
+                stateJson = stateJson,
+                timeRemainingMs = 0L, // Timed out, no time remaining
+                currentProblemIndex = currentProblemIndex
+            )
+            android.util.Log.i("Challenge1", "Saved challenge state to Firebase before timeout")
+            
             eventService.timeoutChallenge(rollNumber, 1)
-            submitChallenge()
+            submitChallenge(isTimeout = true)
         }
     }
     
@@ -1012,7 +1231,8 @@ class Challenge1Activity : AppCompatActivity() {
     
     override fun onStop() {
         super.onStop()
-        if (!isFinishing) {
+        // H-01: Don't trigger anti-cheat during submission or when finishing
+        if (!isFinishing && !isSubmitting) {
             handleAppBackground()
         }
     }
@@ -1020,6 +1240,11 @@ class Challenge1Activity : AppCompatActivity() {
     private var isTerminated = false
     
     private fun handleAppBackground() {
+        // C-07: Pause timer and record wall-clock time when going to background
+        timer?.cancel()
+        timerRunning = false  // BUG-FIX: mark timer as stopped
+        backgroundEnteredRealtime = android.os.SystemClock.elapsedRealtime() // BUG-M4
+        
         warningCount++
         lifecycleScope.launch {
             // ALWAYS save state when exiting app (for safety)
@@ -1045,10 +1270,53 @@ class Challenge1Activity : AppCompatActivity() {
     
     override fun onResume() {
         super.onResume()
-        if (isTerminated) {
-            showTerminationDialog()
-        } else if (warningCount == 1) {
-            showWarningDialog()
+        
+        // BUG-FIX: Sync warningCount FIRST, then make all decisions INSIDE the coroutine
+        lifecycleScope.launch {
+            try {
+                val snapshot = eventService.getParticipantRef(rollNumber)
+                    .child("status/warningCount").get().await()
+                val firebaseCount = snapshot.getValue(Int::class.java) ?: 0
+                if (firebaseCount > warningCount) {
+                    warningCount = firebaseCount
+                    android.util.Log.i("Challenge1", "Synced warningCount from Firebase: $warningCount")
+                }
+            } catch (e: Exception) {
+                android.util.Log.w("Challenge1", "Failed to sync warningCount", e)
+            }
+            
+            // BUG-FIX: All decisions now happen AFTER warningCount sync completes
+            if (isTerminated) {
+                showTerminationDialog()
+            } else if (warningCount >= 1 && !timerRunning) {
+                // BUG-M4: Deduct actual background time from timer
+                if (backgroundEnteredRealtime > 0) {
+                    val backgroundDuration = android.os.SystemClock.elapsedRealtime() - backgroundEnteredRealtime
+                    timeRemainingMs = maxOf(0L, timeRemainingMs - backgroundDuration)
+                    backgroundEnteredRealtime = 0L
+                    android.util.Log.i("Challenge1", "Deducted ${backgroundDuration}ms background time, remaining=${timeRemainingMs}ms")
+                }
+                showWarningDialog()
+                timerStartRealtime = android.os.SystemClock.elapsedRealtime()
+                if (timeRemainingMs <= 0) {
+                    timeoutAndSubmit()
+                } else {
+                    startTimer()
+                }
+            } else if (warningCount == 0 && timerStartRealtime > 0 && !timerRunning) {
+                // Returning from a non-warning background (e.g., split-screen dismissed)
+                // BUG-M4: Also deduct background time for non-warning returns
+                if (backgroundEnteredRealtime > 0) {
+                    val backgroundDuration = android.os.SystemClock.elapsedRealtime() - backgroundEnteredRealtime
+                    timeRemainingMs = maxOf(0L, timeRemainingMs - backgroundDuration)
+                    backgroundEnteredRealtime = 0L
+                }
+                if (timeRemainingMs <= 0) {
+                    timeoutAndSubmit()
+                } else {
+                    startTimer()
+                }
+            }
         }
     }
     
@@ -1092,33 +1360,28 @@ class Challenge1Activity : AppCompatActivity() {
         }
     }
     
-    override fun onBackPressed() {
-        AlertDialog.Builder(this)
-            .setTitle("Exit Challenge?")
-            .setMessage("If you exit, you will receive a warning and may be terminated.")
-            .setPositiveButton("Exit") { _, _ -> super.onBackPressed() }
-            .setNegativeButton("Stay", null)
-            .show()
+    // H-06: Use OnBackPressedCallback instead of deprecated onBackPressed
+    private fun setupBackPressHandler() {
+        onBackPressedDispatcher.addCallback(this, object : androidx.activity.OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                AlertDialog.Builder(this@Challenge1Activity)
+                    .setTitle("Exit Challenge?")
+                    .setMessage("If you exit, you will receive a warning and may be terminated.")
+                    .setPositiveButton("Exit") { _, _ ->
+                        isEnabled = false
+                        onBackPressedDispatcher.onBackPressed()
+                    }
+                    .setNegativeButton("Stay", null)
+                    .show()
+            }
+        })
     }
 }
 
 // ============== DATA CLASSES ==============
 
-data class Challenge1Problem(
-    val id: Int,
-    val statement: String,
-    val expectedMcu: String,
-    val requiredComponents: List<String>,
-    val codeBlocks: List<CodeBlock>
-)
-
-data class Challenge1ProblemAnswer(
-    val selectedMcu: String = "",
-    val selectedComponents: List<String> = emptyList(),
-    val codeBlockOrder: List<String> = emptyList(),
-    val codeBlockIdOrder: List<Int> = emptyList(),
-    val isComplete: Boolean = false
-)
+// R-06: Removed duplicate Challenge1Problem, Challenge1ProblemAnswer, CodeBlock, CodeBlockCategory
+// — these are already imported from services package
 
 data class ComponentItem(
     val name: String,
@@ -1127,16 +1390,6 @@ data class ComponentItem(
 )
 
 enum class ComponentType { SENSOR, MODULE }
-
-data class CodeBlock(
-    val originalOrder: Int,
-    val content: String,
-    val category: CodeBlockCategory
-)
-
-enum class CodeBlockCategory {
-    INCLUDE, DEFINE, DECLARATION, SETUP, LOOP
-}
 
 // ============== ADAPTERS ==============
 
@@ -1169,9 +1422,10 @@ class ComponentAdapter(
         val assetPath = "components/${if (item.type == ComponentType.SENSOR) "sensors" else "modules"}/$imageFileName"
         
         try {
-            val inputStream = holder.itemView.context.assets.open(assetPath)
-            val bitmap = android.graphics.BitmapFactory.decodeStream(inputStream)
-            inputStream.close()
+            // L-08: Use use{} to ensure InputStream is closed even if decodeStream throws
+            val bitmap = holder.itemView.context.assets.open(assetPath).use { inputStream ->
+                android.graphics.BitmapFactory.decodeStream(inputStream)
+            }
             holder.image.setImageBitmap(bitmap)
             holder.image.clearColorFilter()
         } catch (e: Exception) {

@@ -36,19 +36,8 @@ class ChallengeLoginActivity : AppCompatActivity() {
     }
 
     private fun setupUI() {
-        // Pre-fill user credentials for convenience
-        binding.etEmail.setText(ChallengeConstants.USER_EMAIL)
-        binding.etPassword.setText(ChallengeConstants.USER_PASSWORD)
-
         binding.btnLogin.setOnClickListener {
             performLogin()
-        }
-
-        binding.tvAdminLink.setOnClickListener {
-            // Fill admin credentials
-            binding.etEmail.setText(ChallengeConstants.ADMIN_EMAIL)
-            binding.etPassword.setText(ChallengeConstants.ADMIN_PASSWORD)
-            Toast.makeText(this, "Admin credentials filled", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -102,40 +91,10 @@ class ChallengeLoginActivity : AppCompatActivity() {
                 }
             }
             .addOnFailureListener { signInError ->
-                // If sign-in fails, try to create the user
-                android.util.Log.w("ChallengeLoginActivity", "Sign-in failed, attempting to create user: ${signInError.message}")
-                createUserAndLogin(email, password)
-            }
-    }
-
-    private fun createUserAndLogin(email: String, password: String) {
-        auth.createUserWithEmailAndPassword(email, password)
-            .addOnSuccessListener {
+                // H-07: Do NOT auto-create users on failed sign-in
+                // This was a security vulnerability allowing arbitrary account creation
                 showLoading(false)
-                android.util.Log.d("ChallengeLoginActivity", "Successfully created user: $email")
-                // Check if admin
-                if (email == ChallengeConstants.ADMIN_EMAIL) {
-                    navigateToAdmin()
-                } else {
-                    navigateToRollNumberEntry()
-                }
-            }
-            .addOnFailureListener { createError ->
-                // User might already exist, try sign-in one more time
-                android.util.Log.w("ChallengeLoginActivity", "Create failed, retrying sign-in: ${createError.message}")
-                auth.signInWithEmailAndPassword(email, password)
-                    .addOnSuccessListener {
-                        showLoading(false)
-                        if (email == ChallengeConstants.ADMIN_EMAIL) {
-                            navigateToAdmin()
-                        } else {
-                            navigateToRollNumberEntry()
-                        }
-                    }
-                    .addOnFailureListener { finalError ->
-                        showLoading(false)
-                        showError("Login failed: ${finalError.localizedMessage}")
-                    }
+                showError("Login failed: ${signInError.localizedMessage}")
             }
     }
 

@@ -34,8 +34,8 @@ class RankingDashboardActivity : AppCompatActivity() {
     private lateinit var auth: FirebaseAuth
     
     private var rollNumber: String = ""
-    private var hasStartedCh2: Boolean = false
-    private var hasStartedCh3: Boolean = false
+    private var rankingsObserverJob: kotlinx.coroutines.Job? = null
+    private var statusObserverJob: kotlinx.coroutines.Job? = null
     
     private lateinit var rankingsAdapter: RankingsAdapter
 
@@ -65,11 +65,14 @@ class RankingDashboardActivity : AppCompatActivity() {
         // Swipe to refresh
         binding.swipeRefresh.setOnRefreshListener {
             loadMyScore()
-            binding.swipeRefresh.isRefreshing = false
+            // M-04: isRefreshing is now dismissed inside loadMyScore() callback
         }
         
         // Logout button
         binding.btnLogout.setOnClickListener {
+            // Cancel Firebase observers BEFORE signing out to prevent permission errors
+            rankingsObserverJob?.cancel()
+            statusObserverJob?.cancel()
             auth.signOut()
             val intent = Intent(this, com.example.embeddedsystemscareerguide.ui.auth.LoginActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
@@ -84,7 +87,7 @@ class RankingDashboardActivity : AppCompatActivity() {
     }
 
     private fun setupRankingsObserver() {
-        lifecycleScope.launch {
+        rankingsObserverJob = lifecycleScope.launch {
             eventService.observeUniversalRankings().collectLatest { rankings ->
                 rankingsAdapter.updateData(rankings)
                 binding.tvParticipantCount.text = "${rankings.size} participants"
@@ -98,7 +101,7 @@ class RankingDashboardActivity : AppCompatActivity() {
 
     private fun setupStatusObserver() {
         // Listen for challenge unlock notifications
-        lifecycleScope.launch {
+        statusObserverJob = lifecycleScope.launch {
             eventService.observeParticipantStatus(rollNumber).collectLatest { status ->
                 status?.let { handleStatusUpdate(it) }
             }
@@ -165,7 +168,7 @@ class RankingDashboardActivity : AppCompatActivity() {
             else -> return
         }
         intent.putExtra(RollNumberEntryActivity.EXTRA_ROLL_NUMBER, rollNumber)
-        intent.putExtra("isResume", true)
+        intent.putExtra(RollNumberEntryActivity.EXTRA_IS_RESUME, true)
         startActivity(intent)
     }
 
@@ -179,14 +182,8 @@ class RankingDashboardActivity : AppCompatActivity() {
         val challengeNumber = binding.btnStartNextChallenge.tag as? Int ?: return
         
         val intent = when (challengeNumber) {
-            2 -> {
-                hasStartedCh2 = true
-                Intent(this, Challenge2Activity::class.java)
-            }
-            3 -> {
-                hasStartedCh3 = true
-                Intent(this, Challenge3Activity::class.java)
-            }
+            2 -> Intent(this, Challenge2Activity::class.java)
+            3 -> Intent(this, Challenge3Activity::class.java)
             else -> return
         }
         
@@ -202,13 +199,11 @@ class RankingDashboardActivity : AppCompatActivity() {
             // Get participant's ranking data
             val status = eventService.getParticipantStatus(rollNumber)
             
-            // Check challenge access status
-            hasStartedCh2 = false // Will be determined by challenge2 status
-            hasStartedCh3 = false
-            
             status?.let { handleStatusUpdate(it) }
             
             binding.loadingOverlay.visibility = View.GONE
+            // M-04: Dismiss refresh spinner after data arrives
+            binding.swipeRefresh.isRefreshing = false
         }
     }
 
@@ -289,7 +284,8 @@ class RankingsAdapter(
     override fun getItemCount() = rankings.size
     
     fun updateData(newRankings: List<RankingEntry>) {
-        rankings = newRankings.sortedByDescending { it.totalScore }
+        // L-07: Removed client-side sort — rankings are already sorted by updateUniversalRankings()
+        rankings = newRankings
         notifyDataSetChanged()
     }
     

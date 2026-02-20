@@ -153,6 +153,7 @@ class PreReleaseEventService private constructor() {
         getParticipantRef(rollNumber).child("$challengeKey/status").get()
             .addOnSuccessListener { snapshot ->
                 val status = snapshot.getValue(String::class.java)
+                // Only "completed" means done - "timeout" and "resumable" mean user should continue
                 cont.resume(status == "completed")
             }
             .addOnFailureListener { e ->
@@ -185,8 +186,9 @@ class PreReleaseEventService private constructor() {
     
     suspend fun submitChallenge1(
         rollNumber: String,
-        submission: Challenge1Submission,
-        evaluation: EvaluationResult
+        submissions: List<Challenge1Submission>,
+        evaluation: EvaluationResult,
+        isTimeout: Boolean = false
     ): Boolean = suspendCancellableCoroutine { cont ->
         val participantRef = getParticipantRef(rollNumber)
         val now = System.currentTimeMillis()
@@ -197,20 +199,26 @@ class PreReleaseEventService private constructor() {
                 val startTime = snapshot.getValue(Long::class.java) ?: now
                 val timeTaken = now - startTime
                 
-                val weightedScore = (evaluation.totalScore * ChallengeConstants.CHALLENGE_1_WEIGHT).toInt()
+                val weightedScore = evaluation.weightedScore // BUG-M5: use pre-computed value
+                val percentage = weightedScore.toDouble() / ChallengeConstants.MAX_TOTAL_SCORE * 100
+                
+                // Store all submissions as a map (p1, p2, p3) — similar to Ch2/Ch3 questions
+                val submissionsMap = submissions.mapIndexed { index, s -> "p${index + 1}" to s }.toMap()
                 
                 val updates = mapOf(
-                    "challenge1/status" to "completed",
+                    "challenge1/status" to if (isTimeout) "timeout" else "completed",
                     "challenge1/endTime" to now,
                     "challenge1/timeTakenMs" to timeTaken,
-                    "challenge1/submission" to submission,
+                    "challenge1/submission" to submissionsMap,
                     "challenge1/evaluation" to evaluation,
                     "challenge1/scores/rawScore" to evaluation.totalScore,
                     "challenge1/scores/weightedScore" to weightedScore,
-                    "status/currentStatus" to ParticipantStatus.STATUS_COMPLETED,
+                    // Ch1 done: keep in_progress (user still has Ch2/Ch3), unless timeout
+                    "status/currentStatus" to if (isTimeout) ParticipantStatus.STATUS_TIMEOUT else ParticipantStatus.STATUS_IN_PROGRESS,
                     "universalRanking/challenge1Score" to weightedScore,
                     "universalRanking/totalWeightedScore" to weightedScore,
                     "universalRanking/totalTimeTakenMs" to timeTaken,
+                    "universalRanking/percentage" to percentage,
                     "universalRanking/lastUpdatedAt" to now
                 )
                 
@@ -252,7 +260,8 @@ class PreReleaseEventService private constructor() {
     suspend fun submitChallenge2(
         rollNumber: String,
         questions: List<Challenge2QuestionInternal>,
-        evaluation: EvaluationResult
+        evaluation: EvaluationResult,
+        isTimeout: Boolean = false
     ): Boolean = suspendCancellableCoroutine { cont ->
         val participantRef = getParticipantRef(rollNumber)
         val now = System.currentTimeMillis()
@@ -262,28 +271,36 @@ class PreReleaseEventService private constructor() {
                 val startTime = snapshot.getValue(Long::class.java) ?: now
                 val timeTaken = now - startTime
                 
-                val weightedScore = (evaluation.totalScore * ChallengeConstants.CHALLENGE_2_WEIGHT).toInt()
+                // BUG#5-FIX: Use pre-computed weightedScore from evaluation (already includes time bonus)
+                // instead of recalculating from adjusted totalScore which would double-count
+                val weightedScore = evaluation.weightedScore
                 
                 // Build questions map
                 val questionsMap = questions.mapIndexed { index, q -> "q${index + 1}" to q }.toMap()
                 
-                // Get current Ch1 score for total calculation
-                participantRef.child("universalRanking/challenge1Score").get()
-                    .addOnSuccessListener { ch1Snapshot ->
-                        val ch1Score = ch1Snapshot.getValue(Int::class.java) ?: 0
-                        val ch1Time = participantRef.child("challenge1/timeTakenMs")
+                // Get current Ch1 score and time for cumulative totals
+                participantRef.child("universalRanking").get()
+                    .addOnSuccessListener { rankingSnapshot ->
+                        val ch1Score = rankingSnapshot.child("challenge1Score").getValue(Int::class.java) ?: 0
+                        val existingTime = rankingSnapshot.child("totalTimeTakenMs").getValue(Long::class.java) ?: 0L
+                        val totalWeighted = ch1Score + weightedScore
+                        val totalTime = existingTime + timeTaken
+                        val percentage = totalWeighted.toDouble() / ChallengeConstants.MAX_TOTAL_SCORE * 100
                         
                         val updates = mapOf(
-                            "challenge2/status" to "completed",
+                            "challenge2/status" to if (isTimeout) "timeout" else "completed",
                             "challenge2/endTime" to now,
                             "challenge2/timeTakenMs" to timeTaken,
                             "challenge2/questions" to questionsMap,
                             "challenge2/evaluation" to evaluation,
                             "challenge2/scores/rawScore" to evaluation.totalScore,
                             "challenge2/scores/weightedScore" to weightedScore,
-                            "status/currentStatus" to ParticipantStatus.STATUS_COMPLETED,
+                            // Ch2 done: keep in_progress (user still has Ch3), unless timeout
+                            "status/currentStatus" to if (isTimeout) ParticipantStatus.STATUS_TIMEOUT else ParticipantStatus.STATUS_IN_PROGRESS,
                             "universalRanking/challenge2Score" to weightedScore,
-                            "universalRanking/totalWeightedScore" to (ch1Score + weightedScore),
+                            "universalRanking/totalWeightedScore" to totalWeighted,
+                            "universalRanking/totalTimeTakenMs" to totalTime,
+                            "universalRanking/percentage" to percentage,
                             "universalRanking/lastUpdatedAt" to now
                         )
                         
@@ -325,7 +342,8 @@ class PreReleaseEventService private constructor() {
     suspend fun submitChallenge3(
         rollNumber: String,
         questions: List<Challenge3QuestionInternal>,
-        evaluation: EvaluationResult
+        evaluation: EvaluationResult,
+        isTimeout: Boolean = false
     ): Boolean = suspendCancellableCoroutine { cont ->
         val participantRef = getParticipantRef(rollNumber)
         val now = System.currentTimeMillis()
@@ -335,28 +353,34 @@ class PreReleaseEventService private constructor() {
                 val startTime = snapshot.getValue(Long::class.java) ?: now
                 val timeTaken = now - startTime
                 
-                val weightedScore = (evaluation.totalScore * ChallengeConstants.CHALLENGE_3_WEIGHT).toInt()
+                // BUG#5-FIX: Use pre-computed weightedScore from evaluation (already includes time bonus)
+            // Recalculating here would double-count the time bonus
+            val weightedScore = evaluation.weightedScore
                 
                 val questionsMap = questions.mapIndexed { index, q -> "q${index + 1}" to q }.toMap()
                 
-                // Get current scores for total calculation
+                // Get current scores and time for cumulative totals
                 participantRef.child("universalRanking").get()
                     .addOnSuccessListener { rankingSnapshot ->
                         val ch1Score = rankingSnapshot.child("challenge1Score").getValue(Int::class.java) ?: 0
                         val ch2Score = rankingSnapshot.child("challenge2Score").getValue(Int::class.java) ?: 0
+                        val existingTime = rankingSnapshot.child("totalTimeTakenMs").getValue(Long::class.java) ?: 0L
                         val totalScore = ch1Score + ch2Score + weightedScore
+                        val totalTime = existingTime + timeTaken
                         
                         val updates = mapOf(
-                            "challenge3/status" to "completed",
+                            "challenge3/status" to if (isTimeout) "timeout" else "completed",
                             "challenge3/endTime" to now,
                             "challenge3/timeTakenMs" to timeTaken,
                             "challenge3/questions" to questionsMap,
                             "challenge3/evaluation" to evaluation,
                             "challenge3/scores/rawScore" to evaluation.totalScore,
                             "challenge3/scores/weightedScore" to weightedScore,
-                            "status/currentStatus" to ParticipantStatus.STATUS_COMPLETED,
+                            // Ch3 is the final challenge: mark as completed
+                            "status/currentStatus" to if (isTimeout) ParticipantStatus.STATUS_TIMEOUT else ParticipantStatus.STATUS_COMPLETED,
                             "universalRanking/challenge3Score" to weightedScore,
                             "universalRanking/totalWeightedScore" to totalScore,
+                            "universalRanking/totalTimeTakenMs" to totalTime,
                             "universalRanking/percentage" to (totalScore.toDouble() / ChallengeConstants.MAX_TOTAL_SCORE * 100),
                             "universalRanking/lastUpdatedAt" to now
                         )
@@ -381,18 +405,25 @@ class PreReleaseEventService private constructor() {
     // ============== WARNING & TERMINATION ==============
     
     suspend fun addWarning(rollNumber: String): Int = suspendCancellableCoroutine { cont ->
-        val statusRef = getParticipantRef(rollNumber).child("status")
+        val warningRef = getParticipantRef(rollNumber).child("status/warningCount")
         
-        statusRef.child("warningCount").get()
-            .addOnSuccessListener { snapshot ->
-                val currentCount = snapshot.getValue(Int::class.java) ?: 0
-                val newCount = currentCount + 1
-                
-                statusRef.child("warningCount").setValue(newCount)
-                    .addOnSuccessListener { cont.resume(newCount) }
-                    .addOnFailureListener { cont.resume(currentCount) }
+        // Use runTransaction for atomic increment to prevent race conditions
+        warningRef.runTransaction(object : com.google.firebase.database.Transaction.Handler {
+            override fun doTransaction(mutableData: com.google.firebase.database.MutableData): com.google.firebase.database.Transaction.Result {
+                val currentCount = mutableData.getValue(Int::class.java) ?: 0
+                mutableData.value = currentCount + 1
+                return com.google.firebase.database.Transaction.success(mutableData)
             }
-            .addOnFailureListener { cont.resume(0) }
+            
+            override fun onComplete(
+                error: com.google.firebase.database.DatabaseError?,
+                committed: Boolean,
+                currentData: com.google.firebase.database.DataSnapshot?
+            ) {
+                val newCount = currentData?.getValue(Int::class.java) ?: 0
+                cont.resume(newCount)
+            }
+        })
     }
     
     suspend fun terminateParticipant(rollNumber: String, reason: String): Boolean = suspendCancellableCoroutine { cont ->
@@ -541,10 +572,8 @@ class PreReleaseEventService private constructor() {
                     }
                     
                     if (activeChallengeKey != null) {
-                        // Get current extra time and add to it
-                        val currentExtra = snapshot.child("$activeChallengeKey/extraTimeGrantedMs")
-                            .getValue(Long::class.java) ?: 0L
-                        val newExtraTime = currentExtra + extraTimeMs
+                        // REPLACE extra time (not accumulate) - fresh timer for each grant
+                        val newExtraTime = extraTimeMs
                         
                         // Update extra time AND set status to resumable
                         val updates = mapOf(
@@ -610,16 +639,37 @@ class PreReleaseEventService private constructor() {
                     val status = child.child("status").getValue(ParticipantStatus::class.java)
                     val ranking = child.child("universalRanking")
                     
-                    status?.let {
-                        // Enhance with ranking data
-                        val enhanced = it.copy(
+                    // Get ranking scores
+                    val totalScore = ranking.child("totalWeightedScore").getValue(Int::class.java) ?: 0
+                    val ch1Score = ranking.child("challenge1Score").getValue(Int::class.java) ?: 0
+                    val ch2Score = ranking.child("challenge2Score").getValue(Int::class.java) ?: 0
+                    val ch3Score = ranking.child("challenge3Score").getValue(Int::class.java) ?: 0
+                    
+                    if (status != null) {
+                        // Enhance existing status with ranking data
+                        val enhanced = status.copy(
                             rollNumber = rollNumber,
-                            totalScore = ranking.child("totalWeightedScore").getValue(Int::class.java) ?: 0,
-                            challenge1Score = ranking.child("challenge1Score").getValue(Int::class.java) ?: 0,
-                            challenge2Score = ranking.child("challenge2Score").getValue(Int::class.java) ?: 0,
-                            challenge3Score = ranking.child("challenge3Score").getValue(Int::class.java) ?: 0
+                            totalScore = totalScore,
+                            challenge1Score = ch1Score,
+                            challenge2Score = ch2Score,
+                            challenge3Score = ch3Score
                         )
                         participants.add(enhanced)
+                    } else {
+                        // Fallback: create a basic ParticipantStatus from available data
+                        // This handles cases where status node is missing but participant exists
+                        Log.w(TAG, "Participant $rollNumber missing status node, creating fallback")
+                        val fallback = ParticipantStatus(
+                            rollNumber = rollNumber,
+                            currentStatus = if (totalScore > 0) ParticipantStatus.STATUS_COMPLETED else ParticipantStatus.STATUS_WAITING,
+                            canAccessChallenge2 = ch1Score > 0,
+                            canAccessChallenge3 = ch2Score > 0,
+                            totalScore = totalScore,
+                            challenge1Score = ch1Score,
+                            challenge2Score = ch2Score,
+                            challenge3Score = ch3Score
+                        )
+                        participants.add(fallback)
                     }
                 }
                 trySend(participants.sortedByDescending { it.totalScore })
@@ -690,14 +740,25 @@ class PreReleaseEventService private constructor() {
             // Sort by score (descending), then by time (ascending)
             rankings.sortWith(compareByDescending<RankingEntry> { it.totalScore }.thenBy { it.totalTimeMs })
             
-            // Update rankings in database
+            // Build a single atomic update map for all rankings and participant ranks
+            val atomicUpdates = mutableMapOf<String, Any>()
             val rankingsRef = getRankingsRef()
+            
             rankings.forEachIndexed { index, entry ->
                 val rank = index + 1
-                rankingsRef.child(entry.rollNumber).setValue(entry.copy())
-                
+                // Update in rankings node
+                atomicUpdates["${ChallengeConstants.PATH_RANKINGS}/${ChallengeConstants.PATH_UNIVERSAL}/${entry.rollNumber}"] = entry.copy()
                 // Update participant's rank
-                getParticipantRef(entry.rollNumber).child("universalRanking/rank").setValue(rank)
+                atomicUpdates["${ChallengeConstants.PATH_PARTICIPANTS}/${entry.rollNumber}/universalRanking/rank"] = rank
+            }
+            
+            // Single atomic write for all ranking updates
+            if (atomicUpdates.isNotEmpty()) {
+                getEventRef()
+                    .updateChildren(atomicUpdates)
+                    .addOnFailureListener { e ->
+                        Log.e(TAG, "Failed to update universal rankings atomically", e)
+                    }
             }
         }
     }
