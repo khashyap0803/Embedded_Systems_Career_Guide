@@ -14,11 +14,10 @@
   <img src="https://img.shields.io/badge/Firebase-34.3.0-FFCA28?logo=firebase&logoColor=black" alt="Firebase">
   <img src="https://img.shields.io/badge/Gemini_AI-2.5_Flash-4285F4?logo=google&logoColor=white" alt="Gemini">
   <img src="https://img.shields.io/badge/Material_3-1.13.0-6750A4?logo=materialdesign&logoColor=white" alt="Material 3">
-  <img src="https://img.shields.io/badge/License-Educational-blue" alt="License">
 </p>
 
 <p align="center">
-  A gamified, AI-driven learning app that transforms how students and professionals learn embedded systems — from microcontrollers to IoT, real-time OS to industry protocols.
+  A gamified, AI-driven Android app that creates a personalized 40-stage learning path for embedded systems — from microcontrollers to RTOS, protocols to IoT — powered by Google's Gemini 2.5 Flash.
 </p>
 
 ---
@@ -34,275 +33,284 @@
 - [Firebase Setup](#-firebase-setup)
 - [Gemini AI Integration](#-gemini-ai-integration)
 - [Security](#-security)
-- [Documentation](#-documentation)
+- [Source Code Documentation](#-source-code-documentation)
 - [Contributing](#-contributing)
-- [License](#-license)
 
 ---
 
 ## 🎯 Overview
 
-**Embedded Systems Career Guide** is a production-grade Android application designed to take learners from zero to job-ready in embedded systems. The app combines a structured curriculum with Google's Gemini AI to create a truly personalized learning experience.
+**Embedded Systems Career Guide** is a production-grade Android application that takes learners from beginner to job-ready in embedded systems. After a 50-question initial assessment, the app uses Google's Gemini AI to generate a fully personalized 40-stage curriculum with rich educational content, quizzes, flashcards, and an AI chat tutor.
 
-### What Makes It Special
+### What Makes It Different
 
-| Feature | Description |
+| Feature | How It Works |
 |---------|-------------|
-| 🤖 **AI-Personalized Path** | No two learners get the same journey — stages adapt to your strengths and weaknesses |
-| 📚 **Stanford/MIT/IIT-Level Content** | AI generates detailed academic content with theory, code, and pro tips |
-| 🏆 **Gamified Progression** | XP, stars, streaks, and unlockable stages keep you motivated |
-| 🧠 **Smart Assessment** | 50-question initial evaluation determines your starting point |
-| 💬 **AI Tutor on Demand** | Context-aware chat that knows your progress and current topic |
-| 🏅 **Live Competitions** | Real-time coding challenges with universal rankings and leaderboards |
+| 🤖 **AI-Personalized Curriculum** | Assessment identifies weak/strong areas → Gemini generates 40 custom stages ordered by difficulty |
+| 📖 **University-Level Content** | 4 separate AI calls per stage generate theory (1,500–2,000 words), code examples, tips, and challenges |
+| 🏆 **Gamified Progression** | XP, star ratings (40/60/80% thresholds), streaks, and sequential stage unlocking |
+| 💬 **Context-Aware AI Tutor** | Chat knows your current stage, recent topics, and conversation history |
+| 🏅 **Live Competition System** | 3 timed challenges with anti-cheat, real-time rankings, and admin dashboard |
+| 🔒 **100% Cloud-Based** | All data in Firebase — no hardcoded fallback stages; everything is AI-generated |
 
-### Who Is This For?
+### Who Is This For
 
-- 🎓 **Students** preparing for embedded systems careers
-- 💼 **Professionals** transitioning into embedded development
-- 🎯 **Interview candidates** practicing for embedded systems roles
-- 📱 **Self-learners** who want a structured, personalized curriculum
+- 🎓 Students preparing for embedded systems careers
+- 💼 Professionals transitioning into embedded development
+- 🎯 Interview candidates practicing for embedded roles
 
 ---
 
 ## ✨ Key Features
 
-### 1. 🗺️ Dynamic Personalized Learning Path (30–50 Stages)
+### 1. 🗺️ AI-Personalized 40-Stage Learning Path
 
-The app generates a custom learning path of 30–50 stages based on your assessment results. Each stage is tailored to your skill gaps, ordered by difficulty, and covers topics from digital electronics to advanced RTOS.
+After completing the assessment, `StageGeneratorService` (562 lines) sends your results to Gemini AI, which generates 40 stages ordered by difficulty and tailored to your skill gaps. Stages cover 8 categories: Foundation, Microcontroller, Programming, Communication, Real-Time, IoT, Advanced, and Industry.
 
-- **AI-generated curriculum** — adapts to your weak/strong areas
-- **8 topic categories** — Foundation, Microcontroller, Programming, Communication, Real-Time, IoT, Advanced, Industry
-- **Gamified game-path UI** — visual progression map with animated nodes
-- **Progress synced to cloud** — pick up where you left off on any device
+**How it works:**
+- Assessment results are categorized: topics scoring <60% → weak areas, ≥60% → strong areas
+- Gemini generates a JSON array of 40 `PersonalizedStage` objects (id, title, topics, difficulty, XP reward)
+- Only the first stage is unlocked; each subsequent stage unlocks when the previous one is completed
+- If the user retakes the assessment, `regenerateStages()` considers their learning history (completed stages, quiz scores, wrong answers) to generate a smarter curriculum
+- All stages are saved to Firestore; there are **no hardcoded fallback stages**
 
-### 2. 📖 Kindle-Style Stage Content
+**UI:** The learning path is displayed as a vertical game-path with animated nodes, connecting lines (completed = cyan/teal, incomplete = dashed grey), and particle background animations. Built in `LearningPathFragment` (1,098 lines) with custom views (`GamePathView`, `ParticleBackgroundView`, `CircularProgressView`).
 
-Each stage includes rich, AI-generated educational content presented in a beautiful reading experience:
+### 2. 📖 Kindle-Style Stage Content (4-Part AI Generation)
 
-| Section | Details |
-|---------|---------|
-| **Theory** | 1,500–2,000 words of detailed academic content |
-| **Key Points** | 8–10 bullet-point summaries with specifics |
-| **Code Examples** | Difficulty-adapted code (15–80 lines) with line-by-line explanations |
-| **Common Mistakes** | What beginners get wrong and how to avoid it |
-| **Pro Tips** | Industry best practices from real embedded engineers |
-| **Mini Challenge** | A quick hands-on problem to test your understanding |
+Each stage has rich educational content generated by `StageContentService` (1,616 lines — the largest service in the app). Content is generated via **4 separate Gemini API calls** to avoid token truncation:
 
-Content is generated once via 4 separate AI calls (to avoid truncation) and cached in Firestore for instant retrieval.
+| Part | Content | Max Tokens | Retry + Fallback |
+|------|---------|------------|-------------------|
+| **1/4** | Detailed Theory (1,500–2,000 words), university-level | 8,192 | ✅ Hardcoded embedded systems overview |
+| **2/4** | 8 Key Points as bullet summaries | 4,096 | ✅ Simplified prompt + generic points |
+| **3/4** | Code Example (difficulty-adaptive: 15-80 lines) with line-by-line explanation | 8,192 | ✅ GPIO LED toggle fallback |
+| **4/4** | Common Mistakes, Pro Tips, Mini Challenge | 8,192 | ✅ Generic embedded tips |
 
-### 3. 🧠 AI-Powered Smart Assessment
+- Content is **generated once and cached in Firestore** — subsequent access loads from cache
+- Every component has a hardcoded fallback if AI fails
+- Code complexity adapts based on stage difficulty: beginners get 15–25 lines with analogies, advanced gets 40–80 lines with register-level detail
+- Includes extensive JSON repair utilities (5 sub-functions) for handling malformed AI output
+- **UI:** Swipe-based reading in a `ViewPager2` (`ContentReadingActivity`, 430 lines) with page indicator and reading progress bar
 
-A comprehensive 50-question assessment that evaluates your knowledge across all embedded systems topics:
+### 3. 🧠 50-Question Initial Assessment
 
-- **AI-generated exam** covering from basics to advanced concepts
-- **Detailed HTML report** with per-topic breakdown (strengths & weaknesses)
-- **Personalized recommendations** for what to study next
-- **Retake support** — regenerates your learning path based on new results
+`AssessmentActivity` (420 lines) loads questions from `assets/initial_assessment_questions.json`, collects answers (typed or speech-to-text input), then submits the complete set to `GeminiReportService` which generates a detailed HTML report saved to Firestore. The report includes per-topic breakdowns (strengths and weaknesses) used to personalize the learning path.
 
-### 4. 🃏 Flashcards (Tinder-Style Swipe)
+- Supports **retake assessment** — regenerates the entire learning path based on new results
+- `ReportViewerActivity` (353 lines) displays the AI-generated HTML report via WebView
 
-15–20 flashcards per stage for quick revision:
+### 4. 🃏 AI-Generated Flashcards
 
-- **Swipe right** = I know this → moves to next
-- **Swipe left** = Need review → flagged for revision
-- **Tap to flip** = Reveal answer
-- **Spaced repetition** tracking for optimal retention
+`FlashcardService` (265 lines) generates 15 flashcards per stage using `GeminiServiceV2.PromptTemplates.flashcards()`. Each flashcard has a front (question), back (answer), difficulty level, and category. Cards include a `needsReview` flag that can be toggled via `FirestoreManager.updateFlashcardReview()`. Flashcards are cached in Firestore after first generation.
 
-### 5. 📝 Enhanced AI Quizzes
+### 5. 📝 AI Quizzes with Explanations
 
-Dynamic quizzes with real-time AI explanations:
-
-- **5 questions per quiz** — generated fresh each time
-- **Instant feedback** — AI explains why each answer is correct or wrong
-- **Score breakdown** — per-topic performance analysis
-- **Progress tracking** — quiz history saved to cloud
+`GeminiQuizService` (488 lines) generates 5 multiple-choice questions per quiz (in a batch of 5 to avoid truncation), each with 4 options and an explanation for why the correct answer is correct. `QuizActivity` (306 lines) presents questions as Material cards with color-coded feedback (green = correct, red = wrong). Star ratings are awarded based on score: ≥80% → ⭐⭐⭐, ≥60% → ⭐⭐, ≥40% → ⭐. Quiz results (score, stars, time spent) are saved to Firestore and factored into progress.
 
 ### 6. 💬 Context-Aware AI Chat Tutor
 
-An intelligent chat assistant that understands where you are in your learning journey:
+`GeminiChatService` (212 lines) powers a chat interface (`ChatFragment`, 165 lines) where users ask embedded systems questions. The service builds context-aware prompts that include the user's current stage and recent topics. Messages are capped at 100 in memory. Input is sanitized via `InputSanitizer` (64 lines) to prevent prompt injection. Suggestion chips provide quick-start questions.
 
-- **Knows your current stage** and recently studied topics
-- **Conversation memory** — follows up on previous questions
-- **Code analysis** — paste code and get detailed explanations
-- **Doubt solving** — ask anything about embedded systems
+### 7. 🏆 Pre-Release Challenge Competition System
 
-### 7. 🏆 Pre-Release Event Challenge System
+A complete 3-challenge competition platform built across 7 UI files and 2 service files:
 
-A complete competition platform with 3 timed challenge types:
+| Challenge | Format | Timer | Lines |
+|-----------|--------|-------|-------|
+| **Challenge 1** (Easy) | Hardware selection (MCU + components) + drag-drop code blocks | 20 min | 1,552 |
+| **Challenge 2** (Medium) | Fill-in-the-blank code completion (2–4 lines per blank) | 20 min | 755 |
+| **Challenge 3** (Hard) | Full code writing from requirements | 25 min | 779 |
 
-| Challenge | Format | Time | Scoring |
-|-----------|--------|------|---------|
-| **Challenge 1** | Code modification (fix/enhance embedded code) | 20 min | 6-category AI rubric |
-| **Challenge 2** | Multiple choice (5 questions) | 20 min | Weighted scoring |
-| **Challenge 3** | Code writing (build from requirements) | 25 min | 6-category AI rubric |
+**Generated by AI:** `GeminiChallengeService` (1,294 lines) generates problems and evaluates submissions using a 6-category rubric. Server-side enforcement rules prevent AI inconsistency: empty answers → 0, single-word → capped at 2/10, very short (<20 chars) → capped at 4/10.
 
-**Additional features:**
-- 🔐 Roll number + credential-based authentication
-- 🏅 Real-time universal ranking with overall percentage
-- 👨‍💼 Admin dashboard for participant monitoring
-- ⚠️ Anti-cheat: warning system with auto-termination
-- 💾 State preservation: resume challenges after disconnection
-- ⏰ Extra time granting by admin
+**Event management:** `PreReleaseEventService` (953 lines) handles registration, participant status tracking (waiting/in_progress/completed/terminated/resumable), challenge state save/restore for resume, warnings with auto-termination on 2nd exit, and admin controls.
 
-### 8. 📊 Progress Analytics & AI Insights
+**Anti-cheat:** Warning system that increments on app background; auto-terminates participant after 2nd violation. Anti-paste ActionMode callbacks block clipboard in Challenge 2/3.
 
-Comprehensive learning analytics with AI-generated insights:
+**Admin dashboard:** `AdminDashboardActivity` (495 lines) for monitoring participants and granting extra time.
 
-- **Learning pace** — stages completed vs. time spent
-- **Strength/weakness map** — visual topic performance
-- **AI recommendations** — personalized next steps
-- **Streak tracking** — daily learning consistency
-- **XP leaderboard** — compare with other learners
+**Rankings:** `RankingDashboardActivity` (296 lines) shows universal ranking with overall percentage via Firebase Realtime Database real-time listeners (`callbackFlow`).
+
+### 8. 📊 Analytics & Insights
+
+`AnalyticsService` (411 lines) generates AI-powered progress reports with strengths analysis, improvement areas, recommendations, motivational messages, predicted completion days, and weekly goals. Reports are saved to Firestore with timestamps.
 
 ### 9. 🎯 Interview Preparation
 
-AI-powered interview practice tailored to your completed stages:
-
-- **Question types** — technical, behavioral, system design
-- **Difficulty scaling** — easy / medium / hard based on progress
-- **Answer evaluation** — AI grades your responses with feedback
-- **Category filtering** — practice specific topic areas
+`InterviewPrepService` (365 lines) generates interview questions with follow-ups based on completed topics and difficulty level (easy/medium/hard). Uses `GeminiServiceV2.PromptTemplates.interviewPrep()`.
 
 ### 10. 💡 Project Suggestions
 
-Personalized embedded systems project ideas based on your skills:
-
-- **3 difficulty levels** — Beginner, Intermediate, Advanced
-- **Step-by-step guidance** — requirements, outcomes, resources
-- **Progress tracking** — mark projects as started/completed
-- **AI-generated** — suggestions adapt as you learn more
+`ProjectSuggestionService` (337 lines) generates personalized project ideas with step-by-step guidance based on completed stages and skill level. Projects include title, description, difficulty, estimated hours, required components, learning outcomes, and steps. Project status tracking (started/completed) via Firestore.
 
 ### 11. 🌟 Daily Learning Tips
 
-AI-generated tips delivered daily:
+`DailyTipService` (244 lines) generates 7 tips in a weekly batch for efficiency. Tips include a category and actionable item. Stored in Firestore with date-keyed documents for daily retrieval.
 
-- **Context-aware** — related to your current learning stage
-- **Weekly batches** — 7 tips generated at a time for efficiency
-- **In-app history** — browse all past tips
+### 12. 🏠 Dashboard
+
+`HomeFragment` (447 lines) displays the user's progress dashboard: welcome message with username, daily inspiration/quote, XP with animated counter, current stage, streak (days), and completion percentage with animated progress bar. Quick action cards navigate to core features. Assessment status card shows whether assessment is completed. All data loaded cloud-first from Firestore via `UserProgressSyncService`.
 
 ---
 
 ## 🏗️ Architecture
 
-The app follows the **MVVM** (Model-View-ViewModel) pattern with a clean separation of concerns:
+The app uses **Single Activity Architecture** with Jetpack Navigation. `MainActivity` (103 lines) hosts all primary fragments via a `NavHostFragment`. Four top-level destinations (Home, Learning Path, Practice, Profile) are connected via bottom navigation.
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
 │                       PRESENTATION LAYER                         │
 │                                                                  │
-│  ┌──────────────┐  ┌───────────────┐  ┌───────────────────────┐  │
-│  │ HomeFragment │  │ LearningPath  │  │  Challenge Activities │  │
-│  │ ChatFragment │  │   Fragment    │  │  (1, 2, 3 + Admin)    │  │
-│  │ ProfileFrag  │  │ ContentReading│  │  Assessment + Login   │  │
-│  │ PracticeFrag │  │  Activity     │  │  Ranking Dashboard    │  │
-│  └──────┬───────┘  └──────┬────────┘  └──────────┬────────────┘  │
-│         │                 │                      │               │
-│         └─────────────────┼──────────────────────┘               │
-│                           │                                      │
-│                    ┌──────▼──────┐                                │
-│                    │  ViewModels │                                │
-│                    └──────┬──────┘                                │
-└───────────────────────────┼──────────────────────────────────────┘
+│  Main Activity (NavHost)                                         │
+│  ├── HomeFragment (447L)         ← Dashboard + stats             │
+│  ├── LearningPathFragment (1098L)← 40-stage gamified path       │
+│  ├── PracticeFragment (119L)     ← Placeholder (coming soon)    │
+│  ├── ProfileFragment (88L)       ← User info + logout           │
+│  ├── ChatFragment (165L)         ← AI tutor chat                │
+│  └── SettingsFragment (72L)      ← App settings                 │
+│                                                                  │
+│  Standalone Activities:                                          │
+│  ├── LoginActivity (894L)        ← Email/password + Google auth │
+│  ├── RegisterActivity (351L)     ← New account registration     │
+│  ├── IntroductionActivity (103L) ← Post-login routing           │
+│  ├── AssessmentActivity (420L)   ← 50-question assessment       │
+│  ├── ReportViewerActivity (353L) ← HTML report display          │
+│  ├── ContentReadingActivity (430L) ← Kindle-style content       │
+│  ├── QuizActivity (306L)         ← 5-question MCQ quiz          │
+│  └── Challenge Activities (7 files, 4,204L total)               │
+└──────────────────────────────────────────────────────────────────┘
                             │
 ┌───────────────────────────▼──────────────────────────────────────┐
-│                        SERVICE LAYER (19 Services)               │
+│                     SERVICE LAYER (19 services)                   │
 │                                                                  │
-│  ┌─────────────────────┐  ┌──────────────────┐  ┌────────────┐  │
-│  │  GeminiServiceV2    │  │ UserProgressSync │  │ Firestore  │  │
-│  │  (Central AI Hub)   │  │    Service       │  │  Manager   │  │
-│  ├─────────────────────┤  ├──────────────────┤  ├────────────┤  │
-│  │ GeminiChatService   │  │ StageGenerator   │  │ Analytics  │  │
-│  │ GeminiQuizService   │  │ StageContent     │  │  Service   │  │
-│  │ GeminiReportService │  │ FlashcardService │  │ DailyTip   │  │
-│  │ GeminiChallenge     │  │ InterviewPrep    │  │  Service   │  │
-│  │   Service           │  │ ProjectSuggest   │  │ NetworkMod │  │
-│  ├─────────────────────┤  │   ion            │  │ NetworkUtil│  │
-│  │ PreReleaseEvent     │  ├──────────────────┤  │ InputSanit │  │
-│  │   Service (953 LOC) │  │ SecurePrefsMan   │  │   izer     │  │
-│  └─────────────────────┘  └──────────────────┘  └────────────┘  │
+│  AI Services (via Gemini 2.5 Flash REST API):                    │
+│  ├── GeminiServiceV2 (683L)      ← Central AI hub, all prompts  │
+│  ├── GeminiChallengeService (1294L) ← Challenge gen + eval      │
+│  ├── GeminiReportService         ← Assessment report gen         │
+│  ├── GeminiQuizService (488L)    ← Quiz question gen             │
+│  └── GeminiChatService (212L)    ← Chat response gen             │
+│                                                                  │
+│  Feature Services (use GeminiServiceV2 for AI):                  │
+│  ├── StageGeneratorService (562L) ← 40-stage curriculum gen     │
+│  ├── StageContentService (1616L) ← 4-part content gen (largest) │
+│  ├── FlashcardService (265L)     ← 15 flashcards per stage      │
+│  ├── InterviewPrepService (365L) ← Interview Q&A gen            │
+│  ├── ProjectSuggestionService (337L) ← Project ideas gen        │
+│  ├── DailyTipService (244L)      ← 7-day tip batch gen          │
+│  └── AnalyticsService (411L)     ← AI progress reports          │
+│                                                                  │
+│  Infrastructure Services:                                        │
+│  ├── FirestoreManager (981L)     ← ALL Firestore CRUD + 16 data │
+│  │                                  classes defined here         │
+│  ├── PreReleaseEventService (953L) ← Realtime DB event mgmt    │
+│  ├── UserProgressSyncService     ← Cloud progress sync          │
+│  ├── NetworkModule (67L)         ← Centralized OkHttp config    │
+│  ├── NetworkUtils (79L)          ← Connectivity checks          │
+│  ├── InputSanitizer (64L)        ← Prompt injection prevention  │
+│  └── SecurePrefsManager (98L)    ← Encrypted SharedPrefs        │
 └───────────────────────────┬──────────────────────────────────────┘
                             │
 ┌───────────────────────────▼──────────────────────────────────────┐
 │                         DATA LAYER                               │
 │                                                                  │
-│  ┌──────────────────────────────────────────────────────────┐    │
-│  │              Firebase (Single Source of Truth)            │    │
-│  │                                                          │    │
-│  │  ┌────────────────┐  ┌──────────────┐  ┌──────────────┐ │    │
-│  │  │   Firestore    │  │  Realtime DB │  │  Firebase    │ │    │
-│  │  │  (User Data,   │  │ (Challenges, │  │    Auth      │ │    │
-│  │  │ Stages, Content│  │  Rankings,   │  │ (Google +    │ │    │
-│  │  │  Progress)     │  │  Events)     │  │  Email Auth) │ │    │
-│  │  └────────────────┘  └──────────────┘  └──────────────┘ │    │
-│  └──────────────────────────────────────────────────────────┘    │
+│  ┌─────────────────────────────────────────────────────────┐     │
+│  │ Cloud Firestore (primary database)                      │     │
+│  │  users/{username}/                                      │     │
+│  │  ├── profile, assessment_results                        │     │
+│  │  ├── personalized_stages/{stageId}                      │     │
+│  │  ├── quiz_history, progress, chat_history               │     │
+│  │  ├── analytics, projects, daily_tips, interview_prep    │     │
+│  │  └── data/main/stages/data/ (content, flashcards)       │     │
+│  └─────────────────────────────────────────────────────────┘     │
+│  ┌─────────────────────────────────────────────────────────┐     │
+│  │ Firebase Realtime Database (challenge events only)      │     │
+│  │  preReleaseEvent/                                       │     │
+│  │  ├── config/ (eventActive, registrationOpen, extraTime) │     │
+│  │  ├── participants/{odId}/ (profile, status, challenges) │     │
+│  │  └── rankings/{odId}/ (universal ranking data)          │     │
+│  └─────────────────────────────────────────────────────────┘     │
+│  ┌─────────────────────────────────────────────────────────┐     │
+│  │ Firebase Auth (Email/Password + Google Sign-In)         │     │
+│  └─────────────────────────────────────────────────────────┘     │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
-### Data Flow
+### Key Architecture Decisions
 
-```
-User Action → Activity/Fragment → ViewModel → Service → Firebase/Gemini API
-                                                   ↓
-User sees result ← UI Update ← LiveData ← Callback/Coroutine Result
-```
+**Username as Firestore document ID** — Instead of Firebase UID, the app uses the username as the primary document key (`users/{username}/...`). This provides human-readable paths. Username format: `^[a-z0-9_]{3,20}$`.
+
+**Two databases** — Firestore for all user data (offline support, flexible queries, scalable) and Realtime Database specifically for the challenge system (real-time sync, low latency, ideal for live competitions).
+
+**AI calls via OkHttp REST** — Direct HTTP calls to Gemini API rather than an SDK. `GeminiServiceV2` creates its own `OkHttpClient` (60/120/60s timeouts), while `GeminiChallengeService` and `GeminiReportService` also maintain their own clients (bypassing `NetworkModule`).
+
+**16 data classes in FirestoreManager** — All shared data models (`UserProfile`, `PersonalizedStage`, `StageContent`, `Flashcard`, `QuizResult`, `UserProgress`, `ChatMessage`, `AnalyticsReport`, `Project`, `DailyTip`, etc.) are defined in `FirestoreManager.kt` (lines 792–977).
 
 ---
 
 ## 🔧 Tech Stack
 
-### Core
+### Core (from `libs.versions.toml` + `build.gradle.kts`)
 
 | Category | Technology | Version |
 |----------|-----------|---------|
 | **Language** | Kotlin | 2.2.20 |
-| **Build System** | Android Gradle Plugin | 9.0.1 |
+| **Build System** | Android Gradle Plugin (AGP) | 9.0.1 |
+| **Compile SDK** | Android 16 | API 36 |
 | **Min SDK** | Android 8.0 (Oreo) | API 26 |
 | **Target SDK** | Android 16 | API 36 |
 | **JVM Target** | Java 11 | — |
+| **Google Services Plugin** | — | 4.4.3 |
 
 ### UI & Design
 
-| Component | Technology |
-|-----------|-----------|
-| **Design System** | Material Design 3 (v1.13.0) |
-| **Layout Binding** | ViewBinding + DataBinding |
-| **Navigation** | Jetpack Navigation (v2.9.4) |
-| **Lists** | RecyclerView (v1.4.0) |
-| **Layouts** | ConstraintLayout (v2.2.1) |
-| **Cards** | CardView (v1.0.0) |
-| **Pull-to-Refresh** | SwipeRefreshLayout (v1.1.0) |
-| **Custom Views** | GamePathView, ParticleBackgroundView, CircularProgressView |
+| Component | Version |
+|-----------|---------|
+| Material Design 3 | 1.13.0 |
+| AppCompat | 1.7.1 |
+| RecyclerView | 1.4.0 |
+| ConstraintLayout | 2.2.1 |
+| CardView | 1.0.0 |
+| SwipeRefreshLayout | 1.1.0 |
+| Navigation (Fragment + UI) | 2.9.4 |
+| Lifecycle (LiveData + ViewModel) | 2.9.4 |
+| Core KTX | 1.17.0 |
+| ViewBinding + DataBinding | Enabled |
 
 ### Backend & Cloud
 
-| Service | Technology |
-|---------|-----------|
-| **Cloud Platform** | Firebase BOM (v34.3.0) |
-| **Authentication** | Firebase Auth + Google Sign-In (v21.4.0) |
-| **Main Database** | Cloud Firestore (user data, stages, content) |
-| **Realtime Database** | Firebase Realtime DB (challenges, rankings, events) |
-| **AI Engine** | Google Gemini 2.5 Flash API |
+| Service | Version |
+|---------|---------|
+| Firebase BOM | 34.3.0 |
+| Firebase Auth | (managed by BOM) |
+| Cloud Firestore | (managed by BOM) |
+| Firebase Realtime Database | (managed by BOM) |
+| Play Services Auth (Google Sign-In) | 21.4.0 |
 
 ### Networking & Async
 
-| Component | Technology |
-|-----------|-----------|
-| **HTTP Client** | OkHttp (v4.12.0) |
-| **JSON Parsing** | Gson (v2.10.1) |
-| **Async Operations** | Kotlin Coroutines (v1.7.3) |
-| **Coroutine Integrations** | coroutines-android, coroutines-play-services |
-| **Lifecycle** | LiveData + ViewModel (v2.9.4) |
+| Component | Version |
+|-----------|---------|
+| OkHttp | 4.12.0 |
+| Gson | 2.10.1 |
+| Kotlin Coroutines (core + android + play-services) | 1.7.3 |
 
 ### Security
 
-| Feature | Implementation |
-|---------|---------------|
-| **Credential Storage** | EncryptedSharedPreferences (v1.1.0-alpha06) |
-| **API Key Protection** | BuildConfig injection from `local.properties` |
-| **Certificate Pinning** | OkHttp CertificatePinner (release builds only) |
-| **Input Sanitization** | Custom InputSanitizer (prompt injection prevention) |
-| **Code Obfuscation** | R8/ProGuard enabled for release builds |
-| **Network Validation** | Pre-flight connectivity checks via NetworkUtils |
+| Component | Version |
+|-----------|---------|
+| EncryptedSharedPreferences (security-crypto) | 1.1.0-alpha06 |
+| R8/ProGuard (release builds) | `isMinifyEnabled = true`, `isShrinkResources = true` |
+
+### AI
+
+| Component | Details |
+|-----------|---------|
+| Gemini Model | `gemini-2.5-flash` |
+| API Access | Direct REST calls via OkHttp |
+| Temperature | 0.7 |
+| Top-P | 0.95 |
+| Max Output Tokens | 4,096 (default), 8,192 (content gen, stage gen) |
 
 ---
 
@@ -313,74 +321,69 @@ Embedded_Systems_Career_Guide/
 │
 ├── 📱 app/src/main/java/com/example/embeddedsystemscareerguide/
 │   │
-│   ├── MainActivity.kt                    # Navigation host (103 lines)
-│   ├── AppConstants.kt                    # App-wide constants (128 lines)
+│   ├── MainActivity.kt                    # Navigation host, auth gate (103 lines)
+│   ├── AppConstants.kt                    # Centralized constants + PrefsKeys (128 lines)
 │   │
-│   ├── 📦 models/                         # Data models (4 files)
-│   │   ├── LearningStage.kt              #   Stage, UserProgress, StageProgress (83 lines)
-│   │   ├── Question.kt                   #   Quiz question model (7 lines)
-│   │   ├── AssessmentReport.kt           #   Assessment report model (19 lines)
+│   ├── 📦 models/                         # Data models
+│   │   ├── LearningStage.kt              #   LearningStage, UserProgress, StageProgress (83 lines)
+│   │   ├── Question.kt                   #   Assessment question model (7 lines)
+│   │   ├── AssessmentReport.kt           #   Report + QuestionAnswer models (19 lines)
 │   │   └── challenge/
-│   │       └── ChallengeModels.kt        #   17 data classes for challenges (340 lines)
+│   │       └── ChallengeModels.kt        #   17 data classes for challenge system (340 lines)
 │   │
 │   ├── ⚙️ services/                       # Business logic (19 files)
-│   │   ├── GeminiServiceV2.kt            #   Central AI hub — all prompts (683 lines)
-│   │   ├── GeminiChallengeService.kt     #   Challenge evaluation engine (1,294 lines)
-│   │   ├── GeminiReportService.kt        #   Assessment report generation
-│   │   ├── GeminiQuizService.kt          #   Dynamic quiz generation (488 lines)
-│   │   ├── GeminiChatService.kt          #   Context-aware AI chat (212 lines)
-│   │   ├── StageContentService.kt        #   4-part content generation (1,616 lines)
-│   │   ├── StageGeneratorService.kt      #   Personalized stage creation
-│   │   ├── PreReleaseEventService.kt     #   Competition event management (953 lines)
-│   │   ├── UserProgressSyncService.kt    #   Cloud progress synchronization
-│   │   ├── FirestoreManager.kt           #   Firestore CRUD operations
-│   │   ├── FlashcardService.kt           #   Flashcard generation (265 lines)
-│   │   ├── InterviewPrepService.kt       #   Interview question generation (365 lines)
-│   │   ├── ProjectSuggestionService.kt   #   Project ideas generator (337 lines)
-│   │   ├── DailyTipService.kt            #   Daily learning tips (244 lines)
-│   │   ├── AnalyticsService.kt           #   Learning analytics (411 lines)
-│   │   ├── NetworkModule.kt              #   Centralized OkHttp config (67 lines)
-│   │   ├── NetworkUtils.kt               #   Connectivity checks (79 lines)
+│   │   ├── GeminiServiceV2.kt            #   Central AI hub — 14 prompt templates (683 lines)
+│   │   ├── GeminiChallengeService.kt     #   Challenge generation + 6-category eval (1,294 lines)
+│   │   ├── GeminiReportService.kt        #   Assessment HTML report generation
+│   │   ├── GeminiQuizService.kt          #   Dynamic 5-question quiz gen (488 lines)
+│   │   ├── GeminiChatService.kt          #   Context-aware chat responses (212 lines)
+│   │   ├── StageContentService.kt        #   4-part content gen — LARGEST file (1,616 lines)
+│   │   ├── StageGeneratorService.kt      #   40-stage curriculum gen from assessment (562 lines)
+│   │   ├── PreReleaseEventService.kt     #   Challenge event RTDB management (953 lines)
+│   │   ├── UserProgressSyncService.kt    #   Cloud ↔ local progress sync
+│   │   ├── FirestoreManager.kt           #   ALL Firestore CRUD + 16 data classes (981 lines)
+│   │   ├── FlashcardService.kt           #   15 flashcards per stage generation (265 lines)
+│   │   ├── InterviewPrepService.kt       #   Interview questions with follow-ups (365 lines)
+│   │   ├── ProjectSuggestionService.kt   #   Project ideas with step-by-step guides (337 lines)
+│   │   ├── DailyTipService.kt            #   7-day tip batch generation (244 lines)
+│   │   ├── AnalyticsService.kt           #   AI learning analytics reports (411 lines)
+│   │   ├── NetworkModule.kt              #   Centralized OkHttp + cert pinning (67 lines)
+│   │   ├── NetworkUtils.kt               #   Pre-flight connectivity checks (79 lines)
 │   │   ├── InputSanitizer.kt             #   Prompt injection prevention (64 lines)
-│   │   └── SecurePrefsManager.kt         #   Encrypted preferences (98 lines)
+│   │   └── SecurePrefsManager.kt         #   EncryptedSharedPrefs + migration (98 lines)
 │   │
-│   └── 🎨 ui/                            # UI components (~30 files)
-│       ├── home/                          #   Dashboard (HomeFragment + ViewModel)
-│       ├── learningpath/                  #   Gamified stage map (9 files)
-│       ├── content/                       #   Kindle-style reading
-│       ├── auth/                          #   Login (894L) + Register (351L)
-│       ├── assessment/                    #   Assessment + Report viewer
-│       ├── chat/                          #   AI tutor chat
-│       ├── challenge/                     #   6 challenge activities
-│       ├── quiz/                          #   Quiz activity (306 lines)
-│       ├── practice/                      #   Practice mode
-│       ├── profile/                       #   User profile
-│       ├── settings/                      #   App settings
-│       ├── introduction/                  #   First-run introduction
-│       └── custom/                        #   Custom views (particles, paths)
+│   └── 🎨 ui/                            # UI layer
+│       ├── home/                          #   HomeFragment (447L) + HomeViewModel (41L)
+│       ├── learningpath/                  #   LearningPathFragment (1098L) + adapters + custom views
+│       ├── content/                       #   ContentReadingActivity (430L) — Kindle-style reader
+│       ├── auth/                          #   LoginActivity (894L) + RegisterActivity (351L)
+│       ├── assessment/                    #   AssessmentActivity (420L) + ReportViewerActivity (353L)
+│       ├── chat/                          #   ChatFragment (165L) + ChatAdapter (47L)
+│       ├── challenge/                     #   7 files: ChallengeLogin, RollNumber, Ch1/2/3, Admin, Ranking
+│       ├── quiz/                          #   QuizActivity (306L)
+│       ├── practice/                      #   PracticeFragment (119L) — placeholder, "coming soon"
+│       ├── profile/                       #   ProfileFragment (88L) + ProfileViewModel (66L)
+│       ├── settings/                      #   SettingsFragment (72L) + SettingsViewModel (13L)
+│       ├── introduction/                  #   IntroductionActivity (103L) — post-login routing
+│       └── custom/                        #   GamePathItemDecoration (46L), ParticleBackgroundView (96L)
 │
-├── 📝 context/                            # Source code documentation (35 files)
+├── 📝 context/                            # Source code documentation (35 .md files)
+│   ├── AppConstants.md                    #   Root file docs
+│   ├── MainActivity.md
 │   ├── services/                          #   19 service documentation files
 │   ├── models/                            #   4 model documentation files
-│   └── ui/                                #   10 UI documentation files
-│
-├── 📚 docs/                               # Project documentation (25 files)
-│   ├── README.md                          #   This file
-│   ├── architecture/                      #   System design, data flow, navigation
-│   ├── api/                               #   Gemini API & Firebase docs
-│   ├── components/                        #   Component-level documentation
-│   └── guides/                            #   Setup & deployment guides
+│   └── ui/                                #   10 UI module documentation files
 │
 ├── 🔒 database.rules.json                # Firebase Realtime DB security rules
 ├── 🔒 firestore.rules                    # Firestore security rules
-└── ⚙️ gradle/                             # Build configuration
-    └── libs.versions.toml                 #   Version catalog
+├── 📱 app/build.gradle.kts               # Build config + dependency declarations
+└── ⚙️ gradle/libs.versions.toml          # Version catalog
 ```
 
 **Codebase Stats:**
-- **61 Kotlin source files** across models, services, and UI
-- **35 documentation files** covering every source file
-- **~15,000+ lines of Kotlin** — production-quality, fully documented
+- **61 Kotlin source files** across models (4), services (19), UI (~38)
+- **35 documentation files** in `context/` covering every source file
+- All line counts verified against source files
 
 ---
 
@@ -424,6 +427,8 @@ GEMINI_API_KEY=your_gemini_api_key_here
 
 > ⚠️ **Important:** Never commit `local.properties` to version control. It's already in `.gitignore`.
 
+The key is injected into `BuildConfig` via the `buildConfigField` declaration in `app/build.gradle.kts` (line 32).
+
 #### 4. Set Up Firebase
 
 1. Go to [Firebase Console](https://console.firebase.google.com/)
@@ -433,7 +438,7 @@ GEMINI_API_KEY=your_gemini_api_key_here
 5. Enable the following Firebase services:
    - **Authentication** → Email/Password + Google Sign-In
    - **Cloud Firestore** → Create database in production mode
-   - **Realtime Database** → Create database (for challenges)
+   - **Realtime Database** → Create database (used for challenge events)
 
 #### 5. Configure SHA-1 for Google Sign-In
 
@@ -466,192 +471,138 @@ Upload the provided security rules to Firebase:
 
 ## 🔥 Firebase Setup
 
-### Database Architecture
+### Two Databases, Different Purposes
 
-The app uses **two Firebase databases** for different purposes:
+| Database | Purpose | Why This Database |
+|----------|---------|-------------------|
+| **Cloud Firestore** | User profiles, stages, content, flashcards, quiz history, progress, chat, analytics, projects, tips | Flexible queries, offline support, batch operations, scalable |
+| **Realtime Database** | Challenge events, live rankings, participant status, admin controls | Real-time sync via listeners, low latency, ideal for live competitions |
 
-| Database | Purpose | Why |
-|----------|---------|-----|
-| **Cloud Firestore** | User profiles, learning stages, content, progress, quiz history | Flexible queries, offline support, scalable |
-| **Realtime Database** | Challenge events, live rankings, participant status | Real-time sync, low latency, ideal for live competitions |
+### Firestore Document Hierarchy
 
-### Firestore Collections
+As documented in `context/services/FirestoreManager.md`:
 
 ```
-users/{userId}/
-  ├── profile                    # User profile data
-  ├── assessment_results         # Assessment reports
-  ├── personalized_stages/       # AI-generated learning path
-  │   └── {stageId}/
-  │       ├── content/           # Cached stage content
-  │       ├── flashcards/        # Stage flashcards
-  │       └── quiz_history/      # Quiz attempts
-  ├── progress/                  # Overall learning progress
-  ├── chat_history/              # AI chat conversations
-  ├── projects/                  # Project tracking
-  └── interview_prep/            # Interview practice history
-
-cached_content/                  # Shared across all users
-  ├── stages/                    # Reusable content templates
-  ├── flashcard_templates/       # Common flashcard sets
-  └── quiz_pools/                # Question banks
+users/
+└── {username}/                          ← Username is the document ID
+    ├── (profile fields: uid, email...)
+    ├── personalized_stages/
+    │   └── {stageId}/
+    ├── quiz_history/
+    │   └── {stageId_timestamp}/
+    ├── progress/
+    │   └── current
+    ├── chat_history/
+    │   └── {timestamp}/
+    ├── analytics/
+    │   └── {timestamp}/
+    ├── projects/
+    │   ├── suggestions
+    │   └── status_{id}
+    ├── daily_tips/
+    │   └── {yyyy-MM-dd}/
+    └── data/
+        └── main
+            ├── report                   ← Assessment HTML report
+            └── stages/
+                └── data/
+                    ├── personalized_stages/{stageId}/
+                    ├── stage_content/{stageId}/
+                    └── flashcards/{stageId}/
 ```
 
 ### Realtime Database Structure
 
+As documented in `context/services/PreReleaseEventService.md`:
+
 ```
 preReleaseEvent/
-  ├── config/                    # Event configuration
-  │   ├── eventActive            # Boolean: is event live?
-  │   ├── registrationOpen       # Boolean: can users register?
-  │   └── extraTimeMinutes       # Admin-granted extra time
-  ├── participants/{odId}/       # Participant data
-  │   ├── profile/               # Name, roll number, email
-  │   ├── status/                # Challenge progress, warnings
-  │   └── challenges/            # Submission data + scores
-  └── rankings/{odId}/           # Universal ranking data
+├── config/
+│   ├── eventActive           # Boolean: is event live?
+│   ├── registrationOpen      # Boolean: can users register?
+│   └── extraTimeMinutes      # Admin-granted extra time
+├── participants/{odId}/
+│   ├── profile/              # Name, roll number, email
+│   ├── status/               # Challenge progress, warnings
+│   └── challenges/           # Submission data + scores
+└── rankings/{odId}/          # Universal ranking data
 ```
-
-### Storage Estimates
-
-| Data Type | Per User | 50 Users |
-|-----------|----------|----------|
-| User profile | 2 KB | 100 KB |
-| Assessment data | 10 KB | 500 KB |
-| Personalized stages | 100 KB | 5 MB |
-| Stage content (cached) | 500 KB | 25 MB |
-| Flashcards | 200 KB | 10 MB |
-| Quiz history | 50 KB | 2.5 MB |
-| Progress data | 20 KB | 1 MB |
-| Chat history | 100 KB | 5 MB |
-| **Total** | **~1 MB** | **~50 MB** |
-
-> ✅ Well within Firebase's free tier limits (1 GiB Firestore, 500 MB Realtime DB)
 
 ---
 
 ## 🤖 Gemini AI Integration
 
-### How AI Powers the App
-
-The app makes **direct REST API calls** to Google's Gemini 2.5 Flash model using OkHttp. All AI logic is centralized in `GeminiServiceV2.kt` (683 lines) with specialized services for specific features.
-
 ### AI Service Architecture
 
-| Service | Purpose | Key Functions |
-|---------|---------|---------------|
-| `GeminiServiceV2` | Central AI hub | `personalizedStages()`, `stageContent()`, `flashcards()`, `quizWithExplanations()`, `contextAwareChat()`, `progressAnalytics()`, `codeReview()` |
-| `GeminiChallengeService` | Challenge evaluation | `evaluateChallenge1()`, `evaluateChallenge2()`, `evaluateChallenge3()` with 6-category rubric |
-| `GeminiReportService` | Assessment reports | Generates detailed HTML reports with per-topic analysis |
-| `GeminiQuizService` | Quiz generation | Dynamic question generation with explanations |
-| `GeminiChatService` | Chat responses | Context-aware responses considering user's learning history |
+All AI features use Google's **Gemini 2.5 Flash** model via direct REST API calls. The architecture has two patterns:
 
-### AI Features at a Glance
+**Pattern 1: Via `GeminiServiceV2` (683 lines)** — Centralized AI hub used by most services. Provides a single `generateContent()` method with retry logic (3 retries, exponential backoff) and 14 prompt templates in a `PromptTemplates` object. Token tracking with INR cost estimation (₹27/M input, ₹225/M output).
 
-| Feature | Input | Output |
-|---------|-------|--------|
-| **Stage Generation** | Assessment weak/strong areas | 30–50 personalized learning stages |
-| **Content Generation** | Stage name + topics | Theory, key points, code, tips (4 API calls) |
-| **Quiz Generation** | Stage topics | 5 MCQs with detailed explanations |
-| **Flashcard Generation** | Stage topics | 15 Q&A flashcards |
-| **Chat Response** | User message + context | Contextual embedded systems tutoring |
-| **Challenge Evaluation** | Submitted code/answers | 6-category scored rubric (0–10 each) |
-| **Interview Questions** | Completed topics + difficulty | Technical interview Q&A pairs |
-| **Project Suggestions** | Completed stages + skill level | Step-by-step project guides |
-| **Daily Tips** | Current stage + history | Weekly batch of learning tips |
-| **Code Review** | User's code | Line-by-line analysis + suggestions |
+Used by: `AnalyticsService`, `DailyTipService`, `FlashcardService`, `InterviewPrepService`, `ProjectSuggestionService`, `StageContentService`, `StageGeneratorService`, `FirestoreManager`.
 
-### Server-Side Enforcement
+**Pattern 2: Direct OkHttp** — `GeminiChallengeService` (1,294 lines) and `GeminiReportService` maintain their own OkHttp clients and bypass `GeminiServiceV2`, building requests directly.
 
-The challenge evaluation system includes **server-side enforcement rules** to ensure consistent scoring:
+### All AI Functions
 
-- Empty/placeholder answers → automatic 0 score
-- Single-word answers → capped at 2/10
-- Very short answers (< 20 chars) → capped at 4/10
-- These rules override AI responses to prevent inconsistency
-
-### Token Usage & Cost Estimates
-
-| Feature | Monthly Tokens (per user) | Estimated Cost |
-|---------|--------------------------|----------------|
-| Personalized stages | 50,000 | ₹11.25 |
-| 50 stage contents | 500,000 | ₹112.50 |
-| 50 flashcard sets | 250,000 | ₹56.25 |
-| Enhanced quizzes | 100,000 | ₹22.50 |
-| Chat (100 messages) | 80,000 | ₹18.00 |
-| Analytics (4 reports) | 32,000 | ₹7.20 |
-| Interview prep | 50,000 | ₹11.25 |
-| Projects | 20,000 | ₹4.50 |
-| Daily tips | 15,000 | ₹3.38 |
-| Code review | 50,000 | ₹11.25 |
-| **Total per user** | **~1.15M** | **~₹258/month** |
+| Service | AI Function | What It Generates |
+|---------|-------------|-------------------|
+| `StageGeneratorService` | `personalizedStages()` | 40-stage learning curriculum from assessment results |
+| `StageGeneratorService` | `regenerateStagesWithHistory()` | Rebuilt curriculum considering learning history |
+| `StageContentService` | `stageContent()` (4 calls) | Theory + key points + code + tips per stage |
+| `FlashcardService` | `flashcards()` | 15 flashcards per stage |
+| `GeminiQuizService` | `quizWithExplanations()` | 5 MCQs with answer explanations |
+| `GeminiChatService` | `contextAwareChat()` | Contextual chat response |
+| `GeminiReportService` | (direct prompt) | HTML assessment report |
+| `GeminiChallengeService` | (3 generators + 3 evaluators) | Challenge problems + 6-category evaluations |
+| `AnalyticsService` | `analytics()` | Learning recommendations |
+| `InterviewPrepService` | `interviewPrep()` | Interview questions with follow-ups |
+| `ProjectSuggestionService` | `projectSuggestions()` | 5 project ideas with step-by-step guides |
+| `DailyTipService` | `dailyTips()` | 7-tip weekly batch |
 
 ---
 
 ## 🔒 Security
 
-### Security Measures Implemented
+As documented in `context/services/InputSanitizer.md`, `context/services/SecurePrefsManager.md`, and `context/services/NetworkModule.md`:
 
-| Layer | Protection | Implementation |
-|-------|-----------|----------------|
-| **API Keys** | Not hardcoded in source | Injected via `BuildConfig` from `local.properties` |
-| **User Credentials** | Encrypted at rest | `EncryptedSharedPreferences` with AES-256-GCM |
-| **Network** | Certificate pinning | OkHttp `CertificatePinner` for `googleapis.com` (release only) |
-| **User Input** | Prompt injection prevention | `InputSanitizer` strips system/assistant prompts, markdown injection |
-| **HTML Display** | XSS prevention | HTML entity encoding via `sanitizeForHtml()` |
-| **Username** | Validation & sanitization | Lowercase, alphanumeric only, max 20 chars |
-| **Release Builds** | Code obfuscation | R8/ProGuard with `minifyEnabled = true` |
-| **Firebase** | Security rules | User-scoped read/write rules for both Firestore and Realtime DB |
-| **Anti-Cheat** | Challenge integrity | Warning system, auto-termination, state monitoring |
-| **Authentication** | Multi-provider | Firebase Auth with Email/Password + Google Sign-In |
-
-### Legacy Prefs Migration
-
-The app includes automatic migration from unencrypted `SharedPreferences` to `EncryptedSharedPreferences` — existing users are seamlessly upgraded on first launch after update.
+| Layer | Implementation | Details |
+|-------|---------------|---------|
+| **API Key Storage** | `BuildConfig` injection | Loaded from `local.properties` at build time, not hardcoded in source |
+| **Credential Storage** | `EncryptedSharedPreferences` (1.1.0-alpha06) | AES-256-GCM encryption for sensitive data (`SecurePrefsManager`, 98 lines) |
+| **Legacy Migration** | Auto-migration | `SecurePrefsManager` migrates from unencrypted `SharedPreferences` on first use |
+| **Prompt Injection** | `InputSanitizer` (64 lines) | Strips system/assistant prompt patterns, escapes special characters, enforces max length (5,000 chars) |
+| **HTML Sanitization** | `sanitizeForHtml()` | HTML entity encoding prevents XSS in WebView report display |
+| **Username Validation** | Regex `^[a-z0-9_]{3,20}$` | Lowercase alphanumeric + underscore only, 3–20 chars |
+| **Certificate Pinning** | `OkHttp CertificatePinner` | Pins `generativelanguage.googleapis.com` in release builds only (`NetworkModule`, 67 lines) |
+| **Code Obfuscation** | R8/ProGuard | `isMinifyEnabled = true`, `isShrinkResources = true` for release builds |
+| **Network Checks** | `NetworkUtils` (79 lines) | Pre-flight connectivity validation before API calls |
+| **Challenge Anti-Cheat** | Warning system | App background detection, auto-termination after 2nd violation, anti-paste callbacks |
+| **Firebase Rules** | `firestore.rules` + `database.rules.json` | User-scoped read/write access rules |
 
 ---
 
-## 📚 Documentation
+## 📚 Source Code Documentation
 
-### Source Code Documentation (`context/`)
+Every Kotlin source file has a corresponding `.md` documentation file in the `context/` directory. Each doc includes:
 
-Every single `.kt` source file has a corresponding `.md` documentation file in the `context/` directory. Each doc includes:
-
-- ✅ Exact line counts (verified against source)
-- ✅ Complete function lists with signatures
-- ✅ Class structures and data models
+- ✅ Exact file size and line count (verified against source)
+- ✅ Complete function list with signatures and line ranges
+- ✅ Class/data class structures with field descriptions
 - ✅ Design decisions and architecture notes
-- ✅ Bug fix history and changelog
+- ✅ Dependency and connection maps
+- ✅ Known issues and technical debt
 
 | Category | Files | Documentation Directory |
 |----------|-------|------------------------|
-| Services | 19 | `context/services/` |
-| Models | 4 | `context/models/` |
-| UI | ~30 (10 grouped docs) | `context/ui/` |
-| Root | 2 | `context/` |
-
-### Project Documentation (`docs/`)
-
-| Document | Path | Description |
-|----------|------|-------------|
-| **This README** | `docs/README.md` | Complete project overview |
-| **Architecture** | `docs/architecture/ARCHITECTURE.md` | System design and patterns |
-| **Navigation Flow** | `docs/architecture/NAVIGATION_FLOW.md` | Screen-to-screen navigation |
-| **Data Flow** | `docs/architecture/DATA_FLOW.md` | Cloud data architecture |
-| **Gemini API Guide** | `docs/api/GEMINI_API.md` | AI integration details |
-| **Firebase Guide** | `docs/api/FIREBASE.md` | Cloud setup and configuration |
-| **Setup Guide** | `docs/guides/SETUP.md` | Development environment setup |
-| **Deployment Guide** | `docs/guides/DEPLOYMENT.md` | Build and release process |
-| **V2 Master Plan** | `docs/V2_MASTER_PLAN.md` | Feature planning and roadmap |
-| **API Cost Analysis** | `docs/API_COST_ANALYSIS.md` | Token usage and billing estimates |
-| **Challenge System** | `docs/PRE_RELEASE_EVENT_CHALLENGE.md` | Competition system documentation |
-| **Challenge Audit** | `docs/AUDIT_REPORT_CHALLENGE_SYSTEM.md` | Bug fix audit report |
+| Services | 19 docs | [`context/services/`](../context/services/) |
+| Models | 4 docs | [`context/models/`](../context/models/) |
+| UI Modules | 10 docs (grouped by feature) | [`context/ui/`](../context/ui/) |
+| Root | 2 docs (`AppConstants`, `MainActivity`) | [`context/`](../context/) |
+| **Total** | **35 documentation files** | |
 
 ---
 
 ## 🤝 Contributing
-
-This project is currently developed for educational purposes. If you'd like to contribute:
 
 1. **Fork** this repository
 2. **Create** a feature branch: `git checkout -b feature/amazing-feature`
@@ -659,19 +610,14 @@ This project is currently developed for educational purposes. If you'd like to c
 4. **Push** to the branch: `git push origin feature/amazing-feature`
 5. **Open** a Pull Request
 
-### Code Style
+### Code Conventions
 
-- Kotlin with standard Android conventions
-- MVVM architecture pattern
-- Service classes for business logic
-- Coroutines for all async operations
+- Kotlin with MVVM architecture
+- Single Activity pattern with Jetpack Navigation
+- Singleton services (`companion object` double-checked locking)
+- Coroutines for all async work (`Dispatchers.IO` for network/DB)
 - Firebase callbacks bridged via `suspendCancellableCoroutine` and `callbackFlow`
-
----
-
-## 📄 License
-
-This project is developed for **educational purposes**.
+- `Result<T>` return type for error handling in service methods
 
 ---
 
