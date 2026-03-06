@@ -13,3 +13,32 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Python & Training
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.env
+
+# Credentials & Tokens
+credentials.json
+gdrive_token.json
+rclone.conf
+token.json
+
+# Models & Weights
+*.gguf
+*.bin
+*.pt
+*.safetensors
+*.ckpt
+
+# Directories
+outputs/
+logs/
+checkpoints/
+
+# Other
+*.log
+.DS_Store
