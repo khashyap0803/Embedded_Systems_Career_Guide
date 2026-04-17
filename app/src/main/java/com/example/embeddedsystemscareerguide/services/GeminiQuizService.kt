@@ -1,31 +1,25 @@
 package com.example.embeddedsystemscareerguide.services
 
 import android.util.Log
-import com.example.embeddedsystemscareerguide.BuildConfig
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
-import java.util.concurrent.TimeUnit
+import java.net.ConnectException
+import java.net.SocketTimeoutException
 
 /**
- * AI Quiz Generation Service - Powered by Gemini API
+ * AI Quiz Generation Service - Powered by local Ollama LLM
  * Generates unique quizzes for each learning stage
  */
 class GeminiQuizService {
 
-    // M3 fix: Use shared client from NetworkModule
     private val client = NetworkModule.standardClient
-
     private val gson = Gson()
-
-    // M6 fix: Use centralized API URL from NetworkModule
-    private val GEMINI_API_URL = NetworkModule.getGeminiApiUrl()
 
     companion object {
         private const val TAG = "GeminiQuizService"
@@ -152,34 +146,19 @@ Generate 5 SHORT questions now:
     
     private fun executeApiCall(prompt: String): String {
         val requestBody = JsonObject().apply {
-            val contentsArray = com.google.gson.JsonArray()
-            val contentObject = JsonObject().apply {
-                addProperty("role", "user")
-                val partsArray = com.google.gson.JsonArray()
-                val partObject = JsonObject().apply {
-                    addProperty("text", prompt)
-                }
-                partsArray.add(partObject)
-                add("parts", partsArray)
-            }
-            contentsArray.add(contentObject)
-            add("contents", contentsArray)
-
-            val generationConfig = JsonObject().apply {
+            addProperty("model", NetworkModule.DEFAULT_MODEL)
+            addProperty("prompt", prompt)
+            addProperty("stream", false)
+            add("options", JsonObject().apply {
                 addProperty("temperature", 0.8)
-                addProperty("topK", 40)
-                addProperty("topP", 0.95)
-                addProperty("maxOutputTokens", 2048)
-            }
-            add("generationConfig", generationConfig)
+                addProperty("num_predict", 2048)
+            })
         }
 
-        val jsonBody = gson.toJson(requestBody)
-        val body = jsonBody.toRequestBody("application/json".toMediaType())
-
         val request = Request.Builder()
-            .url(GEMINI_API_URL)
-            .post(body)
+            .url(NetworkModule.getOllamaGenerateUrl())
+            .post(requestBody.toString().toRequestBody("application/json".toMediaType()))
+            .addHeader("ngrok-skip-browser-warning", "true")
             .build()
 
         val response = client.newCall(request).execute()
@@ -190,29 +169,9 @@ Generate 5 SHORT questions now:
             throw Exception("API call failed: ${response.code}")
         }
 
-        // Parse response and return text
-        // H5 fix: Add null safety for API response parsing
         val jsonResponse = gson.fromJson(responseBody, JsonObject::class.java)
-        val candidates = jsonResponse.getAsJsonArray("candidates")
-        
-        if (candidates == null || candidates.size() == 0) {
-            throw Exception("No candidates in API response")
-        }
-        
-        val content = candidates[0].asJsonObject
-            .getAsJsonObject("content")
-        
-        if (content == null) {
-            throw Exception("No content in API response")
-        }
-        
-        val parts = content.getAsJsonArray("parts")
-        if (parts == null || parts.size() == 0) {
-            throw Exception("No parts in API response")
-        }
-        
-        return parts[0].asJsonObject.get("text")?.asString 
-            ?: throw Exception("No text in API response")
+        return jsonResponse.get("response")?.asString
+            ?: throw Exception("No response text from Ollama")
     }
 
     private fun parseQuizResponse(response: String): List<QuizQuestion> {

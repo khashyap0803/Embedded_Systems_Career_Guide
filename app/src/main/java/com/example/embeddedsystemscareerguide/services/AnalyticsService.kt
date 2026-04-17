@@ -33,7 +33,7 @@ class AnalyticsService(private val context: Context) {
         }
     }
 
-    private val geminiService = GeminiServiceV2.getInstance(context)
+    private val geminiService = OllamaService.getInstance(context)
     private val firestoreManager = FirestoreManager.getInstance(context)
     private val gson = Gson()
 
@@ -230,7 +230,7 @@ class AnalyticsService(private val context: Context) {
     ): List<Recommendation> {
         // Try AI generation first
         try {
-            val prompt = GeminiServiceV2.PromptTemplates.analytics(
+            val prompt = OllamaService.PromptTemplates.analytics(
                 progressPercentage = analytics.progressPercentage,
                 strongTopics = analytics.strongTopics,
                 weakTopics = analytics.weakTopics,

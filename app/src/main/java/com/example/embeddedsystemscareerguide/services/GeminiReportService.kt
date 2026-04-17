@@ -1,7 +1,6 @@
 package com.example.embeddedsystemscareerguide.services
 
 import android.util.Log
-import com.example.embeddedsystemscareerguide.BuildConfig
 import com.example.embeddedsystemscareerguide.models.QuestionAnswer
 import com.google.gson.Gson
 import com.google.gson.JsonObject
@@ -9,15 +8,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.withContext
-import okhttp3.CertificatePinner
 import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
-import java.util.concurrent.TimeUnit
 
 /**
- * AI Report Generation Service - Powered by Gemini API
+ * AI Report Generation Service - Powered by local Ollama LLM
  *
  * Generates detailed assessment reports with personalized 12-week roadmaps
  * based on user quiz responses. Features include:
@@ -37,14 +33,8 @@ class GeminiReportService {
         fun onProgress(phase: Int, totalPhases: Int, phaseName: String, quote: String)
     }
 
-    // M3 fix: Use shared long-timeout client from NetworkModule
-    // Certificate pinning is configured centrally in NetworkModule
     private val client = NetworkModule.longTimeoutClient
-
     private val gson = Gson()
-
-    // M6 fix: Use centralized API URL from NetworkModule
-    private val GEMINI_API_URL = NetworkModule.getGeminiApiUrl()
 
     companion object {
         private const val TAG = "GeminiReportService"
@@ -575,40 +565,25 @@ $userInputText
     }
 
     /**
-     * Make API call to Gemini
+     * Make API call to Ollama
      */
     private suspend fun callGeminiAPI(prompt: String): String = withContext(Dispatchers.IO) {
         try {
             val requestBody = JsonObject().apply {
-                val contentsArray = com.google.gson.JsonArray()
-                val contentObject = JsonObject().apply {
-                    val partsArray = com.google.gson.JsonArray()
-                    val partObject = JsonObject().apply {
-                        addProperty("text", prompt)
-                    }
-                    partsArray.add(partObject)
-                    add("parts", partsArray)
-                }
-                contentsArray.add(contentObject)
-                add("contents", contentsArray)
-
-                // Add generation config for better responses
-                // Gemini 2.5 Flash supports up to 65536 output tokens
-                val generationConfig = JsonObject().apply {
+                addProperty("model", NetworkModule.DEFAULT_MODEL)
+                addProperty("prompt", prompt)
+                addProperty("stream", false)
+                add("options", JsonObject().apply {
                     addProperty("temperature", 0.7)
-                    addProperty("topK", 40)
-                    addProperty("topP", 0.95)
-                    addProperty("maxOutputTokens", 65536)
-                }
-                add("generationConfig", generationConfig)
+                    addProperty("num_predict", 16384)
+                    addProperty("top_p", 0.95)
+                })
             }
 
-            val jsonBody = gson.toJson(requestBody)
-            val body = jsonBody.toRequestBody("application/json".toMediaType())
-
             val request = Request.Builder()
-                .url(GEMINI_API_URL)
-                .post(body)
+                .url(NetworkModule.getOllamaGenerateUrl())
+                .post(requestBody.toString().toRequestBody("application/json".toMediaType()))
+                .addHeader("ngrok-skip-browser-warning", "true")
                 .build()
 
             val response = client.newCall(request).execute()
@@ -619,36 +594,19 @@ $userInputText
                 throw Exception("API call failed: ${response.code}")
             }
 
-            // Parse response
             val jsonResponse = gson.fromJson(responseBody, JsonObject::class.java)
-            val candidates = jsonResponse.getAsJsonArray("candidates")
+            val content = jsonResponse.get("response")?.asString
+                ?: throw Exception("No response text from Ollama")
             
-            if (candidates == null || candidates.size() == 0) {
-                Log.e(TAG, "No candidates in response")
-                throw Exception("No candidates in API response")
-            }
+            // Strip Qwen3 <think>...</think> reasoning blocks before returning HTML content
+            val cleaned = content.replace(Regex("<think>[\\s\\S]*?</think>", RegexOption.IGNORE_CASE), "").trim()
             
-            val candidate = candidates[0].asJsonObject
-            
-            // Check finish reason for truncation
-            val finishReason = candidate.get("finishReason")?.asString
-            if (finishReason == "MAX_TOKENS") {
-                Log.w(TAG, "Response was truncated due to max tokens limit")
-            } else if (finishReason != null && finishReason != "STOP") {
-                Log.w(TAG, "Unexpected finish reason: $finishReason")
-            }
-            
-            val content = candidate
-                .getAsJsonObject("content")
-                .getAsJsonArray("parts")[0].asJsonObject
-                .get("text").asString
-            
-            Log.d(TAG, "API response length: ${content.length} chars, finishReason: $finishReason")
+            Log.d(TAG, "API response length: ${cleaned.length} chars")
 
-            return@withContext content
+            return@withContext cleaned
 
         } catch (e: Exception) {
-            Log.e(TAG, "Error calling Gemini API", e)
+            Log.e(TAG, "Error calling Ollama API", e)
             throw e
         }
     }

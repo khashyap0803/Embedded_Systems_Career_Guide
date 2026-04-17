@@ -1,66 +1,82 @@
 package com.example.embeddedsystemscareerguide.services
 
-import com.example.embeddedsystemscareerguide.BuildConfig
-import okhttp3.CertificatePinner
+import android.util.Log
+import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import java.util.concurrent.TimeUnit
 
 /**
- * M3 fix: Centralized network configuration
- * Provides shared OkHttpClient instances for all Gemini API services
- * Benefits: Connection pool reuse, consistent timeouts, single certificate pinning config
+ * Centralized network configuration for Ollama LLM API.
+ * All AI requests route through the Ngrok static domain to the local Ollama server.
+ *
+ * Authentication/Bypass: We use the `ngrok-skip-browser-warning` header to bypass 
+ * the Ngrok free-tier interstitial page.
+ * NOTE: For this to work with Ollama, the Ngrok tunnel MUST be started with the 
+ * `--host-header=rewrite` flag, otherwise Ollama will reject the request with 403 Forbidden.
  */
 object NetworkModule {
 
-    // C1 fix: Certificate pinning for Google APIs using Google Trust Services root CAs
-    private val certificatePinner = CertificatePinner.Builder()
-        .add("generativelanguage.googleapis.com", "sha256/hxqRlPTu1bMS/0DITB1SSu0vd4u/8l8TjPgRaK5cHq0=") // GTS Root R1
-        .add("generativelanguage.googleapis.com", "sha256/Vfd95BwDeSQo+NUYxVEEb1lmHRY3q0+E8L3bEHZYx4M=") // GTS Root R2
-        .add("*.googleapis.com", "sha256/hxqRlPTu1bMS/0DITB1SSu0vd4u/8l8TjPgRaK5cHq0=")
-        .add("*.googleapis.com", "sha256/Vfd95BwDeSQo+NUYxVEEb1lmHRY3q0+E8L3bEHZYx4M=")
-        .build()
+    private const val TAG = "NetworkModule"
+
+    // Ollama server exposed via Ngrok static domain (bypasses CGNAT)
+    private const val OLLAMA_BASE_URL = "https://shakiest-unspotlighted-priscila.ngrok-free.dev"
+
+    // Default fine-tuned model
+    const val DEFAULT_MODEL = "es-guide-q6"
+
+    /**
+     * Interceptor that adds the Ngrok bypass header to every request.
+     * This bypasses the free-tier interstitial page.
+     */
+    private val bypassInterceptor = Interceptor { chain ->
+        val request = chain.request().newBuilder()
+            .addHeader("ngrok-skip-browser-warning", "true")
+            .build()
+        chain.proceed(request)
+    }
 
     /**
      * Standard OkHttpClient for chat and quiz services
-     * 30s connect, 60s read/write timeouts
+     * 30s connect, 120s read (local LLM can be slow on first load), 30s write
      */
     val standardClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
+            .addInterceptor(bypassInterceptor)
             .connectTimeout(30, TimeUnit.SECONDS)
-            .readTimeout(60, TimeUnit.SECONDS)
+            .readTimeout(120, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
-            .apply {
-                // Enable certificate pinning for release builds only
-                if (!BuildConfig.DEBUG) {
-                    certificatePinner(certificatePinner)
-                }
-            }
             .build()
     }
 
     /**
-     * Long-timeout OkHttpClient for report generation
-     * 90s connect, 300s read (5 min), 90s write
+     * Long-timeout OkHttpClient for report generation and stage content
+     * 90s connect, 600s read (10 min for large responses), 90s write
      */
     val longTimeoutClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
+            .addInterceptor(bypassInterceptor)
             .connectTimeout(90, TimeUnit.SECONDS)
-            .readTimeout(300, TimeUnit.SECONDS)  // 5 minutes for large responses
+            .readTimeout(600, TimeUnit.SECONDS)
             .writeTimeout(90, TimeUnit.SECONDS)
-            .apply {
-                // Enable certificate pinning for release builds only
-                if (!BuildConfig.DEBUG) {
-                    certificatePinner(certificatePinner)
-                }
-            }
             .build()
     }
 
     /**
-     * M6 fix: Centralized Gemini API URL construction
-     * Uses BuildConfig for API key (injected from local.properties)
+     * Get the Ollama API URL for content generation
      */
-    fun getGeminiApiUrl(model: String = "gemini-2.5-flash"): String {
-        return "https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=${BuildConfig.GEMINI_API_KEY}"
+    fun getOllamaGenerateUrl(): String {
+        return "$OLLAMA_BASE_URL/api/generate"
     }
+
+    /**
+     * Get the Ollama API URL for chat (multi-turn conversations)
+     */
+    fun getOllamaChatUrl(): String {
+        return "$OLLAMA_BASE_URL/api/chat"
+    }
+
+    /**
+     * Server down error message shown to users
+     */
+    const val SERVER_DOWN_MESSAGE = "Server down. Try again later or contact the service provider: 9032827339"
 }

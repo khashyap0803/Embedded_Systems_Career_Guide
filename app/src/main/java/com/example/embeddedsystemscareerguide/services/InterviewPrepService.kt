@@ -31,7 +31,7 @@ class InterviewPrepService(private val context: Context) {
         }
     }
 
-    private val geminiService = GeminiServiceV2.getInstance(context)
+    private val geminiService = OllamaService.getInstance(context)
     private val gson = Gson()
 
     /**
@@ -80,7 +80,7 @@ class InterviewPrepService(private val context: Context) {
         try {
             Log.d(TAG, "Generating $count interview questions for topics: $topics")
 
-            val prompt = GeminiServiceV2.PromptTemplates.interviewPrep(
+            val prompt = OllamaService.PromptTemplates.interviewPrep(
                 topics = topics,
                 difficulty = difficulty,
                 questionCount = count

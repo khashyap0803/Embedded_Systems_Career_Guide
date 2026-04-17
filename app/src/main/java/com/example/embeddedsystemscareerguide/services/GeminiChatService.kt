@@ -1,30 +1,24 @@
 package com.example.embeddedsystemscareerguide.services
 
 import android.util.Log
-import com.example.embeddedsystemscareerguide.BuildConfig
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
-import java.util.concurrent.TimeUnit
+import java.net.ConnectException
+import java.net.SocketTimeoutException
 
 /**
- * AI Chat Tutor Service - Powered by Gemini API
+ * AI Chat Tutor Service - Powered by local Ollama LLM
  * Provides embedded systems expertise for student Q&A
  */
 class GeminiChatService {
 
-    // M3 fix: Use shared client from NetworkModule
     private val client = NetworkModule.standardClient
-
     private val gson = Gson()
-
-    // M6 fix: Use centralized API URL from NetworkModule
-    private val GEMINI_API_URL = NetworkModule.getGeminiApiUrl()
 
     companion object {
         private const val TAG = "GeminiChatService"
@@ -77,7 +71,7 @@ When providing code examples, format them properly for readability.
             conversationHistory.add(ChatMessage("user", userMessage))
 
             // Build conversation with system prompt
-            val response = callGeminiAPI(userMessage)
+            val response = callOllamaAPI(userMessage)
 
             // Add response to history
             conversationHistory.add(ChatMessage("model", response))
@@ -90,76 +84,59 @@ When providing code examples, format them properly for readability.
 
             return@withContext response
 
+        } catch (e: SocketTimeoutException) {
+            Log.e(TAG, "Server timeout", e)
+            return@withContext NetworkModule.SERVER_DOWN_MESSAGE
+        } catch (e: ConnectException) {
+            Log.e(TAG, "Connection failed", e)
+            return@withContext NetworkModule.SERVER_DOWN_MESSAGE
         } catch (e: Exception) {
             Log.e(TAG, "Error sending message", e)
-            return@withContext "Sorry, I'm having trouble connecting right now. Please check your internet and try again! 🔄"
+            return@withContext NetworkModule.SERVER_DOWN_MESSAGE
         }
     }
 
     /**
-     * Make API call to Gemini
+     * Make API call to Ollama /api/chat (multi-turn)
      */
-    private suspend fun callGeminiAPI(userMessage: String): String = withContext(Dispatchers.IO) {
+    private suspend fun callOllamaAPI(userMessage: String): String = withContext(Dispatchers.IO) {
         try {
-            val requestBody = JsonObject().apply {
-                val contentsArray = com.google.gson.JsonArray()
-                
-                // Add system instruction
-                val systemContent = JsonObject().apply {
-                    addProperty("role", "user")
-                    val partsArray = com.google.gson.JsonArray()
-                    val partObject = JsonObject().apply {
-                        addProperty("text", SYSTEM_PROMPT)
-                    }
-                    partsArray.add(partObject)
-                    add("parts", partsArray)
+            // Build messages array for Ollama chat API
+            val messagesArray = com.google.gson.JsonArray()
+            
+            // System message
+            val systemMsg = JsonObject().apply {
+                addProperty("role", "system")
+                addProperty("content", SYSTEM_PROMPT)
+            }
+            messagesArray.add(systemMsg)
+            
+            // Add conversation history
+            for (message in conversationHistory.takeLast(10)) {
+                val msgObj = JsonObject().apply {
+                    addProperty("role", if (message.role == "user") "user" else "assistant")
+                    addProperty("content", message.content)
                 }
-                contentsArray.add(systemContent)
-                
-                // Add model acknowledgment
-                val ackContent = JsonObject().apply {
-                    addProperty("role", "model")
-                    val partsArray = com.google.gson.JsonArray()
-                    val partObject = JsonObject().apply {
-                        addProperty("text", "I understand. I'm EmbedBot, your friendly Embedded Systems Tutor! I'll help you learn about microcontrollers, programming, protocols, and more. How can I help you today? 🎯")
-                    }
-                    partsArray.add(partObject)
-                    add("parts", partsArray)
-                }
-                contentsArray.add(ackContent)
-                
-                // Add conversation history
-                for (message in conversationHistory.takeLast(10)) {
-                    val contentObject = JsonObject().apply {
-                        addProperty("role", if (message.role == "user") "user" else "model")
-                        val partsArray = com.google.gson.JsonArray()
-                        val partObject = JsonObject().apply {
-                            addProperty("text", message.content)
-                        }
-                        partsArray.add(partObject)
-                        add("parts", partsArray)
-                    }
-                    contentsArray.add(contentObject)
-                }
-                
-                add("contents", contentsArray)
+                messagesArray.add(msgObj)
+            }
 
-                // Generation config
-                val generationConfig = JsonObject().apply {
+            val requestBody = JsonObject().apply {
+                addProperty("model", NetworkModule.DEFAULT_MODEL)
+                add("messages", messagesArray)
+                addProperty("stream", false)
+                add("options", JsonObject().apply {
                     addProperty("temperature", 0.7)
-                    addProperty("topK", 40)
-                    addProperty("topP", 0.95)
-                    addProperty("maxOutputTokens", 1024)
-                }
-                add("generationConfig", generationConfig)
+                    addProperty("num_predict", 1024)
+                })
             }
 
             val jsonBody = gson.toJson(requestBody)
             val body = jsonBody.toRequestBody("application/json".toMediaType())
 
             val request = Request.Builder()
-                .url(GEMINI_API_URL)
+                .url(NetworkModule.getOllamaChatUrl())
                 .post(body)
+                .addHeader("ngrok-skip-browser-warning", "true")
                 .build()
 
             val response = client.newCall(request).execute()
@@ -170,18 +147,20 @@ When providing code examples, format them properly for readability.
                 throw Exception("API call failed: ${response.code}")
             }
 
-            // Parse response
+            // Parse Ollama chat response
             val jsonResponse = gson.fromJson(responseBody, JsonObject::class.java)
-            val candidates = jsonResponse.getAsJsonArray("candidates")
-            val content = candidates[0].asJsonObject
-                .getAsJsonObject("content")
-                .getAsJsonArray("parts")[0].asJsonObject
-                .get("text").asString
+            val content = jsonResponse
+                .getAsJsonObject("message")
+                ?.get("content")?.asString
+                ?: throw Exception("No content in response")
 
-            return@withContext content
+            // Strip Qwen3 <think>...</think> reasoning blocks — they must not appear in UI
+            val cleaned = content.replace(Regex("<think>[\\s\\S]*?</think>", RegexOption.IGNORE_CASE), "").trim()
+
+            return@withContext cleaned
 
         } catch (e: Exception) {
-            Log.e(TAG, "Error calling Gemini API", e)
+            Log.e(TAG, "Error calling Ollama API", e)
             throw e
         }
     }

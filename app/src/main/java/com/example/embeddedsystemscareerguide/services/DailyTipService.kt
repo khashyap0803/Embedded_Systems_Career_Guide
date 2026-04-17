@@ -33,7 +33,7 @@ class DailyTipService(private val context: Context) {
         }
     }
 
-    private val geminiService = GeminiServiceV2.getInstance(context)
+    private val geminiService = OllamaService.getInstance(context)
     private val firestoreManager = FirestoreManager.getInstance(context)
     private val gson = Gson()
 
@@ -85,7 +85,7 @@ class DailyTipService(private val context: Context) {
             val currentStage = stages.find { !it.isCompleted }
             val completedTopics = stages.filter { it.isCompleted }.map { it.title }
             
-            val prompt = GeminiServiceV2.PromptTemplates.dailyTips(
+            val prompt = OllamaService.PromptTemplates.dailyTips(
                 currentTopic = currentStage?.title ?: "Embedded Systems",
                 completedTopics = completedTopics,
                 count = TIPS_PER_GENERATION

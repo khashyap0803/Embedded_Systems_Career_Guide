@@ -31,7 +31,7 @@ class ProjectSuggestionService(private val context: Context) {
         }
     }
 
-    private val geminiService = GeminiServiceV2.getInstance(context)
+    private val geminiService = OllamaService.getInstance(context)
     private val firestoreManager = FirestoreManager.getInstance(context)
     private val gson = Gson()
 
@@ -65,7 +65,7 @@ class ProjectSuggestionService(private val context: Context) {
 
             callback.onProgress("Finding projects matching your skills...")
 
-            val prompt = GeminiServiceV2.PromptTemplates.projectSuggestions(
+            val prompt = OllamaService.PromptTemplates.projectSuggestions(
                 completedStages = completedTopics,
                 skillLevel = determineSkillLevel(stages)
             )

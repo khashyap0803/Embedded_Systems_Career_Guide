@@ -32,7 +32,7 @@ class StageContentService(private val context: Context) {
         }
     }
 
-    private val geminiService = GeminiServiceV2.getInstance(context)
+    private val geminiService = OllamaService.getInstance(context)
     private val firestoreManager = FirestoreManager.getInstance(context)
     private val gson = Gson()
 

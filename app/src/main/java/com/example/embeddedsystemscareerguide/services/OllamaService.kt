@@ -2,38 +2,30 @@ package com.example.embeddedsystemscareerguide.services
 
 import android.content.Context
 import android.util.Log
-import com.example.embeddedsystemscareerguide.BuildConfig
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
-import java.util.concurrent.TimeUnit
+import java.net.ConnectException
+import java.net.SocketTimeoutException
 
 /**
- * GeminiServiceV2 - Unified AI Service for V2.0 Features
+ * OllamaService - Unified AI Service powered by local fine-tuned Qwen3-14B
  * 
- * Provides centralized access to Gemini API with:
- * - Prompt template system for different features
- * - Response caching layer
- * - Token usage tracking
- * - Error handling with retry logic
+ * Replaces GeminiServiceV2 entirely. All AI requests go through the local
+ * Ollama instance exposed via Ngrok static domain.
  * 
  * @author Embedded Systems Career Guide
- * @version 2.0
+ * @version 3.0
  */
-class GeminiServiceV2(private val context: Context) {
+class OllamaService(private val context: Context) {
 
     companion object {
-        private const val TAG = "GeminiServiceV2"
-        
-        // API Configuration
-        private const val GEMINI_API_KEY = BuildConfig.GEMINI_API_KEY
-        private const val GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$GEMINI_API_KEY"
+        private const val TAG = "OllamaService"
         
         // Retry Configuration
         private const val MAX_RETRIES = 3
@@ -41,22 +33,16 @@ class GeminiServiceV2(private val context: Context) {
         
         // Singleton instance
         @Volatile
-        private var instance: GeminiServiceV2? = null
+        private var instance: OllamaService? = null
         
-        fun getInstance(context: Context): GeminiServiceV2 {
+        fun getInstance(context: Context): OllamaService {
             return instance ?: synchronized(this) {
-                instance ?: GeminiServiceV2(context.applicationContext).also { instance = it }
+                instance ?: OllamaService(context.applicationContext).also { instance = it }
             }
         }
     }
 
-    // OkHttp client with appropriate timeouts
-    private val client = OkHttpClient.Builder()
-        .connectTimeout(60, TimeUnit.SECONDS)
-        .readTimeout(120, TimeUnit.SECONDS)
-        .writeTimeout(60, TimeUnit.SECONDS)
-        .build()
-
+    private val client = NetworkModule.longTimeoutClient
     private val gson = Gson()
 
     // Token usage tracking
@@ -65,12 +51,10 @@ class GeminiServiceV2(private val context: Context) {
 
     /**
      * Prompt Templates for different AI features
+     * (Preserved from GeminiServiceV2 - identical prompts work with the fine-tuned model)
      */
     object PromptTemplates {
         
-        /**
-         * Generate personalized learning stages based on assessment results
-         */
         fun personalizedStages(
             userName: String,
             weakAreas: List<String>,
@@ -111,10 +95,6 @@ RESPOND WITH ONLY THIS JSON (no markdown, no explanation):
 }
 """
 
-        /**
-         * Generate learning content for a specific stage
-         * HIGH-QUALITY ACADEMIC CONTENT: Focused and Complete
-         */
         fun stageContent(stageName: String, topics: List<String>): String = """
 You are an expert Embedded Systems professor creating focused learning content for: "$stageName"
 
@@ -179,10 +159,6 @@ CRITICAL: Your response MUST be valid, complete JSON. Keep content concise but c
 }
 """
 
-        /**
-         * Regenerate personalized stages considering user's learning history
-         * Used when user retakes assessment - considers their previous progress
-         */
         fun regenerateStagesWithHistory(
             userName: String,
             weakAreas: List<String>,
@@ -235,9 +211,6 @@ RESPOND WITH ONLY THIS JSON (no markdown, no explanation):
 }
 """
 
-        /**
-         * Generate flashcards for a stage
-         */
         fun flashcards(stageName: String, topics: List<String>, count: Int = 15): String = """
 Generate $count flashcards for studying: "$stageName"
 Topics: ${topics.joinToString(", ")}
@@ -259,9 +232,6 @@ RESPOND WITH ONLY THIS JSON:
 }
 """
 
-        /**
-         * Generate quiz with explanations
-         */
         fun quizWithExplanations(stageName: String, topics: List<String>, count: Int = 5): String = """
 Generate $count MCQ questions for: "$stageName"
 Topics: ${topics.joinToString(", ")}
@@ -279,9 +249,6 @@ RESPOND WITH ONLY THIS JSON:
 ]
 """
 
-        /**
-         * Context-aware chat response
-         */
         fun contextAwareChat(
             userMessage: String,
             currentStage: String?,
@@ -319,9 +286,6 @@ RESPOND WITH ONLY THIS JSON:
             return context
         }
 
-        /**
-         * Progress analytics and insights
-         */
         fun progressAnalytics(
             userName: String,
             completedStages: Int,
@@ -361,9 +325,6 @@ RESPOND WITH ONLY THIS JSON:
 }
 """
 
-        /**
-         * Interview questions generation
-         */
         fun interviewQuestions(
             completedTopics: List<String>,
             difficulty: String = "mixed"
@@ -393,9 +354,6 @@ RESPOND WITH ONLY THIS JSON:
 }
 """
 
-        /**
-         * Project suggestions based on skills
-         */
         fun projectSuggestions(
             completedStages: List<String>,
             skillLevel: String
@@ -425,9 +383,6 @@ RESPOND WITH ONLY THIS JSON:
 }
 """
 
-        /**
-         * Daily learning tip
-         */
         fun dailyTip(currentStage: String?, recentActivity: String): String = """
 Generate a brief, helpful learning tip for an embedded systems student.
 
@@ -448,9 +403,6 @@ RESPOND WITH ONLY THIS JSON:
 }
 """
 
-        /**
-         * Code review and analysis
-         */
         fun codeReview(code: String, language: String = "c"): String = """
 Review this $language code for embedded systems and provide detailed feedback.
 
@@ -484,9 +436,6 @@ RESPOND WITH ONLY THIS JSON:
 }
 """
 
-        /**
-         * Analytics insights for learning progress
-         */
         fun analytics(
             progressPercentage: Int,
             strongTopics: List<String>,
@@ -518,9 +467,6 @@ RESPOND WITH ONLY THIS JSON:
 }
 """
 
-        /**
-         * Generate daily learning tips
-         */
         fun dailyTips(
             currentTopic: String,
             completedTopics: List<String>,
@@ -547,9 +493,6 @@ RESPOND WITH ONLY THIS JSON:
 }
 """
 
-        /**
-         * Interview preparation questions
-         */
         fun interviewPrep(
             topics: List<String>,
             difficulty: String,
@@ -579,7 +522,7 @@ RESPOND WITH ONLY THIS JSON:
     }
 
     /**
-     * Make API call to Gemini with retry logic
+     * Make API call to Ollama with retry logic
      */
     suspend fun generateContent(prompt: String, maxOutputTokens: Int = 4096): Result<String> = withContext(Dispatchers.IO) {
         var lastException: Exception? = null
@@ -587,15 +530,21 @@ RESPOND WITH ONLY THIS JSON:
 
         repeat(MAX_RETRIES) { attempt ->
             try {
-                val response = callGeminiAPI(prompt, maxOutputTokens)
+                val response = callOllamaAPI(prompt, maxOutputTokens)
                 return@withContext Result.success(response)
+            } catch (e: SocketTimeoutException) {
+                Log.w(TAG, "Timeout on attempt ${attempt + 1}: ${e.message}")
+                lastException = Exception(NetworkModule.SERVER_DOWN_MESSAGE)
+            } catch (e: ConnectException) {
+                Log.w(TAG, "Connection failed on attempt ${attempt + 1}: ${e.message}")
+                lastException = Exception(NetworkModule.SERVER_DOWN_MESSAGE)
             } catch (e: Exception) {
                 Log.w(TAG, "Attempt ${attempt + 1} failed: ${e.message}")
                 lastException = e
                 
                 if (attempt < MAX_RETRIES - 1) {
                     delay(delayMs)
-                    delayMs *= 2 // Exponential backoff
+                    delayMs *= 2
                 }
             }
         }
@@ -604,25 +553,24 @@ RESPOND WITH ONLY THIS JSON:
     }
 
     /**
-     * Internal API call method
+     * Internal API call to Ollama /api/generate
      */
-    private fun callGeminiAPI(prompt: String, maxOutputTokens: Int = 4096): String {
+    private fun callOllamaAPI(prompt: String, maxOutputTokens: Int = 4096): String {
         val requestBody = JsonObject().apply {
-            add("contents", gson.toJsonTree(listOf(
-                mapOf(
-                    "parts" to listOf(mapOf("text" to prompt))
-                )
-            )))
-            add("generationConfig", JsonObject().apply {
+            addProperty("model", NetworkModule.DEFAULT_MODEL)
+            addProperty("prompt", prompt)
+            addProperty("stream", false)
+            add("options", JsonObject().apply {
                 addProperty("temperature", 0.7)
-                addProperty("maxOutputTokens", maxOutputTokens)
-                addProperty("topP", 0.95)
+                addProperty("num_predict", maxOutputTokens)
+                addProperty("top_p", 0.95)
             })
         }
 
         val request = Request.Builder()
-            .url(GEMINI_API_URL)
+            .url(NetworkModule.getOllamaGenerateUrl())
             .post(requestBody.toString().toRequestBody("application/json".toMediaType()))
+            .addHeader("ngrok-skip-browser-warning", "true")
             .build()
 
         client.newCall(request).execute().use { response ->
@@ -634,25 +582,18 @@ RESPOND WITH ONLY THIS JSON:
             val jsonResponse = gson.fromJson(responseBody, JsonObject::class.java)
 
             // Track token usage if available
-            jsonResponse.getAsJsonObject("usageMetadata")?.let { usage ->
-                totalInputTokens += usage.get("promptTokenCount")?.asLong ?: 0
-                totalOutputTokens += usage.get("candidatesTokenCount")?.asLong ?: 0
-            }
+            jsonResponse.get("prompt_eval_count")?.asLong?.let { totalInputTokens += it }
+            jsonResponse.get("eval_count")?.asLong?.let { totalOutputTokens += it }
 
-            // Extract text content
-            val candidates = jsonResponse.getAsJsonArray("candidates")
-            if (candidates == null || candidates.size() == 0) {
-                throw Exception("No candidates in response")
-            }
+            // Ollama returns the response text directly in the "response" field
+            val content = jsonResponse.get("response")?.asString
+                ?: throw Exception("No response text from Ollama")
 
-            val content = candidates[0].asJsonObject
-                .getAsJsonObject("content")
-                ?.getAsJsonArray("parts")
-                ?.get(0)?.asJsonObject
-                ?.get("text")?.asString
-                ?: throw Exception("No text in response")
+            // Qwen3 outputs <think>...</think> reasoning blocks before the actual response.
+            // Strip them out so downstream JSON parsers don't break.
+            val cleaned = content.replace(Regex("<think>[\\s\\S]*?</think>", RegexOption.IGNORE_CASE), "").trim()
 
-            return content.trim()
+            return cleaned
         }
     }
 
@@ -670,13 +611,7 @@ RESPOND WITH ONLY THIS JSON:
     }
 
     /**
-     * Estimate cost based on token usage (Gemini 2.5 Flash pricing)
+     * Estimate cost (free since running locally!)
      */
-    fun estimateCostINR(): Double {
-        val inputCostPer1M = 27.0  // ₹27 per million input tokens
-        val outputCostPer1M = 225.0 // ₹225 per million output tokens
-        
-        return (totalInputTokens * inputCostPer1M / 1_000_000) + 
-               (totalOutputTokens * outputCostPer1M / 1_000_000)
-    }
+    fun estimateCostINR(): Double = 0.0
 }

@@ -32,7 +32,7 @@ class FlashcardService(private val context: Context) {
         }
     }
 
-    private val geminiService = GeminiServiceV2.getInstance(context)
+    private val geminiService = OllamaService.getInstance(context)
     private val firestoreManager = FirestoreManager.getInstance(context)
     private val gson = Gson()
 
@@ -85,7 +85,7 @@ class FlashcardService(private val context: Context) {
         callback: FlashcardCallback
     ) {
         try {
-            val prompt = GeminiServiceV2.PromptTemplates.flashcards(
+            val prompt = OllamaService.PromptTemplates.flashcards(
                 stageName = stage.title,
                 topics = stage.topics,
                 count = DEFAULT_CARD_COUNT

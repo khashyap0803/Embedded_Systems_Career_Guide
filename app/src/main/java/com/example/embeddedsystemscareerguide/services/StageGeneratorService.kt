@@ -13,8 +13,8 @@ import kotlinx.coroutines.withContext
  * StageGeneratorService - AI-Powered Personalized Stage Generator
  * 
  * Generates personalized learning stages based on assessment results.
- * Uses GeminiServiceV2 to create a customized curriculum of 30-50 stages
- * tailored to the student's strengths and weaknesses.
+ * Uses OllamaService (local fine-tuned LLM via Ngrok) to create a customized
+ * curriculum of 30-50 stages tailored to the student's strengths and weaknesses.
  * 
  * @author Embedded Systems Career Guide
  * @version 2.0
@@ -37,7 +37,7 @@ class StageGeneratorService(private val context: Context) {
         }
     }
 
-    private val geminiService = GeminiServiceV2.getInstance(context)
+    private val geminiService = OllamaService.getInstance(context)
     private val firestoreManager = FirestoreManager.getInstance(context)
     private val gson = Gson()
 
@@ -97,7 +97,7 @@ class StageGeneratorService(private val context: Context) {
                 
                 // Generate prompt using template (add retry hint on subsequent attempts)
                 val prompt = if (attempt == 1) {
-                    GeminiServiceV2.PromptTemplates.personalizedStages(
+                    OllamaService.PromptTemplates.personalizedStages(
                         userName = userName,
                         weakAreas = weakAreas,
                         strongAreas = strongAreas,
@@ -105,7 +105,7 @@ class StageGeneratorService(private val context: Context) {
                     )
                 } else {
                     // On retry, add explicit instruction for cleaner JSON
-                    GeminiServiceV2.PromptTemplates.personalizedStages(
+                    OllamaService.PromptTemplates.personalizedStages(
                         userName = userName,
                         weakAreas = weakAreas,
                         strongAreas = strongAreas,
@@ -113,7 +113,7 @@ class StageGeneratorService(private val context: Context) {
                     ) + "\n\nIMPORTANT: Ensure valid, complete JSON. Close all arrays and objects properly."
                 }
 
-                // Call Gemini API
+                // Call Ollama API
                 val result = geminiService.generateContent(prompt, maxOutputTokens = 8192)
                 
                 if (result.isFailure) {
@@ -461,7 +461,7 @@ class StageGeneratorService(private val context: Context) {
                 
                 // Use the enhanced regeneration prompt that considers history
                 val prompt = if (attempt == 1) {
-                    GeminiServiceV2.PromptTemplates.regenerateStagesWithHistory(
+                    OllamaService.PromptTemplates.regenerateStagesWithHistory(
                         userName = userName,
                         weakAreas = weakAreas,
                         strongAreas = strongAreas,
@@ -470,7 +470,7 @@ class StageGeneratorService(private val context: Context) {
                     )
                 } else {
                     // On retry, add explicit instruction for cleaner JSON
-                    GeminiServiceV2.PromptTemplates.regenerateStagesWithHistory(
+                    OllamaService.PromptTemplates.regenerateStagesWithHistory(
                         userName = userName,
                         weakAreas = weakAreas,
                         strongAreas = strongAreas,
@@ -479,7 +479,7 @@ class StageGeneratorService(private val context: Context) {
                     ) + "\n\nIMPORTANT: Ensure valid, complete JSON. Close all arrays and objects properly."
                 }
 
-                // Call Gemini API
+                // Call Ollama API
                 val result = geminiService.generateContent(prompt, maxOutputTokens = 8192)
                 
                 if (result.isFailure) {

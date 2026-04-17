@@ -2,7 +2,6 @@ package com.example.embeddedsystemscareerguide.services
 
 import android.content.Context
 import android.util.Log
-import com.example.embeddedsystemscareerguide.BuildConfig
 import com.example.embeddedsystemscareerguide.models.challenge.*
 import com.google.gson.Gson
 import com.google.gson.JsonObject
@@ -10,13 +9,12 @@ import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
-import java.util.concurrent.TimeUnit
 
 /**
- * GeminiChallengeService - AI-Powered Challenge Generation and Evaluation
+ * ChallengeService - AI-Powered Challenge Generation and Evaluation
+ * Powered by local Ollama LLM via Ngrok
  * 
  * Provides:
  * - Dynamic problem generation for all 3 challenges
@@ -28,10 +26,6 @@ class GeminiChallengeService(private val context: Context) {
 
     companion object {
         private const val TAG = "GeminiChallengeService"
-        
-        // API Configuration
-        private const val GEMINI_API_KEY = BuildConfig.GEMINI_API_KEY
-        private const val GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$GEMINI_API_KEY"
         
         // Available components for Challenge 1
         val AVAILABLE_MCUS = listOf("Arduino UNO", "ESP32")
@@ -59,13 +53,7 @@ class GeminiChallengeService(private val context: Context) {
         }
     }
 
-    // OkHttp client with appropriate timeouts
-    private val client = OkHttpClient.Builder()
-        .connectTimeout(60, TimeUnit.SECONDS)
-        .readTimeout(120, TimeUnit.SECONDS)
-        .writeTimeout(60, TimeUnit.SECONDS)
-        .build()
-
+    private val client = NetworkModule.longTimeoutClient
     private val gson = Gson()
 
     // ========== CHALLENGE 1: PROBLEM GENERATION ==========
@@ -961,7 +949,7 @@ Return ONLY this JSON (no markdown, no explanation):
     // ========== HELPER METHODS ==========
     
     /**
-     * Call Gemini API with robust retry logic
+     * Call Ollama API with robust retry logic
      * - 5 retry attempts
      * - Exponential backoff: 1s, 2s, 4s, 8s, 16s (+ random jitter)
      * - Detailed error logging
@@ -971,19 +959,20 @@ Return ONLY this JSON (no markdown, no explanation):
         val baseDelayMs = 1000L
         
         val requestBody = JsonObject().apply {
-            add("contents", gson.toJsonTree(listOf(
-                mapOf("parts" to listOf(mapOf("text" to prompt)))
-            )))
-            add("generationConfig", JsonObject().apply {
+            addProperty("model", NetworkModule.DEFAULT_MODEL)
+            addProperty("prompt", prompt)
+            addProperty("stream", false)
+            add("options", JsonObject().apply {
                 addProperty("temperature", temperature)
-                addProperty("maxOutputTokens", 16384)
-                addProperty("topP", 0.95)
+                addProperty("num_predict", 16384)
+                addProperty("top_p", 0.95)
             })
         }
 
         val request = Request.Builder()
-            .url(GEMINI_API_URL)
+            .url(NetworkModule.getOllamaGenerateUrl())
             .post(requestBody.toString().toRequestBody("application/json".toMediaType()))
+            .addHeader("ngrok-skip-browser-warning", "true")
             .build()
 
         var lastException: Exception? = null
@@ -995,19 +984,16 @@ Return ONLY this JSON (no markdown, no explanation):
                 client.newCall(request).execute().use { response ->
                     val responseCode = response.code
                     
-                    // Handle rate limiting specifically
                     if (responseCode == 429) {
                         val retryAfter = response.header("Retry-After")?.toLongOrNull() ?: (baseDelayMs * (1 shl attempt))
                         Log.w(TAG, "Rate limited (429). Retry after: ${retryAfter}ms")
                         throw RateLimitException("Rate limited by API. Retry after ${retryAfter}ms")
                     }
                     
-                    // Handle server errors (5xx) - these are retryable
                     if (responseCode in 500..599) {
                         throw ServerException("Server error: $responseCode - ${response.message}")
                     }
                     
-                    // Handle client errors (4xx except 429) - not retryable
                     if (responseCode in 400..499) {
                         throw ClientException("Client error: $responseCode - ${response.message}")
                     }
@@ -1021,29 +1007,21 @@ Return ONLY this JSON (no markdown, no explanation):
                     
                     val jsonResponse = gson.fromJson(responseBody, JsonObject::class.java)
 
-                    // Check for API-level errors
                     jsonResponse.get("error")?.let { error ->
                         val errorMessage = error.asJsonObject.get("message")?.asString ?: "Unknown API error"
-                        throw Exception("Gemini API error: $errorMessage")
+                        throw Exception("Ollama API error: $errorMessage")
                     }
 
-                    val candidates = jsonResponse.getAsJsonArray("candidates")
-                    if (candidates == null || candidates.size() == 0) {
-                        throw Exception("No candidates in response - model may have refused to generate content")
-                    }
+                    val content = jsonResponse.get("response")?.asString
+                        ?: throw Exception("No response text from Ollama")
 
-                    val content = candidates[0].asJsonObject
-                        .getAsJsonObject("content")
-                        ?.getAsJsonArray("parts")
-                        ?.get(0)?.asJsonObject
-                        ?.get("text")?.asString
-                        ?: throw Exception("No text in response content")
+                    // Strip Qwen3 <think>...</think> reasoning blocks before JSON parsing
+                    val cleaned = content.replace(Regex("<think>[\\s\\S]*?</think>", RegexOption.IGNORE_CASE), "").trim()
 
                     Log.d(TAG, "API call successful on attempt ${attempt + 1}")
-                    return content.trim()
+                    return cleaned
                 }
             } catch (e: ClientException) {
-                // Client errors (4xx except 429) are not retryable
                 Log.e(TAG, "Non-retryable client error: ${e.message}")
                 throw e
             } catch (e: Exception) {
@@ -1051,7 +1029,6 @@ Return ONLY this JSON (no markdown, no explanation):
                 Log.w(TAG, "Attempt ${attempt + 1} failed: ${e.message}")
                 
                 if (attempt < maxRetries - 1) {
-                    // Exponential backoff with jitter: base * 2^attempt + random(0-500ms)
                     val delayMs = baseDelayMs * (1L shl attempt) + (Math.random() * 500).toLong()
                     Log.d(TAG, "Waiting ${delayMs}ms before retry...")
                     kotlinx.coroutines.delay(delayMs)
@@ -1059,12 +1036,11 @@ Return ONLY this JSON (no markdown, no explanation):
             }
         }
         
-        // All retries exhausted
         val errorMessage = when (lastException) {
             is RateLimitException -> "API rate limit exceeded. Please wait a moment and try again."
-            is ServerException -> "Gemini server is temporarily unavailable. Please try again."
-            is java.net.UnknownHostException -> "No internet connection. Please check your network."
-            is java.net.SocketTimeoutException -> "Connection timed out. Please check your network."
+            is ServerException -> NetworkModule.SERVER_DOWN_MESSAGE
+            is java.net.UnknownHostException -> NetworkModule.SERVER_DOWN_MESSAGE
+            is java.net.SocketTimeoutException -> NetworkModule.SERVER_DOWN_MESSAGE
             else -> lastException?.message ?: "Unknown error occurred"
         }
         
