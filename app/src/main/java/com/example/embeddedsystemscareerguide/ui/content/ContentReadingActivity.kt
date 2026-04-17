@@ -18,6 +18,7 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import com.example.embeddedsystemscareerguide.R
 import com.example.embeddedsystemscareerguide.services.*
+import com.example.embeddedsystemscareerguide.ui.chat.ChatAdapter
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
@@ -360,7 +361,7 @@ class ContentPageAdapter(
         // Show content based on page type
         when (page.type) {
             "theory", "mini_challenge" -> {
-                holder.mainContent.text = page.textContent
+                holder.mainContent.text = ChatAdapter.cleanAiResponse(page.textContent)
                 holder.mainContent.visibility = View.VISIBLE
             }
             "key_points", "common_mistakes", "pro_tips" -> {
@@ -372,7 +373,7 @@ class ContentPageAdapter(
                 holder.codeBlockCard.visibility = View.VISIBLE
 
                 if (page.codeExplanation.isNotEmpty()) {
-                    holder.codeExplanation.text = page.codeExplanation
+                    holder.codeExplanation.text = ChatAdapter.cleanAiResponse(page.codeExplanation)
                     holder.codeExplanation.visibility = View.VISIBLE
                 } else {
                     holder.codeExplanation.visibility = View.GONE
@@ -408,7 +409,7 @@ class ContentPageAdapter(
         
         points.forEach { point ->
             val textView = TextView(context).apply {
-                text = point
+                text = ChatAdapter.cleanAiResponse(point)
                 setTextColor(context.getColor(R.color.text_primary))
                 textSize = 16f
                 setPadding(0, 12, 0, 12)
