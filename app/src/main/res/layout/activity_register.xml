@@ -9,6 +9,7 @@
 
     <ImageView
         android:id="@+id/imageViewAppLogo"
+        android:contentDescription="@string/cd_app_logo"
         android:layout_width="80dp"
         android:layout_height="80dp"
         android:src="@drawable/ic_app_logo"

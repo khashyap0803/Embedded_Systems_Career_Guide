@@ -9,6 +9,7 @@
     <!-- Animated Background with better transparency -->
     <ImageView
         android:id="@+id/background_animation"
+        android:importantForAccessibility="no"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:alpha="0.2"
@@ -56,7 +57,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="center"
-                        android:text="🎯 Embedded Systems Journey"
+                        android:text="ðŸŽ¯ Embedded Systems Journey"
                         android:textAppearance="@style/TextAppearance.Material3.HeadlineSmall"
                         android:textColor="@color/white"
                         android:textStyle="bold" />
@@ -139,7 +140,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="🔥 Streak"
+                                android:text="ðŸ”¥ Streak"
                                 android:textAppearance="@style/TextAppearance.Material3.LabelMedium"
                                 android:textColor="@color/slate_300" />
                         </LinearLayout>
@@ -163,7 +164,7 @@
                         android:layout_height="wrap_content"
                         android:layout_gravity="center"
                         android:layout_marginTop="8dp"
-                        android:text="0% Complete • 0 of 16 stages"
+                        android:text="0% Complete â€¢ 0 of 16 stages"
                         android:textAppearance="@style/TextAppearance.Material3.LabelMedium"
                         android:textColor="@color/slate_400" />
                 </LinearLayout>

@@ -17,6 +17,7 @@
 
     <ImageView
         android:id="@+id/image_avatar_option"
+        android:contentDescription="@string/cd_avatar_option"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:padding="6dp"

@@ -23,4 +23,34 @@
     <!-- Additional night theme colors -->
     <color name="overlay_dark">#80000000</color>
     <color name="transparent">#00000000</color>
+
+    <!--
+      Dark values for every semantic name. The default bucket now holds the
+      light palette, so anything semantic that is not restated here would come
+      out light in dark mode. Raw palette entries (slate_*, indigo_* ...) are
+      deliberately NOT overridden - they are absolute swatches and must mean
+      the same thing in both modes.
+    -->
+    <color name="text_tertiary">@color/slate_500</color>
+    <color name="text_hint">@color/slate_500</color>
+    <color name="text_disabled">@color/slate_600</color>
+
+    <color name="background">@color/slate_900</color>
+    <color name="card_background">@color/slate_800</color>
+    <color name="card_elevated">@color/slate_700</color>
+    <color name="card_border">@color/slate_600</color>
+
+    <color name="glass_primary">#1A1E293B</color>
+    <color name="glass_secondary">#14334155</color>
+    <color name="glass_accent">#1A6366F1</color>
+
+    <color name="input_background">@color/slate_700</color>
+    <color name="panel_background">@color/slate_800</color>
+
+    <color name="surface_dark">@color/slate_900</color>
+    <color name="surface_elevated">@color/slate_750</color>
+
+    <color name="colorSurface">@color/slate_800</color>
+    <color name="colorOnSurface">@color/slate_100</color>
+    <color name="colorOnBackground">@color/slate_100</color>
 </resources>

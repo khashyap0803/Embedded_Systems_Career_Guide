@@ -1,12 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Base Dark Theme -->
+    <!--
+      Base theme, shared by both modes.
+
+      Colour roles resolve through the semantic names, which flip between
+      values/colors.xml (light) and values-night/colors.xml (dark). This block
+      used to hardcode dark swatches while inheriting Material3.DayNight, so
+      in day mode the ~8 roles named here were dark while every role it did
+      NOT name kept Material3's light defaults - producing light-on-light
+      chips, dialog containers, outlined field strokes and switch tracks.
+
+      windowLightStatusBar/-NavigationBar are true here (dark icons for the
+      light background) and overridden to false in values-night.
+    -->
     <style name="Theme.EmbeddedSystemsCareerGuide" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Primary colors -->
         <item name="colorPrimary">@color/indigo_600</item>
         <item name="colorPrimaryVariant">@color/indigo_500</item>
-        <item name="colorOnPrimary">@color/slate_100</item>
+        <item name="colorOnPrimary">@color/white</item>
 
         <!-- Secondary colors -->
         <item name="colorSecondary">@color/cyan_500</item>
@@ -14,16 +26,19 @@
         <item name="colorOnSecondary">@color/slate_900</item>
 
         <!-- Background colors -->
-        <item name="android:colorBackground">@color/slate_900</item>
-        <item name="colorSurface">@color/slate_800</item>
-        <item name="colorOnBackground">@color/slate_100</item>
-        <item name="colorOnSurface">@color/slate_100</item>
+        <item name="android:colorBackground">@color/background</item>
+        <item name="colorSurface">@color/card_background</item>
+        <item name="colorOnBackground">@color/text_primary</item>
+        <item name="colorOnSurface">@color/text_primary</item>
+        <item name="colorSurfaceVariant">@color/card_elevated</item>
+        <item name="colorOnSurfaceVariant">@color/text_secondary</item>
+        <item name="colorOutline">@color/card_border</item>
 
         <!-- Status bar and navigation -->
-        <item name="android:statusBarColor">@color/slate_900</item>
-        <item name="android:navigationBarColor">@color/slate_900</item>
-        <item name="android:windowLightStatusBar">false</item>
-        <item name="android:windowLightNavigationBar">false</item>
+        <item name="android:statusBarColor">@color/background</item>
+        <item name="android:navigationBarColor">@color/background</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
 
         <!-- Text colors -->
         <item name="android:textColorPrimary">@color/text_primary</item>

@@ -59,6 +59,7 @@
 
                         <ImageView
                             android:id="@+id/stage_icon"
+                            android:contentDescription="@string/cd_stage_icon"
                             android:layout_width="36dp"
                             android:layout_height="36dp"
                             android:layout_gravity="center"
@@ -69,6 +70,7 @@
                     <!-- Lock Overlay for Locked Stages -->
                     <ImageView
                         android:id="@+id/lock_overlay"
+                        android:contentDescription="@string/cd_stage_locked"
                         android:layout_width="28dp"
                         android:layout_height="28dp"
                         android:layout_gravity="bottom|end"
@@ -129,7 +131,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="⭐"
+                                android:text="â­"
                                 android:textSize="12sp" />
 
                             <TextView
@@ -191,10 +193,13 @@
                 android:background="@drawable/rounded_background"
                 android:backgroundTint="@color/black_50"
                 android:paddingHorizontal="8dp"
-                android:paddingVertical="4dp">
+                android:paddingVertical="4dp"
+                android:contentDescription="@string/cd_star_rating"
+                android:importantForAccessibility="yes">
 
                 <ImageView
                     android:id="@+id/star_1"
+                    android:importantForAccessibility="no"
                     android:layout_width="16dp"
                     android:layout_height="16dp"
                     android:layout_marginEnd="2dp"
@@ -203,6 +208,7 @@
 
                 <ImageView
                     android:id="@+id/star_2"
+                    android:importantForAccessibility="no"
                     android:layout_width="16dp"
                     android:layout_height="16dp"
                     android:layout_marginEnd="2dp"
@@ -211,6 +217,7 @@
 
                 <ImageView
                     android:id="@+id/star_3"
+                    android:importantForAccessibility="no"
                     android:layout_width="16dp"
                     android:layout_height="16dp"
                     android:src="@drawable/ic_star_outline"
@@ -221,6 +228,7 @@
         <!-- Sparkle Effects for completed stages -->
         <ImageView
             android:id="@+id/sparkle_left"
+            android:importantForAccessibility="no"
             android:layout_width="32dp"
             android:layout_height="32dp"
             android:layout_alignTop="@id/stage_card"
@@ -234,6 +242,7 @@
 
         <ImageView
             android:id="@+id/sparkle_right"
+            android:importantForAccessibility="no"
             android:layout_width="32dp"
             android:layout_height="32dp"
             android:layout_alignTop="@id/stage_card"

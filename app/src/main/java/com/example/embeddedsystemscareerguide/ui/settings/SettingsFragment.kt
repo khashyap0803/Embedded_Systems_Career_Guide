@@ -19,6 +19,8 @@ import com.example.embeddedsystemscareerguide.R
 import com.example.embeddedsystemscareerguide.databinding.FragmentSettingsBinding
 import com.example.embeddedsystemscareerguide.services.AuthManager
 import com.example.embeddedsystemscareerguide.services.DailyReminderManager
+import com.example.embeddedsystemscareerguide.services.ThemeManager
+import com.example.embeddedsystemscareerguide.services.ThemeMode
 import com.example.embeddedsystemscareerguide.ui.auth.LoginActivity
 import com.google.firebase.auth.FirebaseAuth
 
@@ -56,10 +58,34 @@ class SettingsFragment : Fragment() {
 
         setupAccountInfo()
         setupDailyReminderToggle()
+        setupThemeSelector()
         setupAppInfo()
 
         binding.buttonLogout.setOnClickListener {
             performLogout()
+        }
+    }
+
+    /**
+     * Appearance dropdown. Driven off [ThemeMode.entries] so adding a mode to
+     * that enum is the only change needed to surface it here.
+     */
+    private fun setupThemeSelector() {
+        val modes = ThemeMode.selectable()
+        val labels = modes.map { getString(it.labelRes) }
+
+        binding.dropdownThemeMode.setSimpleItems(labels.toTypedArray())
+        binding.dropdownThemeMode.setText(
+            getString(ThemeManager.getMode(requireContext()).labelRes),
+            false
+        )
+
+        binding.dropdownThemeMode.setOnItemClickListener { _, _, position, _ ->
+            val chosen = modes[position]
+            if (chosen == ThemeManager.getMode(requireContext())) return@setOnItemClickListener
+            // Applying a night mode recreates the Activity, which is how every
+            // already-inflated screen picks up the new palette.
+            ThemeManager.setMode(requireContext(), chosen)
         }
     }
 

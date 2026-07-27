@@ -102,6 +102,16 @@
     <string name="content_degraded_notice">Couldn\'t generate the %1$s for this lesson, so placeholder text is shown instead. It hasn\'t been saved.</string>
     <string name="action_regenerate">Regenerate</string>
     <string name="action_cancel_generation">Cancel</string>
+    <string name="cd_stage_locked">Stage locked</string>
+    <string name="cd_stage_completed">Stage completed</string>
+    <string name="cd_app_logo">Embedded Systems Career Guide logo</string>
+    <string name="cd_avatar_option">Avatar option</string>
+
+    <!-- Theme -->
+    <string name="settings_theme_title">Appearance</string>
+    <string name="theme_system">Follow system</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
     <string name="content_generation_cancelled">Generation cancelled.</string>
 
     <!-- Content Descriptions -->
@@ -166,7 +176,7 @@
     <!-- Settings screen -->
     <string name="settings_daily_reminder_title">Daily Reminder</string>
     <string name="settings_daily_reminder_subtitle">A once-a-day notification to keep your streak going</string>
-    <string name="settings_dark_mode_line">• Dark Mode: Always On</string>
+    <string name="settings_dark_mode_line">• Appearance: set above</string>
     <string name="settings_autosave_line">• Progress Auto-Sync: Enabled (cloud-based)</string>
 
     <!-- Profile screen -->

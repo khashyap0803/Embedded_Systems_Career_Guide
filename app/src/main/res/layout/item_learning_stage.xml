@@ -17,6 +17,7 @@
 
         <ImageView
             android:id="@+id/stageIcon"
+            android:contentDescription="@string/cd_stage_icon"
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:src="@drawable/ic_foundation"
@@ -50,6 +51,7 @@
 
         <ImageView
             android:id="@+id/lockIcon"
+            android:contentDescription="@string/cd_stage_locked"
             android:layout_width="24dp"
             android:layout_height="24dp"
             android:src="@drawable/ic_lock"
@@ -59,6 +61,7 @@
 
         <ImageView
             android:id="@+id/completionIcon"
+            android:contentDescription="@string/cd_stage_completed"
             android:layout_width="24dp"
             android:layout_height="24dp"
             android:src="@drawable/ic_check_circle"
