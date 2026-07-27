@@ -462,7 +462,10 @@ class LearningPathFragment : Fragment() {
                 .putInt("home_streak", 1)
                 .putInt("home_progress_percentage", 0)
                 .putInt("home_completed_stages", 0)
-                .putInt("home_total_stages", com.example.embeddedsystemscareerguide.AppConstants.TOTAL_LEARNING_STAGES)
+                // 0 means "path not generated yet". Writing a guessed total
+                // here would make Home render a denominator the user's actual
+                // generated path does not have.
+                .putInt("home_total_stages", 0)
                 .apply()
         }
     }
@@ -555,7 +558,12 @@ class LearningPathFragment : Fragment() {
         val reversedStages = stages.sortedByDescending { it.order }
 
         reversedStages.forEachIndexed { index, stage ->
-            val stageView = createStageNode(stage, index == reversedStages.size - 1)
+            // index 0 is the highest-order stage, drawn at the top of the path.
+            val stageView = createStageNode(
+                stage,
+                isFirstStage = index == reversedStages.size - 1,
+                isTopOfPath = index == 0
+            )
             stagesContainer.addView(stageView)
 
             // Add entrance animation with delay
@@ -575,7 +583,11 @@ class LearningPathFragment : Fragment() {
         }
     }
 
-    private fun createStageNode(stage: LearningStage, isFirstStage: Boolean): View {
+    private fun createStageNode(
+        stage: LearningStage,
+        isFirstStage: Boolean,
+        isTopOfPath: Boolean
+    ): View {
         val stageView = LayoutInflater.from(requireContext())
             .inflate(R.layout.item_stage_node, binding.stagesContainer, false)
 
@@ -637,8 +649,10 @@ class LearningPathFragment : Fragment() {
             }
         }
 
-        // Hide connection lines appropriately
-        if (stage.id.toInt() == 16) {
+        // Hide connection lines appropriately. This used to test for stage 16,
+        // which both hid a connector in the middle of a longer generated path
+        // and left a dangling connector above the real final stage.
+        if (isTopOfPath) {
             connectionLineTop.visibility = View.GONE
         }
         if (isFirstStage) {
@@ -808,8 +822,12 @@ class LearningPathFragment : Fragment() {
         // completedStageCount comes from the caller's own UserProgress.completedStages
         // (the live cloud-backed source of truth) rather than the "completed_stages"
         // prefs StringSet, which is only ever written by the dead saveLocalProgress()
-        // path and was therefore always empty, pinning this header at 0/16 permanently.
-        val totalStages = com.example.embeddedsystemscareerguide.AppConstants.TOTAL_LEARNING_STAGES
+        // path and was therefore always empty, pinning this header at 0 permanently.
+        //
+        // The denominator is the generated path's real length. It is not a fixed
+        // 16 - StageGeneratorService asks the model for TARGET_STAGES and the
+        // user's path is however many stages actually came back.
+        val totalStages = stages.size
         val completedStages = completedStageCount
         val progressPercentage = if (totalStages > 0) (completedStages * 100) / totalStages else 0
 
@@ -817,7 +835,11 @@ class LearningPathFragment : Fragment() {
         binding.progressOverall.progress = progressPercentage
 
         // Update progress text with actual completed stages count
-        val progressText = "$progressPercentage% Complete • $completedStages of $totalStages stages"
+        val progressText = if (totalStages > 0) {
+            "$progressPercentage% Complete • $completedStages of $totalStages stages"
+        } else {
+            "$completedStages stages completed"
+        }
         binding.textProgressDetail.text = progressText
 
         // Sync progress to home page for consistency

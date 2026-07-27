@@ -46,16 +46,17 @@
             android:layout_height="match_parent"
             app:layout_behavior="@string/appbar_scrolling_view_behavior" />
 
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/fab"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="bottom|end"
-            android:layout_margin="16dp"
-            android:contentDescription="@string/fab_content_description"
-            app:backgroundTint="@color/indigo_600"
-            app:tint="@color/white"
-            app:srcCompat="@drawable/ic_learning_path" />
+        <!--
+          Spans the whole coordinator so one continuous press-drag-release
+          gesture can be tracked without handing touches between views. It
+          rejects any touch that does not start on the button itself, so the
+          content underneath still receives taps normally.
+        -->
+        <com.example.embeddedsystemscareerguide.ui.widget.RadialFabMenuView
+            android:id="@+id/radialFabMenu"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:contentDescription="@string/fab_content_description" />
 
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 </layout>

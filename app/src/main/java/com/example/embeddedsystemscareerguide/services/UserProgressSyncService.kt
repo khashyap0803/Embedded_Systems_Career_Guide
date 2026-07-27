@@ -150,16 +150,16 @@ class UserProgressSyncService(private val context: Context) {
      * Update home page progress values for consistency
      */
     private fun updateHomeProgress(editor: SharedPreferences.Editor, progress: UserProgress) {
-        // H4 fix: Use AppConstants instead of hardcoded value
-        val totalStages = AppConstants.TOTAL_LEARNING_STAGES
-        val progressPercentage = ((progress.completedStages.size.toFloat() / totalStages) * 100).toInt()
-        
         editor.putInt("home_total_xp", progress.totalXP)
         editor.putInt("home_current_level", progress.currentStage)
         editor.putInt("home_streak", progress.streak)
-        editor.putInt("home_progress_percentage", progressPercentage)
         editor.putInt("home_completed_stages", progress.completedStages.size)
-        editor.putInt("home_total_stages", totalStages)
+        // Deliberately does not touch "home_total_stages" or the derived
+        // percentage: this class only sees UserProgress, which carries no path
+        // length. It previously divided by a constant 16 while the generated
+        // path is a different size per user, producing a percentage that did
+        // not match the learning path screen. LearningPathFragment owns those
+        // two keys because it is the only place that holds the real stage list.
     }
 
     /**

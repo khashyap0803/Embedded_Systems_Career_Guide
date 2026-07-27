@@ -6,7 +6,7 @@ import android.view.Menu
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
-import androidx.appcompat.widget.PopupMenu
+import androidx.core.view.doOnLayout
 import androidx.navigation.NavController
 import androidx.navigation.findNavController
 import androidx.navigation.fragment.NavHostFragment
@@ -16,10 +16,24 @@ import com.example.embeddedsystemscareerguide.databinding.ActivityMainBinding
 import com.example.embeddedsystemscareerguide.services.AuthManager
 import com.example.embeddedsystemscareerguide.ui.assessment.AssessmentActivity
 import com.example.embeddedsystemscareerguide.ui.auth.LoginActivity
-import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.example.embeddedsystemscareerguide.ui.practice.PracticeContentActivity
+import com.example.embeddedsystemscareerguide.ui.widget.RadialFabMenuView
+import com.google.android.material.appbar.AppBarLayout
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.auth.FirebaseAuth
 
 class MainActivity : AppCompatActivity() {
+
+    private companion object {
+        const val ACTION_CHAT = 1
+        const val ACTION_PRACTICE = 2
+        const val ACTION_LEARNING = 3
+        const val ACTION_ASSESSMENT = 4
+        const val ACTION_FLASHCARDS = 5
+        const val ACTION_INTERVIEW = 6
+        const val ACTION_PROFILE = 7
+        const val ACTION_SETTINGS = 8
+    }
 
     private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var binding: ActivityMainBinding
@@ -40,9 +54,7 @@ class MainActivity : AppCompatActivity() {
 
         setSupportActionBar(findViewById<Toolbar>(R.id.toolbar))
 
-        findViewById<FloatingActionButton>(R.id.fab)?.setOnClickListener { view ->
-            showQuickActionsMenu(view)
-        }
+        setupRadialFabMenu()
 
         try {
             val navHostFragment = (supportFragmentManager.findFragmentById(R.id.nav_host_fragment_content_main) as NavHostFragment)
@@ -93,19 +105,55 @@ class MainActivity : AppCompatActivity() {
         return navController.navigateUp() || super.onSupportNavigateUp()
     }
 
-    private fun showQuickActionsMenu(anchor: android.view.View) {
-        val popup = PopupMenu(this, anchor)
-        popup.menuInflater.inflate(R.menu.fab_quick_actions, popup.menu)
-        popup.setOnMenuItemClickListener { item ->
-            when (item.itemId) {
-                R.id.quick_action_chat -> navController?.navigate(R.id.nav_chat)
-                R.id.quick_action_practice -> navController?.navigate(R.id.nav_practice)
-                R.id.quick_action_learning -> navController?.navigate(R.id.nav_learning)
-                R.id.quick_action_assessment -> startActivity(Intent(this, AssessmentActivity::class.java))
-            }
-            true
+    private fun setupRadialFabMenu() {
+        val fabMenu = findViewById<RadialFabMenuView>(R.id.radialFabMenu) ?: return
+
+        fabMenu.actions = listOf(
+            RadialFabMenuView.Action(ACTION_CHAT, "AI Tutor", R.drawable.ic_idea),
+            RadialFabMenuView.Action(ACTION_PRACTICE, "Practice", R.drawable.ic_quiz),
+            RadialFabMenuView.Action(ACTION_LEARNING, "Learning Path", R.drawable.ic_learning_path),
+            RadialFabMenuView.Action(ACTION_ASSESSMENT, "Assessment", R.drawable.ic_assessment),
+            RadialFabMenuView.Action(ACTION_FLASHCARDS, "Flashcards", R.drawable.ic_code),
+            RadialFabMenuView.Action(ACTION_INTERVIEW, "Interview Prep", R.drawable.ic_career),
+            RadialFabMenuView.Action(ACTION_PROFILE, "Profile", R.drawable.ic_profile),
+            RadialFabMenuView.Action(ACTION_SETTINGS, "Settings", R.drawable.ic_settings)
+        )
+
+        fabMenu.onActionSelected = { action -> runQuickAction(action.id) }
+
+        // Screen readers cannot drive a slide-to-pick gesture, so offer the same
+        // actions as a plain selectable list when touch exploration is on.
+        fabMenu.onAccessibleMenuRequested = { actions ->
+            MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.quick_actions_title)
+                .setItems(actions.map { it.label }.toTypedArray()) { _, which ->
+                    runQuickAction(actions[which].id)
+                }
+                .show()
         }
-        popup.show()
+
+        // The View can read system bar insets itself but not the app bar, which
+        // would otherwise let the button be dragged underneath the toolbar.
+        findViewById<AppBarLayout>(R.id.appBarLayout)?.doOnLayout { bar ->
+            fabMenu.extraTopInset = bar.height
+        }
+    }
+
+    private fun runQuickAction(actionId: Int) {
+        when (actionId) {
+            ACTION_CHAT -> navController?.navigate(R.id.nav_chat)
+            ACTION_PRACTICE -> navController?.navigate(R.id.nav_practice)
+            ACTION_LEARNING -> navController?.navigate(R.id.nav_learning)
+            ACTION_PROFILE -> navController?.navigate(R.id.nav_profile)
+            ACTION_SETTINGS -> navController?.navigate(R.id.nav_settings)
+            ACTION_ASSESSMENT -> startActivity(Intent(this, AssessmentActivity::class.java))
+            ACTION_FLASHCARDS -> startActivity(
+                PracticeContentActivity.intentFor(this, PracticeContentActivity.Mode.FLASHCARDS)
+            )
+            ACTION_INTERVIEW -> startActivity(
+                PracticeContentActivity.intentFor(this, PracticeContentActivity.Mode.INTERVIEW)
+            )
+        }
     }
 
     private fun logout() {

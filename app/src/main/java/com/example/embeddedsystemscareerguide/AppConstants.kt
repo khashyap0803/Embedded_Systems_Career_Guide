@@ -7,10 +7,16 @@ package com.example.embeddedsystemscareerguide
 object AppConstants {
 
     // ==================== Learning Path ====================
-    
-    /** Total number of learning stages in the curriculum */
-    const val TOTAL_LEARNING_STAGES = 16
-    
+
+    // NOTE: there is deliberately no TOTAL_LEARNING_STAGES constant. The
+    // learning path is generated per user by StageGeneratorService, so its
+    // length varies and cannot be known at compile time. Read the real count
+    // from the user's generated stage list (FirestoreManager.getPersonalizedStages()
+    // or LearningPathFragment's in-memory list) and treat 0 as "not known yet".
+    // A constant here previously claimed 16 while real paths had ~40 stages,
+    // which made the home dashboard, the progress bars and the "Graduate"
+    // achievement all disagree with the actual curriculum.
+
     /** M1 fix: Number of questions per quiz (updated to match actual usage) */
     const val QUESTIONS_PER_QUIZ = 10
     

@@ -97,7 +97,8 @@
     <string name="nav_header_title">Embedded Systems Guide</string>
     <string name="nav_header_subtitle">Your Career Companion</string>
     <string name="nav_header_desc">Navigation Header</string>
-    <string name="fab_content_description">Floating Action Button</string>
+    <string name="fab_content_description">Quick actions. Press and hold, then slide to an option.</string>
+    <string name="quick_actions_title">Quick actions</string>
 
     <!-- Content Descriptions -->
 
