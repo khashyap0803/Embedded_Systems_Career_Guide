@@ -40,15 +40,29 @@ service cloud.firestore {
       // Nested collections under user documents require authentication
       // This protects sensitive data like progress, quiz history, etc.
       match /{subcollection}/{document=**} {
-        allow read, write: if request.auth != null && 
+        allow read, write: if request.auth != null &&
                               request.auth.uid == get(/databases/$(database)/documents/users/$(username)).data.uid;
       }
     }
-    
-    // LEGACY: Allow authenticated users to access any document not covered above
-    // This is a fallback for existing functionality
-    match /{document=**} {
-      allow read, write: if request.auth != null;
+
+    // LEGACY per-uid assessment reports (superseded by users/{username}/data/report,
+    // but LoginActivity/IntroductionActivity/ReportViewerActivity still read this path
+    // as a fallback for accounts created before that migration). Nothing in the app
+    // writes here anymore, so writes are denied outright rather than left open.
+    match /assessment_reports/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
     }
+
+    // Every collection the app writes to is one of: usernames/**, users/**
+    // (including all nested subcollections, matched above), or
+    // assessment_reports/{uid} (matched above). There is deliberately no
+    // trailing catch-all: a `match /{document=**} { allow read, write: if
+    // request.auth != null }` block previously sat here and, because
+    // Firestore rules are additive (any matching allow wins), it silently
+    // overrode every scoped rule above it - any signed-in account, including
+    // the shared pre-release-event login, could read or overwrite any other
+    // user's profile, progress, or report. If a new top-level collection is
+    // added, it needs its own explicit rule here, not a blanket fallback.
   }
 }

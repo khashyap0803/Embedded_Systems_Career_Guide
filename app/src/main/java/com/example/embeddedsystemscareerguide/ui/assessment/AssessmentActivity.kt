@@ -35,9 +35,25 @@ class AssessmentActivity : AppCompatActivity() {
     private val geminiService = GeminiReportService()
     private val firestore = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
-    
+
     // V2: Track if this is a retake (for regeneration with history)
     private var isRetake = false
+
+    /**
+     * Held so submission can disable it. The system back press must not be able to
+     * finish() the Activity mid-report-generation.
+     */
+    private lateinit var backCallback: OnBackPressedCallback
+
+    companion object {
+        // Keys for surviving configuration changes and process death. The manifest
+        // only declares configChanges="uiMode", so a rotation DOES recreate this
+        // Activity. Without these, every one of the 50 free-text answers was lost
+        // and the user was dropped back on question 1.
+        private const val STATE_ANSWERS = "state_answers"
+        private const val STATE_QUESTION_INDEX = "state_question_index"
+        private const val STATE_IS_RETAKE = "state_is_retake"
+    }
 
     private val speechRecognizerLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -59,26 +75,63 @@ class AssessmentActivity : AppCompatActivity() {
 
         // V2: Check if this is a retake assessment
         isRetake = intent.getBooleanExtra("is_retake", false)
+
+        // Restore work in progress after a configuration change or process death.
+        // Must happen BEFORE displayCurrentQuestion() so the saved answer is shown.
+        if (savedInstanceState != null) {
+            @Suppress("UNCHECKED_CAST", "DEPRECATION")
+            val restored = savedInstanceState.getSerializable(STATE_ANSWERS) as? HashMap<Int, String>
+            if (restored != null) answers = restored.toMutableMap()
+            currentQuestionIndex = savedInstanceState.getInt(STATE_QUESTION_INDEX, 0)
+            isRetake = savedInstanceState.getBoolean(STATE_IS_RETAKE, isRetake)
+            Log.d("Assessment", "Restored ${answers.size} answers at question $currentQuestionIndex")
+        }
+
         Log.d("Assessment", "Assessment started, isRetake=$isRetake")
 
-        // Handle system back to save answer first
-        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+        // Handle system back to save answer first. Kept as a field so submission can
+        // disable it: previously back remained active during report generation, so a
+        // stray back press finished the Activity, cancelled the coroutine, and threw
+        // the report away while the UI still showed progress.
+        backCallback = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 saveCurrentAnswer()
                 finish()
             }
-        })
+        }
+        onBackPressedDispatcher.addCallback(this, backCallback)
 
         loadQuestions()
         setupUI()
+
+        // Clamp in case the asset changed between sessions.
+        if (currentQuestionIndex >= questions.size) currentQuestionIndex = 0
         displayCurrentQuestion()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        // Capture what is currently typed, not just what was already committed by
+        // Next/Back, so a rotation mid-answer does not drop the in-progress text.
+        saveCurrentAnswer()
+        outState.putSerializable(STATE_ANSWERS, HashMap(answers))
+        outState.putInt(STATE_QUESTION_INDEX, currentQuestionIndex)
+        outState.putBoolean(STATE_IS_RETAKE, isRetake)
+        super.onSaveInstanceState(outState)
     }
 
     private fun loadQuestions() {
         try {
             val json = assets.open("initial_assessment_questions.json").bufferedReader().use { it.readText() }
             val type = object : TypeToken<List<Question>>() {}.type
-            questions = Gson().fromJson(json, type)
+            // Gson bypasses Kotlin null-safety: an empty or malformed asset returns
+            // null into a declared-non-null List, and the next questions.isEmpty()
+            // would throw NPE. Default to an empty list instead.
+            questions = Gson().fromJson<List<Question>?>(json, type) ?: emptyList()
+            if (questions.isEmpty()) {
+                Log.e("AssessmentActivity", "Question asset parsed to an empty list")
+                Toast.makeText(this, "Error loading questions", Toast.LENGTH_SHORT).show()
+                finish()
+            }
         } catch (e: Exception) {
             // M2 fix: Log asset loading errors for debugging
             Log.e("AssessmentActivity", "Failed to load questions from assets", e)
@@ -157,7 +210,10 @@ class AssessmentActivity : AppCompatActivity() {
 
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault())
+            // EXTRA_LANGUAGE is read as an IETF BCP-47 tag string, not a Locale object -
+            // passing the object made getStringExtra() return null downstream, silently
+            // ignoring the requested language.
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault().toLanguageTag())
             putExtra(RecognizerIntent.EXTRA_PROMPT, getString(R.string.speech_to_text))
         }
 
@@ -189,6 +245,11 @@ class AssessmentActivity : AppCompatActivity() {
         // Disable buttons to prevent multiple clicks
         binding.buttonNext.isEnabled = false
         binding.buttonBack.isEnabled = false
+
+        // Also disable the system back gesture. Report generation runs on a client
+        // with a 600 s read timeout; letting back finish() the Activity here silently
+        // cancelled the coroutine and discarded the report with no error shown.
+        backCallback.isEnabled = false
 
         // Process assessment and generate report
         lifecycleScope.launch {
@@ -297,6 +358,9 @@ class AssessmentActivity : AppCompatActivity() {
 
             } catch (e: Exception) {
                 binding.loadingOverlay.isVisible = false
+                // Restore the back gesture alongside the buttons. Without this, a
+                // failed submission would leave the user unable to leave the screen.
+                backCallback.isEnabled = true
                 binding.buttonNext.isEnabled = true
                 binding.buttonBack.isEnabled = true
                 Toast.makeText(

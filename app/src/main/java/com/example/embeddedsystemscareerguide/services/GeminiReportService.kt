@@ -36,6 +36,18 @@ class GeminiReportService {
     private val client = NetworkModule.longTimeoutClient
     private val gson = Gson()
 
+    /**
+     * HTML-escape a user-supplied value before it is interpolated into report markup.
+     *
+     * Assessment answers are free text and were previously spliced into the report
+     * verbatim. The report is then rendered in a WebView, so an answer containing
+     * `<script>` executed inside the app and was persisted to Firestore, making it a
+     * stored-XSS sink rather than a one-off. Escaping here closes the injection at
+     * the point of construction; ReportViewerActivity additionally runs with
+     * JavaScript disabled.
+     */
+    private fun esc(value: String): String = InputSanitizer.sanitizeForHtml(value)
+
     companion object {
         private const val TAG = "GeminiReportService"
         // Process 15 questions per chunk for detailed feedback
@@ -136,10 +148,10 @@ class GeminiReportService {
         return questions.joinToString("\n") { qa ->
             """
             <div class="question-feedback">
-                <h4>Question ${qa.n}: ${qa.q}</h4>
+                <h4>Question ${qa.n}: ${esc(qa.q)}</h4>
                 <div class="user-answer">
                     <strong>Your Answer:</strong>
-                    <blockquote>${qa.u.ifBlank { "[No answer provided]" }}</blockquote>
+                    <blockquote>${esc(qa.u).ifBlank { "[No answer provided]" }}</blockquote>
                 </div>
                 <p>Your answer has been recorded. Please review embedded systems resources to improve your understanding of this topic.</p>
             </div>
@@ -155,8 +167,8 @@ class GeminiReportService {
         val questionsHtml = questions.joinToString("\n") { qa ->
             """
             <div class="question-feedback">
-                <h4>Question ${qa.n}: ${qa.q}</h4>
-                <div class="user-answer"><strong>Your Answer:</strong> ${qa.u.ifBlank { "[No answer]" }}</div>
+                <h4>Question ${qa.n}: ${esc(qa.q)}</h4>
+                <div class="user-answer"><strong>Your Answer:</strong> ${esc(qa.u).ifBlank { "[No answer]" }}</div>
             </div>
             """.trimIndent()
         }

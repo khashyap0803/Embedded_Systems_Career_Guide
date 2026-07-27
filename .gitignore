@@ -42,3 +42,6 @@ checkpoints/
 # Other
 *.log
 .DS_Store
+
+# Firebase CLI local cache
+.firebase/

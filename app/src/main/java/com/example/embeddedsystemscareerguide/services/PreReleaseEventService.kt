@@ -265,62 +265,86 @@ class PreReleaseEventService private constructor() {
     ): Boolean = suspendCancellableCoroutine { cont ->
         val participantRef = getParticipantRef(rollNumber)
         val now = System.currentTimeMillis()
-        
+
         participantRef.child("challenge2/startTime").get()
             .addOnSuccessListener { snapshot ->
                 val startTime = snapshot.getValue(Long::class.java) ?: now
                 val timeTaken = now - startTime
-                
+
                 // BUG#5-FIX: Use pre-computed weightedScore from evaluation (already includes time bonus)
                 // instead of recalculating from adjusted totalScore which would double-count
                 val weightedScore = evaluation.weightedScore
-                
+
                 // Build questions map
                 val questionsMap = questions.mapIndexed { index, q -> "q${index + 1}" to q }.toMap()
-                
-                // Get current Ch1 score and time for cumulative totals
-                participantRef.child("universalRanking").get()
-                    .addOnSuccessListener { rankingSnapshot ->
-                        val ch1Score = rankingSnapshot.child("challenge1Score").getValue(Int::class.java) ?: 0
-                        val existingTime = rankingSnapshot.child("totalTimeTakenMs").getValue(Long::class.java) ?: 0L
+
+                // ATOMIC cumulative update. Previously this read universalRanking and then
+                // wrote the recomputed totals as a separate updateChildren() call, which was
+                // not atomic and, more importantly, accumulated onto a RUNNING total
+                // (universalRanking/totalTimeTakenMs already includes any earlier attempt's
+                // own contribution). Retrying this exact submit - a real scenario at exam
+                // submit time, on a flaky network - re-added this challenge's time and score
+                // on top of what a previous attempt had already written, corrupting the
+                // leaderboard. runTransaction makes the read+write atomic against concurrent
+                // writers, and totals are now derived from the per-challenge source-of-truth
+                // fields (challengeN/timeTakenMs, challengeN/scores/weightedScore), which this
+                // function itself sets idempotently - so re-running with the same evaluation
+                // recomputes the same total instead of adding to it again.
+                participantRef.runTransaction(object : Transaction.Handler {
+                    override fun doTransaction(currentData: MutableData): Transaction.Result {
+                        val ch1Score = currentData.child("challenge1").child("scores").child("weightedScore")
+                            .getValue(Int::class.java) ?: 0
+                        val ch1Time = currentData.child("challenge1").child("timeTakenMs")
+                            .getValue(Long::class.java) ?: 0L
+
                         val totalWeighted = ch1Score + weightedScore
-                        val totalTime = existingTime + timeTaken
+                        val totalTime = ch1Time + timeTaken
                         val percentage = totalWeighted.toDouble() / ChallengeConstants.MAX_TOTAL_SCORE * 100
-                        
-                        val updates = mapOf(
-                            "challenge2/status" to if (isTimeout) "timeout" else "completed",
-                            "challenge2/endTime" to now,
-                            "challenge2/timeTakenMs" to timeTaken,
-                            "challenge2/questions" to questionsMap,
-                            "challenge2/evaluation" to evaluation,
-                            "challenge2/scores/rawScore" to evaluation.totalScore,
-                            "challenge2/scores/weightedScore" to weightedScore,
-                            // Ch2 done: keep in_progress (user still has Ch3), unless timeout
-                            "status/currentStatus" to if (isTimeout) ParticipantStatus.STATUS_TIMEOUT else ParticipantStatus.STATUS_IN_PROGRESS,
-                            "universalRanking/challenge2Score" to weightedScore,
-                            "universalRanking/totalWeightedScore" to totalWeighted,
-                            "universalRanking/totalTimeTakenMs" to totalTime,
-                            "universalRanking/percentage" to percentage,
-                            "universalRanking/lastUpdatedAt" to now
-                        )
-                        
-                        participantRef.updateChildren(updates)
-                            .addOnSuccessListener { 
-                                updateUniversalRankings()
-                                cont.resume(true) 
-                            }
-                            .addOnFailureListener { e ->
-                                Log.e(TAG, "Failed to submit Challenge 2", e)
+
+                        currentData.child("challenge2").child("status")
+                            .setValue(if (isTimeout) "timeout" else "completed")
+                        currentData.child("challenge2").child("endTime").setValue(now)
+                        currentData.child("challenge2").child("timeTakenMs").setValue(timeTaken)
+                        currentData.child("challenge2").child("questions").setValue(questionsMap)
+                        currentData.child("challenge2").child("evaluation").setValue(evaluation)
+                        currentData.child("challenge2").child("scores").child("rawScore").setValue(evaluation.totalScore)
+                        currentData.child("challenge2").child("scores").child("weightedScore").setValue(weightedScore)
+                        // Ch2 done: keep in_progress (user still has Ch3), unless timeout
+                        currentData.child("status").child("currentStatus")
+                            .setValue(if (isTimeout) ParticipantStatus.STATUS_TIMEOUT else ParticipantStatus.STATUS_IN_PROGRESS)
+                        currentData.child("universalRanking").child("challenge2Score").setValue(weightedScore)
+                        currentData.child("universalRanking").child("totalWeightedScore").setValue(totalWeighted)
+                        currentData.child("universalRanking").child("totalTimeTakenMs").setValue(totalTime)
+                        currentData.child("universalRanking").child("percentage").setValue(percentage)
+                        currentData.child("universalRanking").child("lastUpdatedAt").setValue(now)
+
+                        return Transaction.success(currentData)
+                    }
+
+                    override fun onComplete(error: DatabaseError?, committed: Boolean, snapshot: DataSnapshot?) {
+                        when {
+                            error != null -> {
+                                Log.e(TAG, "Failed to submit Challenge 2 (transaction)", error.toException())
                                 cont.resume(false)
                             }
+                            !committed -> {
+                                Log.e(TAG, "Challenge 2 submit transaction aborted without committing")
+                                cont.resume(false)
+                            }
+                            else -> {
+                                updateUniversalRankings()
+                                cont.resume(true)
+                            }
+                        }
                     }
+                })
             }
             .addOnFailureListener { e ->
                 Log.e(TAG, "Failed to get start time", e)
                 cont.resume(false)
             }
     }
-    
+
     // ============== CHALLENGE 3 OPERATIONS ==============
     
     suspend fun startChallenge3(rollNumber: String): Boolean = suspendCancellableCoroutine { cont ->
@@ -352,56 +376,79 @@ class PreReleaseEventService private constructor() {
             .addOnSuccessListener { snapshot ->
                 val startTime = snapshot.getValue(Long::class.java) ?: now
                 val timeTaken = now - startTime
-                
+
                 // BUG#5-FIX: Use pre-computed weightedScore from evaluation (already includes time bonus)
-            // Recalculating here would double-count the time bonus
-            val weightedScore = evaluation.weightedScore
-                
+                // Recalculating here would double-count the time bonus
+                val weightedScore = evaluation.weightedScore
+
                 val questionsMap = questions.mapIndexed { index, q -> "q${index + 1}" to q }.toMap()
-                
-                // Get current scores and time for cumulative totals
-                participantRef.child("universalRanking").get()
-                    .addOnSuccessListener { rankingSnapshot ->
-                        val ch1Score = rankingSnapshot.child("challenge1Score").getValue(Int::class.java) ?: 0
-                        val ch2Score = rankingSnapshot.child("challenge2Score").getValue(Int::class.java) ?: 0
-                        val existingTime = rankingSnapshot.child("totalTimeTakenMs").getValue(Long::class.java) ?: 0L
+
+                // ATOMIC cumulative update - see submitChallenge2 for why this is a
+                // transaction rather than a read + updateChildren, and why totals are
+                // derived from challengeN/timeTakenMs and challengeN/scores/weightedScore
+                // (each set idempotently by its own submit call) instead of accumulated
+                // onto universalRanking's running total. Challenge 3 carries the highest
+                // weight (200 pts) and is the final submission of the exam, so getting
+                // this wrong on a retry is the most damaging place for it to happen.
+                participantRef.runTransaction(object : Transaction.Handler {
+                    override fun doTransaction(currentData: MutableData): Transaction.Result {
+                        val ch1Score = currentData.child("challenge1").child("scores").child("weightedScore")
+                            .getValue(Int::class.java) ?: 0
+                        val ch2Score = currentData.child("challenge2").child("scores").child("weightedScore")
+                            .getValue(Int::class.java) ?: 0
+                        val ch1Time = currentData.child("challenge1").child("timeTakenMs")
+                            .getValue(Long::class.java) ?: 0L
+                        val ch2Time = currentData.child("challenge2").child("timeTakenMs")
+                            .getValue(Long::class.java) ?: 0L
+
                         val totalScore = ch1Score + ch2Score + weightedScore
-                        val totalTime = existingTime + timeTaken
-                        
-                        val updates = mapOf(
-                            "challenge3/status" to if (isTimeout) "timeout" else "completed",
-                            "challenge3/endTime" to now,
-                            "challenge3/timeTakenMs" to timeTaken,
-                            "challenge3/questions" to questionsMap,
-                            "challenge3/evaluation" to evaluation,
-                            "challenge3/scores/rawScore" to evaluation.totalScore,
-                            "challenge3/scores/weightedScore" to weightedScore,
-                            // Ch3 is the final challenge: mark as completed
-                            "status/currentStatus" to if (isTimeout) ParticipantStatus.STATUS_TIMEOUT else ParticipantStatus.STATUS_COMPLETED,
-                            "universalRanking/challenge3Score" to weightedScore,
-                            "universalRanking/totalWeightedScore" to totalScore,
-                            "universalRanking/totalTimeTakenMs" to totalTime,
-                            "universalRanking/percentage" to (totalScore.toDouble() / ChallengeConstants.MAX_TOTAL_SCORE * 100),
-                            "universalRanking/lastUpdatedAt" to now
-                        )
-                        
-                        participantRef.updateChildren(updates)
-                            .addOnSuccessListener { 
-                                updateUniversalRankings()
-                                cont.resume(true) 
-                            }
-                            .addOnFailureListener { e ->
-                                Log.e(TAG, "Failed to submit Challenge 3", e)
+                        val totalTime = ch1Time + ch2Time + timeTaken
+                        val percentage = totalScore.toDouble() / ChallengeConstants.MAX_TOTAL_SCORE * 100
+
+                        currentData.child("challenge3").child("status")
+                            .setValue(if (isTimeout) "timeout" else "completed")
+                        currentData.child("challenge3").child("endTime").setValue(now)
+                        currentData.child("challenge3").child("timeTakenMs").setValue(timeTaken)
+                        currentData.child("challenge3").child("questions").setValue(questionsMap)
+                        currentData.child("challenge3").child("evaluation").setValue(evaluation)
+                        currentData.child("challenge3").child("scores").child("rawScore").setValue(evaluation.totalScore)
+                        currentData.child("challenge3").child("scores").child("weightedScore").setValue(weightedScore)
+                        // Ch3 is the final challenge: mark as completed
+                        currentData.child("status").child("currentStatus")
+                            .setValue(if (isTimeout) ParticipantStatus.STATUS_TIMEOUT else ParticipantStatus.STATUS_COMPLETED)
+                        currentData.child("universalRanking").child("challenge3Score").setValue(weightedScore)
+                        currentData.child("universalRanking").child("totalWeightedScore").setValue(totalScore)
+                        currentData.child("universalRanking").child("totalTimeTakenMs").setValue(totalTime)
+                        currentData.child("universalRanking").child("percentage").setValue(percentage)
+                        currentData.child("universalRanking").child("lastUpdatedAt").setValue(now)
+
+                        return Transaction.success(currentData)
+                    }
+
+                    override fun onComplete(error: DatabaseError?, committed: Boolean, snapshot: DataSnapshot?) {
+                        when {
+                            error != null -> {
+                                Log.e(TAG, "Failed to submit Challenge 3 (transaction)", error.toException())
                                 cont.resume(false)
                             }
+                            !committed -> {
+                                Log.e(TAG, "Challenge 3 submit transaction aborted without committing")
+                                cont.resume(false)
+                            }
+                            else -> {
+                                updateUniversalRankings()
+                                cont.resume(true)
+                            }
+                        }
                     }
+                })
             }
             .addOnFailureListener { e ->
                 Log.e(TAG, "Failed to get start time", e)
                 cont.resume(false)
             }
     }
-    
+
     // ============== WARNING & TERMINATION ==============
     
     suspend fun addWarning(rollNumber: String): Int = suspendCancellableCoroutine { cont ->

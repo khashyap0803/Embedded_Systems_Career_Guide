@@ -138,4 +138,21 @@
         <item name="android:textSize">16sp</item>
     </style>
 
+    <!--
+      AppBar and Popup Overlays.
+
+      These MUST be declared in the default (non-night) bucket, not only in
+      values-night/. layout-w600dp/app_bar_main.xml and
+      layout-w1240dp/app_bar_main.xml reference them, so on any screen at least
+      600dp wide with the system in light mode the default configuration had no
+      entry for these style ids and inflating activity_main threw
+      Resources.NotFoundException: a hard crash on tablets, unfolded foldables,
+      and large phones in landscape.
+
+      Dark parents match the (currently dark) default theme above, so behaviour
+      is unchanged on phones. values-night/themes.xml overrides these for night.
+    -->
+    <style name="Theme.EmbeddedSystemsCareerGuide.AppBarOverlay" parent="ThemeOverlay.Material3.Dark.ActionBar" />
+    <style name="Theme.EmbeddedSystemsCareerGuide.PopupOverlay" parent="ThemeOverlay.Material3.Dark" />
+
 </resources>

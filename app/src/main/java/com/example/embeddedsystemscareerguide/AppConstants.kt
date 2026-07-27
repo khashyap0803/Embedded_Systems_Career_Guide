@@ -114,10 +114,15 @@ object PrefsKeys {
     const val STAGE_UNLOCKED_PREFIX = "stage_unlocked_"
     
     // ==================== Assessment ====================
-    
+
     /** Prefix for assessment completion - append user ID */
     const val ASSESSMENT_COMPLETED_PREFIX = "assessment_completed_"
-    
+
+    // ==================== App Settings (PREFS_APP) ====================
+
+    /** Whether the daily practice reminder notification is turned on. */
+    const val DAILY_REMINDER_ENABLED = "daily_reminder_enabled"
+
     // ==================== Helper Functions ====================
     
     fun stageStarsKey(stageId: Int) = "${STAGE_STARS_PREFIX}$stageId"

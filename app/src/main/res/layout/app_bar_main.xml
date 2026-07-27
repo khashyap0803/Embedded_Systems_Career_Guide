@@ -9,20 +9,42 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <com.google.android.material.appbar.MaterialToolbar
-            android:id="@+id/toolbar"
+        <!--
+          The toolbar must sit inside an AppBarLayout, and the content below must
+          declare appbar_scrolling_view_behavior.
+
+          Previously the MaterialToolbar was a bare child of the CoordinatorLayout
+          and the content include had layout_height="match_parent" with no
+          layout_behavior. CoordinatorLayout therefore placed the content at y=0 at
+          full height and drew it after the toolbar. Because fragment_home's root
+          ScrollView has an opaque background, the app bar was completely covered on
+          phones, which also hid the Up affordance and the overflow menu holding the
+          only reachable Logout action.
+        -->
+        <com.google.android.material.appbar.AppBarLayout
+            android:id="@+id/appBarLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@color/slate_900"
-            android:theme="@style/ThemeOverlay.Material3.Dark.ActionBar"
-            app:titleTextColor="@color/text_primary" />
+            app:elevation="0dp">
+
+            <com.google.android.material.appbar.MaterialToolbar
+                android:id="@+id/toolbar"
+                android:layout_width="match_parent"
+                android:layout_height="?attr/actionBarSize"
+                android:background="@color/slate_900"
+                android:theme="@style/Theme.EmbeddedSystemsCareerGuide.AppBarOverlay"
+                app:popupTheme="@style/Theme.EmbeddedSystemsCareerGuide.PopupOverlay"
+                app:titleTextColor="@color/text_primary" />
+
+        </com.google.android.material.appbar.AppBarLayout>
 
         <include
             android:id="@+id/contentMain"
             layout="@layout/content_main"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_gravity="center" />
+            app:layout_behavior="@string/appbar_scrolling_view_behavior" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/fab"

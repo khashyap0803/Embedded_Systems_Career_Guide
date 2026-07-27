@@ -14,12 +14,16 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
+import com.example.embeddedsystemscareerguide.AppConstants
 import com.example.embeddedsystemscareerguide.PrefsKeys
 import com.example.embeddedsystemscareerguide.R
 import com.example.embeddedsystemscareerguide.databinding.FragmentHomeBinding
+import com.example.embeddedsystemscareerguide.services.DailyTip
+import com.example.embeddedsystemscareerguide.services.DailyTipService
 import com.example.embeddedsystemscareerguide.services.UserProgressSyncService
 import com.example.embeddedsystemscareerguide.ui.assessment.AssessmentActivity
 import com.example.embeddedsystemscareerguide.ui.assessment.ReportViewerActivity
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.Dispatchers
@@ -42,20 +46,13 @@ class HomeFragment : Fragment() {
     private lateinit var auth: FirebaseAuth
     private lateinit var firestore: FirebaseFirestore
     private lateinit var progressSyncService: UserProgressSyncService
-    
+    private lateinit var dailyTipService: DailyTipService
+
     // Cached cloud progress
     private var cloudProgress: UserProgressSyncService.UserProgress? = null
 
-    // Daily insights array for variety
-    private val dailyInsights = arrayOf(
-        "💡 Tip: Practice coding for 30 minutes daily to build consistency",
-        "🔥 Focus on understanding concepts rather than memorizing syntax",
-        "🎯 Start with simple projects and gradually increase complexity",
-        "⚡ Debug your code step by step to improve problem-solving skills",
-        "🚀 Join embedded systems communities to learn from others",
-        "💪 Regular practice is more effective than long cramming sessions",
-        "🌟 Document your learning journey to track your progress"
-    )
+    // The tip currently shown, kept so tapping the summary line can show it in full.
+    private var currentDailyTip: DailyTip? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -67,6 +64,7 @@ class HomeFragment : Fragment() {
         auth = FirebaseAuth.getInstance()
         firestore = FirebaseFirestore.getInstance()
         progressSyncService = UserProgressSyncService(requireContext())
+        dailyTipService = DailyTipService.getInstance(requireContext())
         return binding.root
     }
 
@@ -75,6 +73,7 @@ class HomeFragment : Fragment() {
 
         setupSwipeRefresh()
         setupUserWelcome()
+        loadDailyTip()
         loadProgressFromCloud() // CLOUD-ONLY: Load all data from cloud
         setupQuickActions()
         setupAchievements()
@@ -107,7 +106,7 @@ class HomeFragment : Fragment() {
      * CLOUD-ONLY: Load all progress data from cloud
      */
     private fun loadProgressFromCloud() {
-        lifecycleScope.launch {
+        viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val progress = progressSyncService.loadProgressFromCloud()
                 
@@ -116,11 +115,13 @@ class HomeFragment : Fragment() {
                     Log.d("HomeFragment", "Loaded from cloud: XP=${progress.totalXP}, streak=${progress.streak}")
                     updateProgressDashboard(progress)
                     updateStudyStreak(progress.streak)
+                    updateAchievements(progress)
                 } else {
                     // New user - use defaults
                     cloudProgress = UserProgressSyncService.UserProgress()
                     updateProgressDashboard(cloudProgress!!)
                     updateStudyStreak(1)
+                    updateAchievements(cloudProgress!!)
                     Log.d("HomeFragment", "No cloud progress, using defaults")
                 }
                 
@@ -154,10 +155,58 @@ class HomeFragment : Fragment() {
             else -> "Good Night"
         }
         binding.textGreeting.text = "$greeting 👋"
+    }
 
-        // Set random daily insight
-        val randomInsight = dailyInsights[Random().nextInt(dailyInsights.size)]
-        binding.textDailyInsight.text = randomInsight
+    /**
+     * Load today's tip from DailyTipService (Firestore-cached, LLM-generated,
+     * regenerated once per day) and show a one-line summary that expands into
+     * the full tip - including its code snippet - on tap.
+     *
+     * Replaces a hardcoded 7-line array that was picked with Random() on every
+     * rotation and every return to this screen, so the "daily" tip changed
+     * several times a minute and the purpose-built DailyTipService sat unused.
+     */
+    private fun loadDailyTip() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val result = dailyTipService.getTodaysTip()
+            val tip = result.getOrNull()
+            if (tip == null) {
+                Log.w("HomeFragment", "Failed to load daily tip", result.exceptionOrNull())
+                binding.textDailyInsight.text = getString(R.string.daily_tip_load_failed)
+                binding.textDailyInsightHint.visibility = View.GONE
+                currentDailyTip = null
+                return@launch
+            }
+
+            currentDailyTip = tip
+            binding.textDailyInsight.text = "💡 ${summarize(tip)}"
+            binding.textDailyInsightHint.visibility = View.VISIBLE
+        }
+
+        binding.textDailyInsight.setOnClickListener {
+            currentDailyTip?.let { showDailyTipDialog(it) }
+        }
+    }
+
+    /** The tip body is markdown-ish: "**Title**\n\ncontent...". Pull just the title for the summary line. */
+    private fun summarize(tip: DailyTip): String {
+        val boldTitle = Regex("^\\*\\*(.+?)\\*\\*").find(tip.tip)?.groupValues?.get(1)
+        return boldTitle ?: tip.tip.take(80).substringBefore("\n")
+    }
+
+    private fun showDailyTipDialog(tip: DailyTip) {
+        val body = buildString {
+            append(tip.tip.replace("**", "").replace("```c", "").replace("```", ""))
+            if (tip.actionItem.isNotBlank()) {
+                append("\n\n👉 ")
+                append(tip.actionItem)
+            }
+        }
+        MaterialAlertDialogBuilder(requireContext(), R.style.Theme_App_AlertDialog)
+            .setTitle(R.string.daily_tip_dialog_title)
+            .setMessage(body)
+            .setPositiveButton(android.R.string.ok, null)
+            .show()
     }
 
     /**
@@ -165,10 +214,10 @@ class HomeFragment : Fragment() {
      */
     private fun updateProgressDashboard(progress: UserProgressSyncService.UserProgress) {
         val totalXP = progress.totalXP
-        val currentLevel = progress.currentStage
+        val currentLevel = totalXP / AppConstants.XP_PER_LEVEL + 1
         val currentStreak = progress.streak
         val completedStages = progress.completedStages.size
-        val totalStages = 16 // AppConstants.TOTAL_LEARNING_STAGES
+        val totalStages = AppConstants.TOTAL_LEARNING_STAGES
         val overallProgress = if (totalStages > 0) (completedStages * 100) / totalStages else 0
 
         // Update progress percentage display
@@ -229,7 +278,7 @@ class HomeFragment : Fragment() {
             return
         }
 
-        lifecycleScope.launch {
+        viewLifecycleOwner.lifecycleScope.launch {
             try {
                 // Check if report exists in cloud
                 val reportDoc = withContext(Dispatchers.IO) {
@@ -330,11 +379,47 @@ class HomeFragment : Fragment() {
     }
 
     /**
-     * Setup achievements section - hide RecyclerView and show empty state
+     * Wires the "View All" link. The list itself is populated by
+     * [updateAchievements] once cloud progress has loaded - previously this
+     * function unconditionally hid the RecyclerView and showed the empty
+     * state, for every user, regardless of what they had actually achieved.
      */
     private fun setupAchievements() {
-        binding.recyclerAchievements.visibility = View.GONE
-        binding.layoutEmptyAchievements.visibility = View.VISIBLE
+        binding.textViewAllAchievements.setOnClickListener { showAllAchievementsDialog() }
+    }
+
+    /**
+     * Real milestone badges computed from the same [UserProgressSyncService.UserProgress]
+     * already loaded for the dashboard - see Achievements.kt. No separate
+     * Firestore read is needed since every condition is already in `progress`.
+     */
+    private fun updateAchievements(progress: UserProgressSyncService.UserProgress) {
+        val earned = com.example.embeddedsystemscareerguide.models.Achievements.earned(progress)
+        if (earned.isEmpty()) {
+            binding.recyclerAchievements.visibility = View.GONE
+            binding.layoutEmptyAchievements.visibility = View.VISIBLE
+            return
+        }
+        binding.recyclerAchievements.visibility = View.VISIBLE
+        binding.layoutEmptyAchievements.visibility = View.GONE
+        binding.recyclerAchievements.layoutManager =
+            androidx.recyclerview.widget.LinearLayoutManager(
+                requireContext(), androidx.recyclerview.widget.LinearLayoutManager.HORIZONTAL, false
+            )
+        binding.recyclerAchievements.adapter = AchievementAdapter(earned.reversed())
+    }
+
+    private fun showAllAchievementsDialog() {
+        val progress = cloudProgress ?: UserProgressSyncService.UserProgress()
+        val lines = com.example.embeddedsystemscareerguide.models.Achievements.ALL.joinToString("\n\n") { a ->
+            val mark = if (a.isEarned(progress)) "✅" else "🔒"
+            "$mark ${a.emoji} ${a.title}\n${a.description}"
+        }
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext(), R.style.Theme_App_AlertDialog)
+            .setTitle("🏆 All Achievements")
+            .setMessage(lines)
+            .setPositiveButton(android.R.string.ok, null)
+            .show()
     }
 
     private fun updateStreakVisualIndicators(streak: Int) {

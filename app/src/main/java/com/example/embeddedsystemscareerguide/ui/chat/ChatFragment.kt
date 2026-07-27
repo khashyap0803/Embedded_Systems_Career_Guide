@@ -28,6 +28,12 @@ class ChatFragment : Fragment() {
     private lateinit var chatAdapter: ChatAdapter
     private val messages = mutableListOf<ChatMessage>()
 
+    // Guards against concurrent sends: btnSend.isEnabled alone doesn't stop this,
+    // since the suggestion chips call sendMessage() directly and were never
+    // disabled - two quick chip taps used to fire two overlapping LLM requests
+    // whose responses interleaved in the transcript.
+    private var isSending = false
+
     data class ChatMessage(
         val content: String,
         val isUser: Boolean
@@ -108,9 +114,10 @@ class ChatFragment : Fragment() {
     }
 
     private fun sendMessage() {
+        if (isSending) return
         val messageText = binding.editMessage.text?.toString()?.trim() ?: return
         if (messageText.isEmpty()) return
-        
+
         // H6 fix: Sanitize user input before sending to API
         val sanitizedMessage = InputSanitizer.sanitizeForApi(messageText, maxLength = 2000)
 
@@ -123,22 +130,24 @@ class ChatFragment : Fragment() {
         binding.editMessage.text?.clear()
 
         // Show loading
+        isSending = true
         binding.progressLoading.visibility = View.VISIBLE
         binding.btnSend.isEnabled = false
 
         // Get AI response using sanitized message
-        lifecycleScope.launch {
+        viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val response = chatService.sendMessage(sanitizedMessage)
-                
+
                 // H2 fix: Add AI response with limit
                 addMessageWithLimit(ChatMessage(response, false))
                 binding.recyclerMessages.scrollToPosition(messages.size - 1)
-                
+
             } catch (e: Exception) {
                 // Add error message with limit
                 addMessageWithLimit(ChatMessage("Sorry, I couldn't process that. Please try again! 🔄", false))
             } finally {
+                isSending = false
                 binding.progressLoading.visibility = View.GONE
                 binding.btnSend.isEnabled = true
             }

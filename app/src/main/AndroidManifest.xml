@@ -4,6 +4,25 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Runtime-requested on API 33+ when the user turns on the Settings > Daily Reminder toggle. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Re-arms the reminder alarm after a reboot, since AlarmManager alarms don't survive one. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- ReportViewerActivity.downloadReport() only requests this below API 29 (scoped
+         storage / MediaStore handles it above that) - without a manifest declaration
+         the runtime request is denied immediately with no dialog on API 26-28. -->
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
+
+    <!-- Package-visibility (API 30+): without this, SpeechRecognizer.isRecognitionAvailable()
+         can return false even when a recognizer is installed, since queryIntentActivities()
+         is filtered unless the target package is declared here. -->
+    <queries>
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
+    </queries>
 
     <application
         android:allowBackup="true"
@@ -62,6 +81,12 @@
             android:exported="false"
             android:theme="@style/Theme.EmbeddedSystemsCareerGuide" />
 
+        <!-- Practice tab: flashcards / interview prep / project challenges -->
+        <activity
+            android:name=".ui.practice.PracticeContentActivity"
+            android:exported="false"
+            android:theme="@style/Theme.EmbeddedSystemsCareerGuide" />
+
         <!-- Pre-Release Event Challenge Activities -->
         <activity
             android:name=".ui.challenge.ChallengeLoginActivity"
@@ -103,6 +128,19 @@
             android:name=".ui.challenge.AdminDashboardActivity"
             android:exported="false"
             android:theme="@style/Theme.EmbeddedSystemsCareerGuide" />
+
+        <!-- Daily practice reminder (Settings > Daily Reminder toggle) -->
+        <receiver
+            android:name=".services.DailyReminderReceiver"
+            android:exported="false" />
+
+        <receiver
+            android:name=".services.BootCompletedReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
 
     </application>
 

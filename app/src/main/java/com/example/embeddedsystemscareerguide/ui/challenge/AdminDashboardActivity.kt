@@ -17,6 +17,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.embeddedsystemscareerguide.R
 import com.example.embeddedsystemscareerguide.databinding.ActivityAdminDashboardBinding
 import com.example.embeddedsystemscareerguide.models.challenge.ParticipantStatus
+import com.example.embeddedsystemscareerguide.services.ChallengeAuth
 import com.example.embeddedsystemscareerguide.services.PreReleaseEventService
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.chip.Chip
@@ -48,9 +49,31 @@ class AdminDashboardActivity : AppCompatActivity() {
         eventService = PreReleaseEventService.getInstance()
         auth = FirebaseAuth.getInstance()
 
-        setupUI()
-        observeParticipants()
-        checkEventStatus()
+        // AUTHORIZATION GATE.
+        //
+        // This screen previously performed no check at all: it attached a listener
+        // to the entire participants tree and exposed delete / unlock / grant-extra-time
+        // controls to whoever managed to start it. Verify the admin claim before
+        // touching any data, and fail closed.
+        //
+        // This is defence in depth, not the security boundary. A modified client can
+        // skip this check, so firestore.rules and database.rules.json must also
+        // require request.auth.token.admin == true on every write this screen makes.
+        lifecycleScope.launch {
+            if (!ChallengeAuth.isAdmin(forceRefresh = true)) {
+                Toast.makeText(
+                    this@AdminDashboardActivity,
+                    R.string.admin_access_denied,
+                    Toast.LENGTH_LONG
+                ).show()
+                finish()
+                return@launch
+            }
+
+            setupUI()
+            observeParticipants()
+            checkEventStatus()
+        }
     }
 
     private fun setupUI() {

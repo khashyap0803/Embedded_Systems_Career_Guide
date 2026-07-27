@@ -2,13 +2,18 @@ package com.example.embeddedsystemscareerguide.ui.assessment
 
 import android.Manifest
 import android.content.ContentValues
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
+import android.webkit.WebResourceRequest
+import android.webkit.WebSettings
+import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -73,15 +78,54 @@ class ReportViewerActivity : AppCompatActivity() {
     private fun setupWebView() {
         binding.webView.apply {
             settings.apply {
-                javaScriptEnabled = true
-                domStorageEnabled = true
+                // SECURITY: JavaScript and DOM storage were enabled here while this
+                // WebView renders LLM-generated HTML that embeds the user's own
+                // assessment answers verbatim (GeminiReportService). That made any
+                // <script> in an answer, or in the model's output, executable inside
+                // the app. The report is static formatted text, so script execution
+                // buys nothing and costs a stored-XSS sink.
+                javaScriptEnabled = false
+                domStorageEnabled = false
+
+                // Do not let report content reach the filesystem or the network.
+                allowFileAccess = false
+                allowContentAccess = false
+                @Suppress("DEPRECATION")
+                allowFileAccessFromFileURLs = false
+                @Suppress("DEPRECATION")
+                allowUniversalAccessFromFileURLs = false
+                blockNetworkLoads = true
+                mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
+
+                // Reading affordances (safe).
                 loadWithOverviewMode = true
                 useWideViewPort = true
                 builtInZoomControls = true
                 displayZoomControls = false
                 setSupportZoom(true)
             }
-            webViewClient = WebViewClient()
+
+            // Report HTML must never navigate anywhere. Open any link the model
+            // emitted in the user's browser instead, so a crafted <a href> cannot
+            // silently redirect the in-app view.
+            webViewClient = object : WebViewClient() {
+                override fun shouldOverrideUrlLoading(
+                    view: WebView,
+                    request: WebResourceRequest
+                ): Boolean {
+                    val url = request.url ?: return true
+                    if (request.isForMainFrame &&
+                        (url.scheme == "http" || url.scheme == "https")
+                    ) {
+                        try {
+                            startActivity(Intent(Intent.ACTION_VIEW, url))
+                        } catch (e: Exception) {
+                            Log.w("ReportViewer", "No handler for report link", e)
+                        }
+                    }
+                    return true // never load in this WebView
+                }
+            }
         }
     }
 

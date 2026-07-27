@@ -773,8 +773,12 @@ class FirestoreManager private constructor(private val context: Context) {
     suspend fun getTodaysTip(): Result<DailyTip?> = withContext(Dispatchers.IO) {
         try {
             val username = getCurrentUsername()
-            val today = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
-                .format(java.util.Date())
+            // Locale-independent (see AppDate) so this agrees with the streak-date
+            // logic in LearningPathFragment/UserProgressSyncService, which previously
+            // used Locale.getDefault() while this call site used Locale.US - two
+            // locale-dependent formatters for the same logical "today" never agreed
+            // on a non-Gregorian-calendar device.
+            val today = com.example.embeddedsystemscareerguide.AppDate.todayIso()
             val doc = getUserDocRef(username)
                 .collection(COLLECTION_DAILY_TIPS)
                 .document(today)

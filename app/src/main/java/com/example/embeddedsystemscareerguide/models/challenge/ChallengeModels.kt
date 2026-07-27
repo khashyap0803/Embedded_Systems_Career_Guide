@@ -328,12 +328,24 @@ object ChallengeConstants {
     const val PATH_RANKINGS = "rankings"
     const val PATH_UNIVERSAL = "universal"
     
-    // User credentials
-    const val USER_EMAIL = "exam1234@challenge.app"
-    const val USER_PASSWORD = "exam1234"
-    const val ADMIN_EMAIL = "admin@challenge.app"
-    const val ADMIN_PASSWORD = "admin1234"
-    
+    // SECURITY: Exam and admin credentials were previously hardcoded here.
+    // `const val` string literals are inlined into the DEX and are NOT obfuscated
+    // by R8, so `strings classes.dex` on any release APK recovered them in seconds.
+    // Combined with LoginActivity's self-provisioning path, the first person to
+    // type the admin password created the admin account and owned the event.
+    //
+    // Credentials are now entered by a human in ChallengeLoginActivity and
+    // validated by Firebase Auth. Admin authorization comes from a Firebase Auth
+    // custom claim, checked via ChallengeAuth.isAdmin(), never from a string
+    // compare in the client.
+    //
+    // To grant admin (once, from a trusted machine using the Admin SDK):
+    //   admin.auth().setCustomUserClaims(uid, { admin: true })
+    // The user must sign out and back in for the claim to appear in their token.
+
+    /** Firebase Auth custom-claim key that authorises the admin dashboard. */
+    const val CLAIM_ADMIN = "admin"
+
     // Roll number pattern
     val ROLL_NUMBER_REGEX = Regex("^1601[0-9]{8}$")
 }

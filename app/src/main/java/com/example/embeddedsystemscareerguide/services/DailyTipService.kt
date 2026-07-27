@@ -6,7 +6,6 @@ import com.google.gson.Gson
 import com.google.gson.JsonObject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.util.*
 
 /**
  * DailyTipService - AI-Powered Daily Learning Tips
@@ -121,15 +120,13 @@ class DailyTipService(private val context: Context) {
             val tipsArray = jsonObject.getAsJsonArray("tips")
             
             val tips = mutableListOf<DailyTip>()
-            val calendar = Calendar.getInstance()
-            
+
             tipsArray?.forEachIndexed { index, element ->
                 try {
                     val obj = element.asJsonObject
-                    
-                    // Assign a date starting from today
-                    calendar.add(Calendar.DAY_OF_YEAR, if (index == 0) 0 else 1)
-                    val dateString = formatDateString(calendar)
+
+                    // Assign a date starting from today, one per day thereafter.
+                    val dateString = formatDateString(index)
                     
                     // Create tip with correct DailyTip data class fields
                     val title = obj.get("title")?.asString ?: "Pro Tip #${index + 1}"
@@ -158,7 +155,6 @@ class DailyTipService(private val context: Context) {
      * Create fallback tips if AI generation fails
      */
     private fun createFallbackTips(): List<DailyTip> {
-        val calendar = Calendar.getInstance()
         val tips = mutableListOf<DailyTip>()
         
         val fallbackContent = listOf(
@@ -200,9 +196,8 @@ class DailyTipService(private val context: Context) {
         )
         
         fallbackContent.forEachIndexed { index, (title, content, code) ->
-            calendar.add(Calendar.DAY_OF_YEAR, if (index == 0) 0 else 1)
             tips.add(DailyTip(
-                date = formatDateString(calendar),
+                date = formatDateString(index),
                 tip = "**$title**\n\n$content\n\n```c\n$code\n```",
                 category = "programming",
                 actionItem = "Try implementing this in your next project"
@@ -225,19 +220,21 @@ class DailyTipService(private val context: Context) {
     }
 
     /**
-     * Get today's date as string (YYYY-MM-DD)
+     * Get today's date as string (YYYY-MM-DD).
+     *
+     * Delegates to AppDate so this always matches
+     * [FirestoreManager.getTodaysTip], which reads today's tip using the same
+     * document id. Previously this built the id from a raw java.util.Calendar
+     * while FirestoreManager derived "today" a different way; a mismatch here
+     * would mean a tip saved under one key is never found under the other.
      */
-    private fun getTodayDateString(): String {
-        return formatDateString(Calendar.getInstance())
-    }
+    private fun getTodayDateString(): String =
+        com.example.embeddedsystemscareerguide.AppDate.todayIso()
 
     /**
-     * Format calendar to date string
+     * Format a date that is [daysFromToday] days after today as YYYY-MM-DD,
+     * for stamping the batch of upcoming tips generated alongside today's.
      */
-    private fun formatDateString(calendar: Calendar): String {
-        val year = calendar.get(Calendar.YEAR)
-        val month = String.format("%02d", calendar.get(Calendar.MONTH) + 1)
-        val day = String.format("%02d", calendar.get(Calendar.DAY_OF_MONTH))
-        return "$year-$month-$day"
-    }
+    private fun formatDateString(daysFromToday: Int): String =
+        java.time.LocalDate.now().plusDays(daysFromToday.toLong()).toString()
 }

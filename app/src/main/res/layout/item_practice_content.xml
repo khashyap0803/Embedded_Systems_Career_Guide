@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/card_practice_item"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="14dp"
+    android:clickable="true"
+    android:focusable="true"
+    app:cardBackgroundColor="@color/glass_secondary"
+    app:cardCornerRadius="18dp"
+    app:cardElevation="6dp"
+    app:strokeColor="@color/indigo_400"
+    app:strokeWidth="1dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="18dp">
+
+        <!-- Tag row: category/difficulty badge + (projects only) status -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/text_item_tag"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_rounded_badge"
+                android:paddingHorizontal="10dp"
+                android:paddingVertical="4dp"
+                android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
+                android:textColor="@color/cyan_200"
+                android:textStyle="bold"
+                tools:text="MEDIUM · CONCEPT" />
+
+            <Space
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
+            <TextView
+                android:id="@+id/text_item_meta"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
+                android:textColor="@color/slate_400"
+                android:visibility="gone"
+                tools:text="~8h"
+                tools:visibility="visible" />
+
+        </LinearLayout>
+
+        <!-- Primary text: flashcard front / interview question / project title -->
+        <TextView
+            android:id="@+id/text_item_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
+            android:textColor="@color/white"
+            android:textStyle="bold"
+            tools:text="What does the volatile keyword do in embedded C?" />
+
+        <!-- Secondary text: flashcard back / ideal answer / project description. Hidden until tapped for flashcards+interview. -->
+        <TextView
+            android:id="@+id/text_item_body"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+            android:textColor="@color/slate_300"
+            android:lineSpacingExtra="2dp"
+            tools:text="It tells the compiler a variable may change unexpectedly and must not be optimized away." />
+
+        <TextView
+            android:id="@+id/text_item_hint"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:text="@string/tap_to_reveal"
+            android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
+            android:textColor="@color/slate_500" />
+
+        <!-- Flashcard review actions -->
+        <LinearLayout
+            android:id="@+id/layout_flashcard_actions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:orientation="horizontal"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_needs_review"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
+                android:text="@string/flashcard_needs_review"
+                android:textColor="@color/amber_400"
+                app:strokeColor="@color/amber_400" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_know_it"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:text="@string/flashcard_know_it"
+                app:backgroundTint="@color/emerald_600" />
+
+        </LinearLayout>
+
+        <!-- Project status actions -->
+        <LinearLayout
+            android:id="@+id/layout_project_actions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:orientation="horizontal"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_project_status"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:backgroundTint="@color/indigo_600"
+                tools:text="▶ Start Project" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

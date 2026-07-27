@@ -6,21 +6,24 @@ import android.view.Menu
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.appcompat.widget.PopupMenu
+import androidx.navigation.NavController
 import androidx.navigation.findNavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupActionBarWithNavController
 import com.example.embeddedsystemscareerguide.databinding.ActivityMainBinding
-import com.example.embeddedsystemscareerguide.services.UserProgressSyncService
+import com.example.embeddedsystemscareerguide.services.AuthManager
+import com.example.embeddedsystemscareerguide.ui.assessment.AssessmentActivity
 import com.example.embeddedsystemscareerguide.ui.auth.LoginActivity
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.FirebaseAuth
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var binding: ActivityMainBinding
+    private var navController: NavController? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,15 +41,13 @@ class MainActivity : AppCompatActivity() {
         setSupportActionBar(findViewById<Toolbar>(R.id.toolbar))
 
         findViewById<FloatingActionButton>(R.id.fab)?.setOnClickListener { view ->
-            Snackbar.make(view, "Quick actions coming soon!", Snackbar.LENGTH_LONG)
-                .setAction("OK", null)
-                .setAnchorView(R.id.fab)
-                .show()
+            showQuickActionsMenu(view)
         }
 
         try {
             val navHostFragment = (supportFragmentManager.findFragmentById(R.id.nav_host_fragment_content_main) as NavHostFragment)
-            val navController = navHostFragment.navController
+            val controller = navHostFragment.navController
+            navController = controller
 
             // Simplified navigation without drawer - all navigation through fragment cards
             appBarConfiguration = AppBarConfiguration(
@@ -57,7 +58,7 @@ class MainActivity : AppCompatActivity() {
                     R.id.nav_profile
                 )
             )
-            setupActionBarWithNavController(navController, appBarConfiguration)
+            setupActionBarWithNavController(controller, appBarConfiguration)
 
         } catch (e: Exception) {
             e.printStackTrace()
@@ -65,16 +66,22 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        // Inflate a simple menu for logout option
-        menu.add(0, R.id.action_logout, 0, "Logout")
+        // Previously built by hand with only a Logout entry, which meant
+        // action_settings (and therefore nav_settings / SettingsFragment) was
+        // never displayed and had no way to be reached. Inflating the real menu
+        // resource restores both entries.
+        menuInflater.inflate(R.menu.main_activity_menu, menu)
         return true
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        // Handle action bar item clicks here
         return when (item.itemId) {
             R.id.action_logout -> {
                 logout()
+                true
+            }
+            R.id.action_settings -> {
+                navController?.navigate(R.id.nav_settings)
                 true
             }
             else -> super.onOptionsItemSelected(item)
@@ -86,14 +93,23 @@ class MainActivity : AppCompatActivity() {
         return navController.navigateUp() || super.onSupportNavigateUp()
     }
 
+    private fun showQuickActionsMenu(anchor: android.view.View) {
+        val popup = PopupMenu(this, anchor)
+        popup.menuInflater.inflate(R.menu.fab_quick_actions, popup.menu)
+        popup.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                R.id.quick_action_chat -> navController?.navigate(R.id.nav_chat)
+                R.id.quick_action_practice -> navController?.navigate(R.id.nav_practice)
+                R.id.quick_action_learning -> navController?.navigate(R.id.nav_learning)
+                R.id.quick_action_assessment -> startActivity(Intent(this, AssessmentActivity::class.java))
+            }
+            true
+        }
+        popup.show()
+    }
+
     private fun logout() {
-        // Clear local progress data before signing out to prevent data leakage
-        UserProgressSyncService(this).clearLocalProgress()
-        
-        // Clear user-specific prefs (including username)
-        getSharedPreferences("user_prefs", MODE_PRIVATE).edit().clear().apply()
-        
-        FirebaseAuth.getInstance().signOut()
+        AuthManager.logout(this)
         val intent = Intent(this, LoginActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         startActivity(intent)

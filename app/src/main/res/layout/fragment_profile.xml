@@ -41,18 +41,42 @@
             android:orientation="vertical"
             android:padding="24dp">
 
-            <!-- Profile Avatar -->
-            <ImageView
-                android:id="@+id/imageView_profile_avatar"
+            <!-- Profile Avatar (tap to change - see AvatarPickerAdapter) -->
+            <FrameLayout
                 android:layout_width="80dp"
                 android:layout_height="80dp"
                 android:layout_gravity="center_horizontal"
-                android:layout_marginBottom="16dp"
-                android:background="@drawable/circle_background"
-                android:backgroundTint="@color/indigo_600"
-                android:padding="16dp"
-                android:src="@drawable/ic_profile"
-                android:tint="@color/white" />
+                android:layout_marginBottom="16dp">
+
+                <ImageView
+                    android:id="@+id/imageView_profile_avatar"
+                    android:layout_width="80dp"
+                    android:layout_height="80dp"
+                    android:background="@drawable/circle_background"
+                    android:backgroundTint="@color/indigo_600"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:padding="16dp"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/ic_profile"
+                    android:tint="@color/white"
+                    android:contentDescription="@string/cd_profile_avatar" />
+
+                <ImageView
+                    android:id="@+id/imageView_avatar_edit_badge"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_gravity="bottom|end"
+                    android:background="@drawable/circle_background"
+                    android:backgroundTint="@color/cyan_500"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:padding="4dp"
+                    android:src="@drawable/ic_camera"
+                    android:tint="@color/white"
+                    android:contentDescription="@string/cd_change_avatar" />
+
+            </FrameLayout>
 
             <!-- User Name -->
             <TextView
@@ -122,6 +146,7 @@
                     android:gravity="center">
 
                     <TextView
+                        android:id="@+id/text_completed_count"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="0"
@@ -146,6 +171,7 @@
                     android:gravity="center">
 
                     <TextView
+                        android:id="@+id/text_xp_count"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="0"
@@ -170,6 +196,7 @@
                     android:gravity="center">
 
                     <TextView
+                        android:id="@+id/text_streak_count"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="0"

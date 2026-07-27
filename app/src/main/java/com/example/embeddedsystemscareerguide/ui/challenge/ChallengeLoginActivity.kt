@@ -7,7 +7,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.example.embeddedsystemscareerguide.databinding.ActivityChallengeLoginBinding
-import com.example.embeddedsystemscareerguide.models.challenge.ChallengeConstants
+import com.example.embeddedsystemscareerguide.services.ChallengeAuth
 import com.example.embeddedsystemscareerguide.services.PreReleaseEventService
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
@@ -78,16 +78,11 @@ class ChallengeLoginActivity : AppCompatActivity() {
         // Try to sign in first
         auth.signInWithEmailAndPassword(email, password)
             .addOnSuccessListener { result ->
-                showLoading(false)
-                val user = result.user
-                
-                if (user != null) {
-                    // Check if admin
-                    if (email == ChallengeConstants.ADMIN_EMAIL) {
-                        navigateToAdmin()
-                    } else {
-                        navigateToRollNumberEntry()
-                    }
+                if (result.user != null) {
+                    routeBySignedInRole()
+                } else {
+                    showLoading(false)
+                    showError("Login failed: no user returned")
                 }
             }
             .addOnFailureListener { signInError ->
@@ -96,6 +91,26 @@ class ChallengeLoginActivity : AppCompatActivity() {
                 showLoading(false)
                 showError("Login failed: ${signInError.localizedMessage}")
             }
+    }
+
+    /**
+     * Decide where a signed-in user lands.
+     *
+     * Previously this compared the typed email against a hardcoded admin address,
+     * which anyone could read out of the APK and which no server rule enforced.
+     * Authorisation now comes from the `admin` Firebase Auth custom claim, which
+     * is signed by Firebase and cannot be forged by a modified client.
+     *
+     * forceRefresh = true so an admin who was granted the claim moments ago is not
+     * blocked by a cached ID token (claims persist in the cached token for up to an
+     * hour).
+     */
+    private fun routeBySignedInRole() {
+        lifecycleScope.launch {
+            val isAdmin = ChallengeAuth.isAdmin(forceRefresh = true)
+            showLoading(false)
+            if (isAdmin) navigateToAdmin() else navigateToRollNumberEntry()
+        }
     }
 
     private fun navigateToRollNumberEntry() {
@@ -120,14 +135,11 @@ class ChallengeLoginActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
-        // Check if already logged in
-        val currentUser = auth.currentUser
-        if (currentUser != null) {
-            val email = currentUser.email ?: ""
-            if (email == ChallengeConstants.ADMIN_EMAIL) {
-                navigateToAdmin()
-            } else if (email == ChallengeConstants.USER_EMAIL) {
-                navigateToRollNumberEntry()
+        // Already signed in: route on the claim rather than on a hardcoded email.
+        // Uses the cached token here (no forceRefresh) to keep resume instant.
+        if (auth.currentUser != null) {
+            lifecycleScope.launch {
+                if (ChallengeAuth.isAdmin()) navigateToAdmin() else navigateToRollNumberEntry()
             }
         }
     }

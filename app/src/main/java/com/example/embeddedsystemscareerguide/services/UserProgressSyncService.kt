@@ -8,8 +8,6 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.tasks.await
-import java.text.SimpleDateFormat
-import java.util.*
 
 /**
  * Service for syncing user progress data between local SharedPreferences and Firebase Firestore.
@@ -224,7 +222,73 @@ class UserProgressSyncService(private val context: Context) {
     }
 
     /**
-     * Load progress from Firebase Firestore (cloud) using username path
+     * Outcome of a cloud progress read.
+     *
+     * The distinction matters: [loadProgressFromCloud] collapses "this user has no
+     * progress document yet" and "the read failed" into a single null. Callers that
+     * then wrote a default UserProgress back to Firestore were destroying real
+     * progress whenever the device was briefly offline or a permission check
+     * failed. Write paths must use [loadProgressResult] and refuse to write on
+     * [Failed]; read-only display paths can keep using the nullable helper.
+     */
+    sealed class ProgressLoad {
+        /** Document exists and was parsed. */
+        data class Loaded(val progress: UserProgress) : ProgressLoad()
+
+        /** Read succeeded; this user genuinely has no progress document yet. */
+        object Absent : ProgressLoad()
+
+        /** Read failed (offline, permission denied, timeout). Local state is unknown. */
+        data class Failed(val cause: Exception?) : ProgressLoad()
+    }
+
+    /**
+     * Load progress, distinguishing "absent" from "failed".
+     *
+     * Use this anywhere the result feeds a write.
+     */
+    suspend fun loadProgressResult(): ProgressLoad {
+        val username = getCurrentUsername()
+            ?: return ProgressLoad.Failed(IllegalStateException("No signed-in username"))
+
+        return try {
+            val document = firestore.collection(COLLECTION_USERS)
+                .document(username)
+                .collection(COLLECTION_DATA)
+                .document(DOCUMENT_PROGRESS)
+                .get()
+                .await()
+
+            val data = document.takeIf { it.exists() }?.data
+                ?: return ProgressLoad.Absent
+
+            @Suppress("UNCHECKED_CAST")
+            ProgressLoad.Loaded(
+                UserProgress(
+                    totalXP = (data["totalXP"] as? Number)?.toInt() ?: 0,
+                    currentStage = (data["currentStage"] as? Number)?.toInt() ?: 1,
+                    streak = (data["streak"] as? Number)?.toInt() ?: 1,
+                    bestStreak = (data["bestStreak"] as? Number)?.toInt() ?: 1,
+                    lastVisitDate = data["lastVisitDate"] as? String ?: "",
+                    completedStages = (data["completedStages"] as? List<String>) ?: emptyList(),
+                    stageStars = (data["stageStars"] as? Map<String, Long>)
+                        ?.mapValues { it.value.toInt() } ?: emptyMap(),
+                    lastUpdated = (data["lastUpdated"] as? Number)?.toLong()
+                        ?: System.currentTimeMillis()
+                )
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to load progress from cloud", e)
+            ProgressLoad.Failed(e)
+        }
+    }
+
+    /**
+     * Load progress from Firebase Firestore (cloud) using username path.
+     *
+     * Returns null for BOTH "no document" and "read failed" — safe for display, but
+     * never use the result to build a write. Use [loadProgressResult] for that.
+     *
      * @return UserProgress if found, null otherwise
      */
     suspend fun loadProgressFromCloud(): UserProgress? {
@@ -399,9 +463,22 @@ class UserProgressSyncService(private val context: Context) {
         }
 
         return try {
-            // First load current progress from cloud
-            val currentProgress = loadProgressFromCloud() ?: UserProgress()
-            
+            // Load current progress, refusing to proceed if the read FAILED.
+            //
+            // This previously did `loadProgressFromCloud() ?: UserProgress()`, which
+            // could not tell "new user" from "read failed". Any offline moment,
+            // permission error, or timeout produced a zeroed UserProgress that was
+            // then merged back over the user's real document, permanently wiping
+            // their XP, stars, and completed stages.
+            val currentProgress = when (val load = loadProgressResult()) {
+                is ProgressLoad.Loaded -> load.progress
+                is ProgressLoad.Absent -> UserProgress()   // genuinely a new user
+                is ProgressLoad.Failed -> {
+                    Log.e(TAG, "Refusing to write stage completion: cloud read failed", load.cause)
+                    return null
+                }
+            }
+
             // Check if stage already completed
             if (currentProgress.completedStages.contains(stageId)) {
                 Log.d(TAG, "Stage $stageId already completed, skipping XP award")
@@ -455,9 +532,20 @@ class UserProgressSyncService(private val context: Context) {
         }
 
         return try {
-            // First load current progress from cloud
-            val currentProgress = loadProgressFromCloud() ?: return null
-            
+            // Same guard as completeStageInCloud: never build a write from a failed
+            // read. Absent is also a no-op here, since there are no stars to improve.
+            val currentProgress = when (val load = loadProgressResult()) {
+                is ProgressLoad.Loaded -> load.progress
+                is ProgressLoad.Absent -> {
+                    Log.d(TAG, "No cloud progress yet, nothing to update stars against")
+                    return null
+                }
+                is ProgressLoad.Failed -> {
+                    Log.e(TAG, "Refusing to write stars: cloud read failed", load.cause)
+                    return null
+                }
+            }
+
             val currentStars = currentProgress.stageStars[stageId] ?: 0
             if (newStars <= currentStars) {
                 Log.d(TAG, "New stars ($newStars) not better than current ($currentStars), no update needed")

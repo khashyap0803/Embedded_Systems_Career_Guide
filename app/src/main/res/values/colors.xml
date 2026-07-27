@@ -1,5 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+
+    <!--
+      Base declarations for names that previously existed ONLY in values-night/.
+
+      A resource declared solely in a qualified folder has no entry in the default
+      configuration, so resolving it outside that configuration throws
+      Resources.NotFoundException. Lint flags this as MissingDefaultResource, and it
+      is the same defect that made the app crash on tablets in light mode via
+      Theme.EmbeddedSystemsCareerGuide.AppBarOverlay.
+
+      Values mirror values-night/colors.xml because the default theme is currently
+      dark, so behaviour is unchanged. When the default bucket is converted to a real
+      light theme, these are the values to re-tune.
+    -->
+    <color name="tech_cyan_accent">@color/cyan_400</color>
+    <color name="tech_blue_dark">@color/slate_900</color>
+    <color name="tech_blue_light">@color/indigo_400</color>
+    <color name="tech_blue_medium">@color/slate_800</color>
+    <color name="tech_off_white">@color/slate_100</color>
+    <color name="tech_grey">@color/slate_500</color>
+    <color name="background_primary">@color/slate_900</color>
+    <color name="background_secondary">@color/slate_800</color>
+    <color name="surface_color">@color/slate_700</color>
+    <color name="accent_primary">@color/indigo_600</color>
+    <color name="accent_secondary">@color/emerald_400</color>
+    <color name="overlay_dark">#80000000</color>
+    <color name="transparent">#00000000</color>
+
     <!-- Base Colors - Dark Tech Theme -->
     <color name="black">#000000</color>
     <color name="black_50">#00000080</color>

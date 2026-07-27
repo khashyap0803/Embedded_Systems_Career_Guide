@@ -178,17 +178,25 @@ Generate 5 SHORT questions now:
         val targetQuestions = 5  // Each API call requests 5 questions
         var parsedQuestions = listOf<QuizQuestion>()
         
+        // Strip Qwen3 <think>...</think> reasoning blocks before any parsing attempt.
+        // Every other service that parses this model's output does this
+        // (GeminiChatService, GeminiReportService, GeminiChallengeService,
+        // OllamaService) - this one was missed. Hoisted above the try so the
+        // question-by-question fallback below also sees stripped text instead
+        // of a raw response that may still contain a leaked reasoning block.
+        val cleaned = response.replace(Regex("<think>[\\s\\S]*?</think>", RegexOption.IGNORE_CASE), "").trim()
+
         try {
             // Extract JSON array from response (remove markdown code blocks if present)
-            var cleanJson = response
+            var cleanJson = cleaned
                 .replace("```json", "")
                 .replace("```", "")
                 .trim()
-            
+
             // Try to extract JSON array if there's extra text around it
             val startIndex = cleanJson.indexOf('[')
             val endIndex = cleanJson.lastIndexOf(']')
-            
+
             if (startIndex != -1 && endIndex != -1 && endIndex > startIndex) {
                 cleanJson = cleanJson.substring(startIndex, endIndex + 1)
             }
@@ -198,10 +206,10 @@ Generate 5 SHORT questions now:
         } catch (e: Exception) {
             Log.e(TAG, "Error parsing quiz response: ${e.message}")
             Log.e(TAG, "Raw response (first 500 chars): ${response.take(500)}")
-            
+
             // Try an alternative parsing approach - parse question by question
             try {
-                parsedQuestions = parseQuizQuestionByQuestion(response)
+                parsedQuestions = parseQuizQuestionByQuestion(cleaned)
             } catch (e2: Exception) {
                 Log.e(TAG, "Alternative parsing also failed: ${e2.message}")
             }

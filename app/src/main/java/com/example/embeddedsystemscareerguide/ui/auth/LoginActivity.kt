@@ -26,8 +26,7 @@ import com.example.embeddedsystemscareerguide.BuildConfig
 import com.example.embeddedsystemscareerguide.MainActivity
 import com.example.embeddedsystemscareerguide.R
 import com.example.embeddedsystemscareerguide.databinding.ActivityLoginBinding
-import com.example.embeddedsystemscareerguide.models.challenge.ChallengeConstants
-import com.example.embeddedsystemscareerguide.ui.challenge.RollNumberEntryActivity
+import com.example.embeddedsystemscareerguide.ui.challenge.ChallengeLoginActivity
 import com.example.embeddedsystemscareerguide.ui.introduction.IntroductionActivity
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
@@ -142,6 +141,12 @@ class LoginActivity : AppCompatActivity() {
         binding.textViewGoToRegister.setOnClickListener {
             startActivity(Intent(this, RegisterActivity::class.java))
             overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
+        }
+
+        // Pre-release event entry point. Replaces the removed "type exam1234"
+        // magic-string backdoor with a visible, ordinary navigation link.
+        binding.textViewEventLogin.setOnClickListener {
+            navigateToChallengeLogin()
         }
 
         // Add button press animations
@@ -269,21 +274,14 @@ class LoginActivity : AppCompatActivity() {
 
         showLoading()
 
-        // Check for special exam credentials (exam1234 / exam1234)
-        if (emailOrUsername.lowercase() == "exam1234" && password == ChallengeConstants.USER_PASSWORD) {
-            Log.d("LoginActivity", "Exam credentials detected - navigating to Challenge flow")
-            hideLoading()
-            navigateToChallengeFlow()
-            return
-        }
-
-        // Check for admin credentials (admin1234 / admin1234)
-        if (emailOrUsername.lowercase() == "admin1234" && password == ChallengeConstants.ADMIN_PASSWORD) {
-            Log.d("LoginActivity", "Admin credentials detected - navigating to Admin Dashboard")
-            hideLoading()
-            navigateToAdminDashboard()
-            return
-        }
+        // SECURITY: two hardcoded backdoors used to live here. Typing "exam1234"
+        // or "admin1234" with a password baked into ChallengeConstants bypassed
+        // authentication entirely, and the handlers below would *create* the
+        // privileged Firebase account if it did not already exist. Both the
+        // constants and the self-provisioning helpers have been removed.
+        //
+        // The event flow is now reached through the "Event Challenge Login" link,
+        // which collects real credentials and lets Firebase Auth validate them.
 
         // Check if input is email or username
         if (emailOrUsername.contains("@")) {
@@ -295,95 +293,17 @@ class LoginActivity : AppCompatActivity() {
         }
     }
 
-    private fun navigateToChallengeFlow() {
-        // Sign in with Firebase Auth using exam credentials, then navigate to Challenge mode
-        auth.signInWithEmailAndPassword(ChallengeConstants.USER_EMAIL, ChallengeConstants.USER_PASSWORD)
-            .addOnSuccessListener {
-                Log.d("LoginActivity", "Successfully signed in with exam credentials")
-                navigateToRollNumberEntry()
-            }
-            .addOnFailureListener { signInError ->
-                Log.w("LoginActivity", "Sign-in failed, attempting to create exam user: ${signInError.message}")
-                // If sign-in fails, try to create the user
-                createExamUserAndNavigate()
-            }
-    }
-
-    private fun createExamUserAndNavigate() {
-        auth.createUserWithEmailAndPassword(ChallengeConstants.USER_EMAIL, ChallengeConstants.USER_PASSWORD)
-            .addOnSuccessListener {
-                Log.d("LoginActivity", "Successfully created and signed in exam user")
-                navigateToRollNumberEntry()
-            }
-            .addOnFailureListener { createError ->
-                Log.w("LoginActivity", "Create user failed, trying sign-in again: ${createError.message}")
-                // User might already exist from another attempt, try sign-in one more time
-                auth.signInWithEmailAndPassword(ChallengeConstants.USER_EMAIL, ChallengeConstants.USER_PASSWORD)
-                    .addOnSuccessListener {
-                        navigateToRollNumberEntry()
-                    }
-                    .addOnFailureListener { finalError ->
-                        hideLoading()
-                        Log.e("LoginActivity", "All attempts failed: ${finalError.message}")
-                        showError("Challenge login failed. Please check your Firebase configuration or create the exam user manually.")
-                    }
-            }
-    }
-
-    private fun navigateToRollNumberEntry() {
+    /**
+     * Open the pre-release event login.
+     *
+     * Deliberately does NOT sign anyone in. ChallengeLoginActivity collects real
+     * credentials and lets Firebase Auth validate them; admin access is then
+     * decided by the `admin` custom claim (see ChallengeAuth), not by this app.
+     */
+    private fun navigateToChallengeLogin() {
         hideLoading()
-        val intent = Intent(this, RollNumberEntryActivity::class.java)
-        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        startActivity(intent)
-        finish()
-    }
-
-    private fun navigateToAdminDashboard() {
-        showLoading()
-        // Sign in with Firebase Auth using admin credentials
-        auth.signInWithEmailAndPassword(ChallengeConstants.ADMIN_EMAIL, ChallengeConstants.ADMIN_PASSWORD)
-            .addOnSuccessListener {
-                Log.d("LoginActivity", "Successfully signed in as admin")
-                hideLoading()
-                val intent = Intent(this, com.example.embeddedsystemscareerguide.ui.challenge.AdminDashboardActivity::class.java)
-                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                startActivity(intent)
-                finish()
-            }
-            .addOnFailureListener { signInError ->
-                Log.w("LoginActivity", "Admin sign-in failed, attempting to create admin user: ${signInError.message}")
-                // If sign-in fails, try to create the admin user
-                createAdminUserAndNavigate()
-            }
-    }
-
-    private fun createAdminUserAndNavigate() {
-        auth.createUserWithEmailAndPassword(ChallengeConstants.ADMIN_EMAIL, ChallengeConstants.ADMIN_PASSWORD)
-            .addOnSuccessListener {
-                Log.d("LoginActivity", "Successfully created and signed in admin user")
-                hideLoading()
-                val intent = Intent(this, com.example.embeddedsystemscareerguide.ui.challenge.AdminDashboardActivity::class.java)
-                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                startActivity(intent)
-                finish()
-            }
-            .addOnFailureListener { createError ->
-                Log.w("LoginActivity", "Create admin failed, trying sign-in again: ${createError.message}")
-                // User might already exist, try sign-in one more time
-                auth.signInWithEmailAndPassword(ChallengeConstants.ADMIN_EMAIL, ChallengeConstants.ADMIN_PASSWORD)
-                    .addOnSuccessListener {
-                        hideLoading()
-                        val intent = Intent(this, com.example.embeddedsystemscareerguide.ui.challenge.AdminDashboardActivity::class.java)
-                        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                        startActivity(intent)
-                        finish()
-                    }
-                    .addOnFailureListener { finalError ->
-                        hideLoading()
-                        Log.e("LoginActivity", "Admin login failed: ${finalError.message}")
-                        showError("Admin login failed. Please check your Firebase configuration.")
-                    }
-            }
+        startActivity(Intent(this, ChallengeLoginActivity::class.java))
+        overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
     }
 
     private fun signInWithEmail(email: String, password: String) {
@@ -707,6 +627,7 @@ class LoginActivity : AppCompatActivity() {
                 }
         } else {
             hideLoading()
+            showError("Sign-in session expired. Please try again.")
         }
     }
 

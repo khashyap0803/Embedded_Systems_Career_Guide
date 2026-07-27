@@ -891,8 +891,16 @@ class Challenge1Activity : AppCompatActivity() {
                 viewHolder: RecyclerView.ViewHolder,
                 target: RecyclerView.ViewHolder
             ): Boolean {
-                val fromPos = viewHolder.adapterPosition
-                val toPos = target.adapterPosition
+                // bindingAdapterPosition returns NO_POSITION (-1) whenever the holder is
+                // in a pending-update state, which happens because reorderCodeBlocksByContent /
+                // reorderCodeBlocksByIds / setSelectedItems call notifyDataSetChanged() while a
+                // drag can be in flight. Collections.swap(list, -1, n) throws
+                // IndexOutOfBoundsException and used to crash mid-challenge.
+                val fromPos = viewHolder.bindingAdapterPosition
+                val toPos = target.bindingAdapterPosition
+                if (fromPos == RecyclerView.NO_POSITION || toPos == RecyclerView.NO_POSITION) {
+                    return false
+                }
                 Collections.swap(codeBlocks, fromPos, toPos)
                 codeBlocksAdapter.notifyItemMoved(fromPos, toPos)
                 return true
@@ -982,7 +990,7 @@ class Challenge1Activity : AppCompatActivity() {
         if (codeBlocks.isNotEmpty() && problemAnswers.getOrNull(currentProblemIndex)?.isComplete == true) complete++
         
         binding.tvProgress.text = "Progress: $complete/3 sections"
-        binding.progressBarCompletion.progress = (complete * 33.33).toInt()
+        binding.progressBarCompletion.progress = complete * 100 / 3
         binding.tvComponentCount.text = "${selectedComponents.size} selected"
         
         // Update overall progress

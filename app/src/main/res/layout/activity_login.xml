@@ -390,6 +390,32 @@
 
                     </androidx.cardview.widget.CardView>
 
+                    <!--
+                      Pre-release event entry point.
+
+                      Replaces the removed magic-string backdoor, where typing
+                      "exam1234" or "admin1234" with a password compiled into the
+                      APK bypassed authentication. This link opens a normal login
+                      screen; Firebase Auth validates the credentials and the
+                      admin custom claim decides authorisation.
+                    -->
+                    <TextView
+                        android:id="@+id/textView_eventLogin"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_horizontal"
+                        android:layout_marginTop="20dp"
+                        android:background="?android:attr/selectableItemBackgroundBorderless"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:minHeight="48dp"
+                        android:paddingHorizontal="20dp"
+                        android:paddingVertical="12dp"
+                        android:text="@string/event_challenge_login"
+                        android:textColor="@color/slate_400"
+                        android:textSize="14sp"
+                        android:gravity="center" />
+
                 </LinearLayout>
 
             </androidx.constraintlayout.widget.ConstraintLayout>

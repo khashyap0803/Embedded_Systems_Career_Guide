@@ -18,11 +18,21 @@ object NetworkModule {
 
     private const val TAG = "NetworkModule"
 
-    // Ollama server exposed via Ngrok static domain (bypasses CGNAT)
-    private const val OLLAMA_BASE_URL = "https://shakiest-unspotlighted-priscila.ngrok-free.dev"
+    // Ollama server exposed via Ngrok's free persistent dev domain (bypasses
+    // CGNAT). This domain is auto-assigned to the "khashyap" ngrok account
+    // and does not change across ngrok restarts, unlike a plain
+    // `ngrok http 11434` with no --domain flag. See start-server.bat /
+    // start-server-silent.vbs for the matching tunnel launch command.
+    private const val OLLAMA_BASE_URL = "https://landfall-quilt-passover.ngrok-free.dev"
 
-    // Default fine-tuned model
-    const val DEFAULT_MODEL = "es-guide-q6"
+    // Default fine-tuned model. Must match an Ollama model name registered on the
+    // server this app talks to (see D:\Data\es-training\Modelfile_Q6_fixed and
+    // start-server.bat/.vbs). "es-guide-q6" previously named the model but nothing
+    // enforced that the Ollama tag actually stayed in sync with it - if the server
+    // operator re-tags or replaces the model under that name, every AI feature in
+    // the app 404s with no indication why. Renamed to something descriptive of
+    // what it actually is.
+    const val DEFAULT_MODEL = "es-career-guide-14b"
 
     /**
      * Interceptor that adds the Ngrok bypass header to every request.

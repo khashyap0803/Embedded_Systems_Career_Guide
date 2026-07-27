@@ -15,11 +15,4 @@
         <attr name="particleColor" format="color" />
         <attr name="animationSpeed" format="integer" />
     </declare-styleable>
-
-    <declare-styleable name="ParticleAnimationView">
-        <attr name="particleCount" format="integer" />
-        <attr name="particleSpeed" format="float" />
-        <attr name="particleSize" format="dimension" />
-        <attr name="backgroundColor" format="color" />
-    </declare-styleable>
 </resources>

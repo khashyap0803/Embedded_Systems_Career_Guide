@@ -86,12 +86,28 @@
                     android:id="@+id/text_daily_insight"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:background="?android:attr/selectableItemBackground"
+                    android:padding="8dp"
+                    android:clickable="true"
+                    android:focusable="true"
                     android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
                     android:textColor="@color/cyan_200"
                     android:gravity="center"
                     android:drawablePadding="8dp"
                     app:drawableStartCompat="@drawable/ic_lightbulb"
                     tools:text="💡 Tip: Practice coding for 30 minutes daily to build consistency" />
+
+                <TextView
+                    android:id="@+id/text_daily_insight_hint"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:gravity="center"
+                    android:text="@string/tap_for_full_tip"
+                    android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
+                    android:textColor="@color/slate_500"
+                    android:visibility="gone"
+                    tools:visibility="visible" />
 
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
