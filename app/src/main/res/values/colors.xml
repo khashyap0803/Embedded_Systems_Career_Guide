@@ -233,4 +233,30 @@
     <color name="primary_dark">@color/indigo_800</color>
     <color name="error">@color/red_500</color>
 
+    <!--
+      Radial quick-action menu. Each action gets its own accent so options are
+      told apart by colour as well as by icon, which matters because the menu
+      is driven by sliding a finger onto a target rather than reading labels.
+      All are the 400-level tints, which carry enough luminance to stay legible
+      against the translucent dark "glass" fill the options are drawn with.
+    -->
+    <color name="radial_home">@color/cyan_400</color>
+    <color name="radial_tutor">@color/amber_400</color>
+    <color name="radial_practice">@color/emerald_400</color>
+    <color name="radial_learning">@color/indigo_400</color>
+    <color name="radial_assessment">@color/blue_400</color>
+    <color name="radial_flashcards">@color/purple_400</color>
+    <color name="radial_interview">@color/pink_400</color>
+    <color name="radial_profile">@color/teal_400</color>
+    <color name="radial_settings">@color/slate_300</color>
+
+    <!-- Tailwind 400-level tints the palette above did not already define. -->
+    <color name="pink_400">#F472B6</color>
+    <color name="teal_400">#2DD4BF</color>
+
+    <!-- Frosted-glass fill and rim for the radial options. -->
+    <color name="radial_glass_fill">#B00F172A</color>
+    <color name="radial_glass_highlight">#26FFFFFF</color>
+    <color name="radial_scrim">#0B1120</color>
+
 </resources>

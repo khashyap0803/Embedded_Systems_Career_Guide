@@ -1,9 +1,13 @@
 package com.example.embeddedsystemscareerguide
 
 import android.content.Intent
+import android.graphics.RenderEffect
+import android.graphics.Shader
+import android.os.Build
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.view.doOnLayout
@@ -25,6 +29,7 @@ import com.google.firebase.auth.FirebaseAuth
 class MainActivity : AppCompatActivity() {
 
     private companion object {
+        const val ACTION_HOME = 0
         const val ACTION_CHAT = 1
         const val ACTION_PRACTICE = 2
         const val ACTION_LEARNING = 3
@@ -108,18 +113,38 @@ class MainActivity : AppCompatActivity() {
     private fun setupRadialFabMenu() {
         val fabMenu = findViewById<RadialFabMenuView>(R.id.radialFabMenu) ?: return
 
+        // Order matters: the first action is placed at the middle of the arc,
+        // the shortest slide from the button, so Home leads.
         fabMenu.actions = listOf(
-            RadialFabMenuView.Action(ACTION_CHAT, "AI Tutor", R.drawable.ic_idea),
-            RadialFabMenuView.Action(ACTION_PRACTICE, "Practice", R.drawable.ic_quiz),
-            RadialFabMenuView.Action(ACTION_LEARNING, "Learning Path", R.drawable.ic_learning_path),
-            RadialFabMenuView.Action(ACTION_ASSESSMENT, "Assessment", R.drawable.ic_assessment),
-            RadialFabMenuView.Action(ACTION_FLASHCARDS, "Flashcards", R.drawable.ic_code),
-            RadialFabMenuView.Action(ACTION_INTERVIEW, "Interview Prep", R.drawable.ic_career),
-            RadialFabMenuView.Action(ACTION_PROFILE, "Profile", R.drawable.ic_profile),
-            RadialFabMenuView.Action(ACTION_SETTINGS, "Settings", R.drawable.ic_settings)
+            RadialFabMenuView.Action(ACTION_HOME, "Home", R.drawable.ic_home, R.color.radial_home),
+            RadialFabMenuView.Action(ACTION_CHAT, "AI Tutor", R.drawable.ic_idea, R.color.radial_tutor),
+            RadialFabMenuView.Action(ACTION_PRACTICE, "Practice", R.drawable.ic_quiz, R.color.radial_practice),
+            RadialFabMenuView.Action(ACTION_LEARNING, "Learning Path", R.drawable.ic_learning_path, R.color.radial_learning),
+            RadialFabMenuView.Action(ACTION_ASSESSMENT, "Assessment", R.drawable.ic_assessment, R.color.radial_assessment),
+            RadialFabMenuView.Action(ACTION_FLASHCARDS, "Flashcards", R.drawable.ic_code, R.color.radial_flashcards),
+            RadialFabMenuView.Action(ACTION_INTERVIEW, "Interview Prep", R.drawable.ic_career, R.color.radial_interview),
+            RadialFabMenuView.Action(ACTION_PROFILE, "Profile", R.drawable.ic_profile, R.color.radial_profile),
+            RadialFabMenuView.Action(ACTION_SETTINGS, "Settings", R.drawable.ic_settings, R.color.radial_settings)
         )
 
         fabMenu.onActionSelected = { action -> runQuickAction(action.id) }
+
+        // Real background blur behind the menu - the frosted panes only read as
+        // glass if what is behind them is actually out of focus. RenderEffect
+        // is API 31+; older devices keep the scrim alone, which still separates
+        // the menu from the content.
+        val contentToBlur = findViewById<View>(R.id.contentMain)
+        fabMenu.onMenuVisibilityChanged = { visible ->
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                contentToBlur?.setRenderEffect(
+                    if (visible) {
+                        RenderEffect.createBlurEffect(28f, 28f, Shader.TileMode.CLAMP)
+                    } else {
+                        null
+                    }
+                )
+            }
+        }
 
         // Screen readers cannot drive a slide-to-pick gesture, so offer the same
         // actions as a plain selectable list when touch exploration is on.
@@ -141,6 +166,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun runQuickAction(actionId: Int) {
         when (actionId) {
+            // Clear back to Home rather than stacking another copy on top of it.
+            ACTION_HOME -> navController?.popBackStack(R.id.nav_home, false).let { popped ->
+                if (popped != true) navController?.navigate(R.id.nav_home)
+            }
             ACTION_CHAT -> navController?.navigate(R.id.nav_chat)
             ACTION_PRACTICE -> navController?.navigate(R.id.nav_practice)
             ACTION_LEARNING -> navController?.navigate(R.id.nav_learning)

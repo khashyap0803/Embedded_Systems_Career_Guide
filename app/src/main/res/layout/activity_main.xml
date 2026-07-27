@@ -1,11 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+<!--
+  The DrawerLayout/NavigationView that used to wrap this content has been
+  removed. Its menu (@menu/navigation_drawer) was an empty <menu> with no
+  items and MainActivity never wired a hamburger to it, but DrawerLayout
+  still responded to left-edge swipes - so an accidental swipe slid a blank
+  white panel over the app with no visible way to dismiss it. Nothing in
+  code referenced drawer_layout or nav_view.
+-->
+<layout xmlns:android="http://schemas.android.com/apk/res/android">
 
     <data />
 
-    <androidx.drawerlayout.widget.DrawerLayout
-        android:id="@+id/drawer_layout"
+    <FrameLayout
+        android:id="@+id/activity_container"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:fitsSystemWindows="true">
@@ -16,14 +23,5 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
 
-        <com.google.android.material.navigation.NavigationView
-            android:id="@+id/nav_view"
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:layout_gravity="start"
-            android:fitsSystemWindows="true"
-            app:headerLayout="@layout/nav_header_main"
-            app:menu="@menu/navigation_drawer" />
-
-    </androidx.drawerlayout.widget.DrawerLayout>
+    </FrameLayout>
 </layout>

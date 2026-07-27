@@ -4,8 +4,11 @@ import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.LinearGradient
+import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.RectF
+import android.graphics.Shader
 import android.graphics.Typeface
 import android.graphics.drawable.Drawable
 import android.util.AttributeSet
@@ -15,6 +18,7 @@ import android.view.View
 import android.view.ViewConfiguration
 import android.view.accessibility.AccessibilityManager
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.ColorUtils
 import androidx.core.graphics.drawable.DrawableCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -33,7 +37,8 @@ import kotlin.math.sin
  * Interaction model:
  *  - **Press and hold** the button: the menu blooms outward. Without lifting,
  *    slide onto an option - whichever option the finger is over enlarges and
- *    highlights. Lift on an option to run it; lift anywhere else to cancel.
+ *    lights up in its own accent colour. Lift on an option to run it; lift
+ *    anywhere else to cancel.
  *  - **Double-tap then hold**: the button itself is picked up and follows the
  *    finger. On release it snaps to the nearest screen edge.
  *
@@ -44,6 +49,10 @@ import kotlin.math.sin
  * full circle in open space, a semicircle against an edge, and a quarter arc
  * in a corner, all from the same code path. Options that cannot fit on the
  * first ring spill onto a wider ring further out so nothing is ever hidden.
+ *
+ * The first action in [actions] is treated as the primary one and is always
+ * placed at the middle of the arc - the shortest, most natural slide from the
+ * button - with the rest fanning out alternately to either side of it.
  *
  * This View deliberately spans the whole screen so that a single continuous
  * gesture can be tracked without handing touches between views. Touches that
@@ -59,7 +68,9 @@ class RadialFabMenuView @JvmOverloads constructor(
     data class Action(
         val id: Int,
         val label: String,
-        val iconRes: Int
+        val iconRes: Int,
+        /** Colour resource used for this option's rim, icon and hover fill. */
+        val accentRes: Int
     )
 
     /** Invoked when the user lifts their finger on an option. */
@@ -71,10 +82,18 @@ class RadialFabMenuView @JvmOverloads constructor(
      */
     var onAccessibleMenuRequested: ((List<Action>) -> Unit)? = null
 
+    /**
+     * Reports menu open/closed so the host can blur the content behind it.
+     * Real background blur is what sells the frosted-glass look, and only the
+     * host knows which sibling view holds the content.
+     */
+    var onMenuVisibilityChanged: ((Boolean) -> Unit)? = null
+
     var actions: List<Action> = emptyList()
         set(value) {
             field = value
             iconCache.clear()
+            accentCache.clear()
             placements = emptyList()
             invalidate()
         }
@@ -95,10 +114,10 @@ class RadialFabMenuView @JvmOverloads constructor(
     // ---- geometry -----------------------------------------------------------
 
     private val fabRadius = dp(28f)
-    private val itemRadius = dp(26f)
-    private val ringGap = dp(44f)          // clearance between FAB edge and ring 1
-    private val ringSpacing = dp(16f)      // clearance between consecutive rings
-    private val itemGap = dp(10f)          // minimum clearance between two options
+    private val itemRadius = dp(27f)
+    private val ringGap = dp(46f)          // clearance between FAB edge and ring 1
+    private val ringSpacing = dp(18f)      // clearance between consecutive rings
+    private val itemGap = dp(12f)          // minimum clearance between two options
     private val edgeMargin = dp(12f)
 
     private var fabCx = 0f
@@ -127,6 +146,7 @@ class RadialFabMenuView @JvmOverloads constructor(
     private var downY = 0f
     private var downAtMs = 0L
     private var lastTapUpMs = 0L
+    private var menuVisibleReported = false
 
     private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop
     private val longPressMs = ViewConfiguration.getLongPressTimeout().toLong()
@@ -158,24 +178,52 @@ class RadialFabMenuView @JvmOverloads constructor(
 
     private val scrimPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val fabPaint = Paint(Paint.ANTI_ALIAS_FLAG)
-    private val itemPaint = Paint(Paint.ANTI_ALIAS_FLAG)
-    private val itemStrokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+    private val glassPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val highlightPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val glowPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val rimPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
-        strokeWidth = dp(1.5f)
+        strokeWidth = dp(1.75f)
     }
     private val labelBgPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val labelRimPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeWidth = dp(1f)
+    }
     private val labelTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         textAlign = Paint.Align.CENTER
-        textSize = dp(12f)
+        textSize = dp(12.5f)
         typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
     }
 
-    private val colorAccent = themeColor(R.color.indigo_600, 0xFF4F46E5.toInt())
-    private val colorSurface = themeColor(R.color.slate_800, 0xFF1E293B.toInt())
+    private val colorGlassFill = themeColor(R.color.radial_glass_fill, 0xB00F172A.toInt())
+    private val colorGlassHighlight = themeColor(R.color.radial_glass_highlight, 0x26FFFFFF)
+    private val colorScrim = themeColor(R.color.radial_scrim, 0xFF0B1120.toInt())
     private val colorOnSurface = themeColor(R.color.text_primary, 0xFFF1F5F9.toInt())
+    private val colorDeepInk = themeColor(R.color.slate_900, 0xFF0F172A.toInt())
+    private val colorFabStart = themeColor(R.color.indigo_500, 0xFF6366F1.toInt())
+    private val colorFabEnd = themeColor(R.color.purple_500, 0xFFA855F7.toInt())
 
     private val iconCache = mutableMapOf<Int, Drawable>()
+    private val accentCache = mutableMapOf<Int, Int>()
     private val labelRect = RectF()
+    private val shaderMatrix = Matrix()
+
+    /**
+     * Gradients are built once against a unit circle and repositioned with a
+     * local matrix, so panning the button or hovering an option does not
+     * allocate a new shader on every frame.
+     */
+    private val unitHighlightShader = LinearGradient(
+        0f, -1f, 0f, 1f,
+        colorGlassHighlight, Color.TRANSPARENT,
+        Shader.TileMode.CLAMP
+    )
+    private val unitFabShader = LinearGradient(
+        0f, -1f, 0f, 1f,
+        colorFabStart, colorFabEnd,
+        Shader.TileMode.CLAMP
+    )
 
     init {
         // Nothing is drawn behind the FAB until the menu opens, so the view is
@@ -184,9 +232,7 @@ class RadialFabMenuView @JvmOverloads constructor(
         isClickable = false
         isFocusable = false
 
-        scrimPaint.color = Color.BLACK
-        fabPaint.color = colorAccent
-        labelBgPaint.color = colorSurface
+        scrimPaint.color = colorScrim
 
         ViewCompat.setOnApplyWindowInsetsListener(this) { _, insets ->
             val bars = insets.getInsets(
@@ -274,15 +320,21 @@ class RadialFabMenuView @JvmOverloads constructor(
             val take = min(capacity, remaining.size)
             val batch = (0 until take).map { remaining.removeFirst() }
 
-            batch.forEachIndexed { i, action ->
-                val deg = when {
-                    isFullCircle -> startDeg + i * (360f / take)
+            // Evenly spaced slots across the usable arc...
+            val slots = FloatArray(take) { i ->
+                when {
+                    isFullCircle -> FULL_CIRCLE_START + i * (360f / take)
                     take == 1 -> startDeg + sweepDeg / 2f
                     else -> startDeg + i * (sweepDeg / (take - 1))
                 }
-                val rad = Math.toRadians(deg.toDouble())
+            }
+
+            // ...filled from the middle outwards, so the earliest (most
+            // important) action sits at the shortest slide from the button.
+            centreOutOrder(take).forEachIndexed { batchIndex, slotIndex ->
+                val rad = Math.toRadians(slots[slotIndex].toDouble())
                 result += Placement(
-                    action = action,
+                    action = batch[batchIndex],
                     cx = fabCx + radius * cos(rad).toFloat(),
                     cy = fabCy + radius * sin(rad).toFloat()
                 )
@@ -304,6 +356,30 @@ class RadialFabMenuView @JvmOverloads constructor(
         }
 
         placements = result
+    }
+
+    /**
+     * Slot indices ordered middle-first then alternating outwards, e.g. for 5
+     * slots: 2, 1, 3, 0, 4.
+     */
+    private fun centreOutOrder(count: Int): IntArray {
+        val order = IntArray(count)
+        val middle = (count - 1) / 2
+        var lower = middle
+        var upper = middle
+        order[0] = middle
+        var written = 1
+        while (written < count) {
+            if (upper < count - 1) {
+                upper++
+                order[written++] = upper
+            }
+            if (written < count && lower > 0) {
+                lower--
+                order[written++] = lower
+            }
+        }
+        return order
     }
 
     /** Smallest angle between two option centres at [radius] that avoids overlap. */
@@ -499,18 +575,26 @@ class RadialFabMenuView @JvmOverloads constructor(
         hoveredIndex = -1
         placements.forEach { it.scale = 1f; it.targetScale = 1f }
         performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+        setMenuVisible(true)
         animateExpansion(1f)
     }
 
     private fun closeMenu() {
         hoveredIndex = -1
+        setMenuVisible(false)
         animateExpansion(0f)
+    }
+
+    private fun setMenuVisible(visible: Boolean) {
+        if (menuVisibleReported == visible) return
+        menuVisibleReported = visible
+        onMenuVisibilityChanged?.invoke(visible)
     }
 
     private fun animateExpansion(target: Float) {
         expansionAnimator?.cancel()
         expansionAnimator = ValueAnimator.ofFloat(expansion, target).apply {
-            duration = if (target > 0f) 180L else 140L
+            duration = if (target > 0f) 200L else 150L
             addUpdateListener {
                 expansion = it.animatedValue as Float
                 invalidate()
@@ -538,7 +622,7 @@ class RadialFabMenuView @JvmOverloads constructor(
         val startX = fabCx
         val startY = fabCy
         ValueAnimator.ofFloat(0f, 1f).apply {
-            duration = 200L
+            duration = 220L
             addUpdateListener {
                 val t = it.animatedValue as Float
                 fabCx = startX + (targetX - startX) * t
@@ -562,6 +646,10 @@ class RadialFabMenuView @JvmOverloads constructor(
         if (width == 0 || height == 0) return
 
         var needsAnotherFrame = false
+        // The hovered option's label is drawn after every circle, otherwise a
+        // neighbouring option overlaps and hides it.
+        var pendingLabel: Triple<String, Float, Float>? = null
+        var pendingLabelAccent = colorOnSurface
 
         if (expansion > 0.01f) {
             scrimPaint.alpha = (SCRIM_ALPHA * expansion).toInt()
@@ -576,36 +664,71 @@ class RadialFabMenuView @JvmOverloads constructor(
                 if (abs(p.targetScale - p.scale) > 0.005f) needsAnotherFrame = true
 
                 val r = itemRadius * p.scale * expansion
+                if (r <= 0f) return@forEachIndexed
+
                 val hovered = i == hoveredIndex
+                val accent = accentFor(p.action.accentRes)
+                val alpha = (255 * expansion).toInt()
 
-                itemPaint.color = if (hovered) colorAccent else colorSurface
-                itemPaint.alpha = (255 * expansion).toInt()
-                canvas.drawCircle(cx, cy, r, itemPaint)
+                if (hovered) {
+                    // Soft colour bloom so the target reads at a glance.
+                    glowPaint.color = ColorUtils.setAlphaComponent(accent, (70 * expansion).toInt())
+                    canvas.drawCircle(cx, cy, r * 1.28f, glowPaint)
+                }
 
-                itemStrokePaint.color = if (hovered) colorOnSurface else colorAccent
-                itemStrokePaint.alpha = (255 * expansion).toInt()
-                canvas.drawCircle(cx, cy, r, itemStrokePaint)
+                // Frosted pane: translucent dark base, then a light sheen
+                // falling from the top edge, then a coloured rim.
+                glassPaint.color = if (hovered) accent else colorGlassFill
+                glassPaint.alpha = if (hovered) alpha else (Color.alpha(colorGlassFill) * expansion).toInt()
+                canvas.drawCircle(cx, cy, r, glassPaint)
 
+                shaderMatrix.setScale(r, r)
+                shaderMatrix.postTranslate(cx, cy)
+                unitHighlightShader.setLocalMatrix(shaderMatrix)
+                highlightPaint.shader = unitHighlightShader
+                highlightPaint.alpha = alpha
+                canvas.drawCircle(cx, cy, r, highlightPaint)
+                highlightPaint.shader = null
+
+                rimPaint.color = if (hovered) Color.WHITE else accent
+                rimPaint.alpha = if (hovered) alpha else (200 * expansion).toInt()
+                canvas.drawCircle(cx, cy, r, rimPaint)
+
+                // Dark glyph on the bright hover fill, accent glyph otherwise -
+                // both keep contrast against their own background.
                 val icon = iconFor(p.action.iconRes)
+                DrawableCompat.setTint(icon, if (hovered) colorDeepInk else accent)
                 val half = (r * ICON_RATIO).toInt()
                 if (half > 0) {
                     icon.setBounds(
                         (cx - half).toInt(), (cy - half).toInt(),
                         (cx + half).toInt(), (cy + half).toInt()
                     )
-                    icon.alpha = (255 * expansion).toInt()
+                    icon.alpha = alpha
                     icon.draw(canvas)
                 }
 
                 if (hovered && expansion > 0.6f) {
-                    drawLabel(canvas, p.action.label, cx, cy + r + dp(6f))
+                    pendingLabel = Triple(p.action.label, cx, cy + r)
+                    pendingLabelAccent = accent
                 }
+            }
+
+            pendingLabel?.let { (text, cx, itemBottom) ->
+                drawLabel(canvas, text, cx, itemBottom, pendingLabelAccent)
             }
         }
 
         // The button itself is always visible.
+        shaderMatrix.setScale(fabRadius, fabRadius)
+        shaderMatrix.postTranslate(fabCx, fabCy)
+        unitFabShader.setLocalMatrix(shaderMatrix)
+        fabPaint.shader = unitFabShader
         canvas.drawCircle(fabCx, fabCy, fabRadius, fabPaint)
+        fabPaint.shader = null
+
         val fabIcon = iconFor(R.drawable.ic_add)
+        DrawableCompat.setTint(fabIcon, Color.WHITE)
         val fabHalf = (fabRadius * ICON_RATIO).toInt()
         fabIcon.setBounds(
             (fabCx - fabHalf).toInt(), (fabCy - fabHalf).toInt(),
@@ -621,26 +744,51 @@ class RadialFabMenuView @JvmOverloads constructor(
         if (needsAnotherFrame) invalidate()
     }
 
-    private fun drawLabel(canvas: Canvas, text: String, cx: Float, top: Float) {
-        val padH = dp(8f)
-        val padV = dp(4f)
+    private fun drawLabel(
+        canvas: Canvas,
+        text: String,
+        cx: Float,
+        itemBottom: Float,
+        accent: Int
+    ) {
+        val padH = dp(10f)
+        val padV = dp(5f)
+        val gap = dp(8f)
         val textWidth = labelTextPaint.measureText(text)
         val fm = labelTextPaint.fontMetrics
         val textHeight = fm.descent - fm.ascent
+        val boxHeight = textHeight + padV * 2
 
         var left = cx - textWidth / 2f - padH
         var right = cx + textWidth / 2f + padH
         // Keep the label on screen when an option sits near a side edge.
-        val bound = dp(4f)
-        if (left < bound) { right += bound - left; left = bound }
-        if (right > width - bound) { left -= right - (width - bound); right = width - bound }
+        val boundL = insetLeft + dp(6f)
+        val boundR = width - insetRight - dp(6f)
+        if (left < boundL) { right += boundL - left; left = boundL }
+        if (right > boundR) { left -= right - boundR; right = boundR }
 
-        labelRect.set(left, top, right, top + textHeight + padV * 2)
+        // Prefer below the option, but flip above when the option is close to
+        // the bottom - otherwise the label ran off the screen entirely.
+        var top = itemBottom + gap
+        val bottomLimit = height - insetBottom - dp(6f)
+        if (top + boxHeight > bottomLimit) {
+            top = itemBottom - itemRadius * 2 * HOVER_SCALE - gap - boxHeight
+        }
+        val topLimit = insetTop + extraTopInset + dp(6f)
+        if (top < topLimit) top = topLimit
+
+        labelRect.set(left, top, right, top + boxHeight)
         val radius = labelRect.height() / 2f
-        labelBgPaint.alpha = (235 * expansion).toInt()
+
+        labelBgPaint.color = colorDeepInk
+        labelBgPaint.alpha = (240 * expansion).toInt()
         canvas.drawRoundRect(labelRect, radius, radius, labelBgPaint)
 
-        labelTextPaint.color = colorOnSurface
+        labelRimPaint.color = accent
+        labelRimPaint.alpha = (180 * expansion).toInt()
+        canvas.drawRoundRect(labelRect, radius, radius, labelRimPaint)
+
+        labelTextPaint.color = accent
         labelTextPaint.alpha = (255 * expansion).toInt()
         canvas.drawText(
             text,
@@ -654,9 +802,11 @@ class RadialFabMenuView @JvmOverloads constructor(
         val base = ContextCompat.getDrawable(context, res)!!
         // Several of the project's vectors bake in their own android:tint, so
         // wrap and re-tint rather than inheriting a low-contrast grey.
-        DrawableCompat.wrap(base.mutate()).apply {
-            DrawableCompat.setTint(this, Color.WHITE)
-        }
+        DrawableCompat.wrap(base.mutate())
+    }
+
+    private fun accentFor(res: Int): Int = accentCache.getOrPut(res) {
+        themeColor(res, colorOnSurface)
     }
 
     override fun onDetachedFromWindow() {
@@ -664,6 +814,7 @@ class RadialFabMenuView @JvmOverloads constructor(
         removeCallbacks(enterDragRunnable)
         expansionAnimator?.cancel()
         expansionAnimator = null
+        setMenuVisible(false)
     }
 
     private fun dp(value: Float): Float = value * resources.displayMetrics.density
@@ -684,10 +835,14 @@ class RadialFabMenuView @JvmOverloads constructor(
 
         private const val MAX_RINGS = 5
         private const val FULL_CIRCLE_EPSILON = 359f
-        private const val HOVER_SCALE = 1.35f
+
+        /** With room for a full circle, start the primary action at the top. */
+        private const val FULL_CIRCLE_START = 270f
+
+        private const val HOVER_SCALE = 1.45f
         private const val HOVER_SLOP = 1.7f
         private const val SCALE_LERP = 0.35f
-        private const val SCRIM_ALPHA = 150
-        private const val ICON_RATIO = 0.52f
+        private const val SCRIM_ALPHA = 205
+        private const val ICON_RATIO = 0.5f
     }
 }
