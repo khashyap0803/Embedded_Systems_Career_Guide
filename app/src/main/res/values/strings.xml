@@ -99,6 +99,8 @@
     <string name="nav_header_desc">Navigation Header</string>
     <string name="fab_content_description">Quick actions. Press and hold, then slide to an option.</string>
     <string name="quick_actions_title">Quick actions</string>
+    <string name="content_degraded_notice">Couldn\'t generate the %1$s for this lesson, so placeholder text is shown instead. It hasn\'t been saved.</string>
+    <string name="action_regenerate">Regenerate</string>
 
     <!-- Content Descriptions -->
 

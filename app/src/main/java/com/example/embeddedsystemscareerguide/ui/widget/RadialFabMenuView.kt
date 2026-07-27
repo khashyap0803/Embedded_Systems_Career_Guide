@@ -164,6 +164,15 @@ class RadialFabMenuView @JvmOverloads constructor(
     private var expansion = 0f
     private var expansionAnimator: ValueAnimator? = null
 
+    /** Deferred so the hovered label paints above every option circle. */
+    private class LabelDraw(
+        val text: String,
+        val cx: Float,
+        val itemTop: Float,
+        val itemBottom: Float,
+        val accent: Int
+    )
+
     private class Placement(
         val action: Action,
         val cx: Float,
@@ -648,8 +657,7 @@ class RadialFabMenuView @JvmOverloads constructor(
         var needsAnotherFrame = false
         // The hovered option's label is drawn after every circle, otherwise a
         // neighbouring option overlaps and hides it.
-        var pendingLabel: Triple<String, Float, Float>? = null
-        var pendingLabelAccent = colorOnSurface
+        var pendingLabel: LabelDraw? = null
 
         if (expansion > 0.01f) {
             scrimPaint.alpha = (SCRIM_ALPHA * expansion).toInt()
@@ -709,14 +717,11 @@ class RadialFabMenuView @JvmOverloads constructor(
                 }
 
                 if (hovered && expansion > 0.6f) {
-                    pendingLabel = Triple(p.action.label, cx, cy + r)
-                    pendingLabelAccent = accent
+                    pendingLabel = LabelDraw(p.action.label, cx, cy - r, cy + r, accent)
                 }
             }
 
-            pendingLabel?.let { (text, cx, itemBottom) ->
-                drawLabel(canvas, text, cx, itemBottom, pendingLabelAccent)
-            }
+            pendingLabel?.let { drawLabel(canvas, it) }
         }
 
         // The button itself is always visible.
@@ -744,13 +749,8 @@ class RadialFabMenuView @JvmOverloads constructor(
         if (needsAnotherFrame) invalidate()
     }
 
-    private fun drawLabel(
-        canvas: Canvas,
-        text: String,
-        cx: Float,
-        itemBottom: Float,
-        accent: Int
-    ) {
+    private fun drawLabel(canvas: Canvas, label: LabelDraw) {
+        val text = label.text
         val padH = dp(10f)
         val padV = dp(5f)
         val gap = dp(8f)
@@ -759,25 +759,28 @@ class RadialFabMenuView @JvmOverloads constructor(
         val textHeight = fm.descent - fm.ascent
         val boxHeight = textHeight + padV * 2
 
-        var left = cx - textWidth / 2f - padH
-        var right = cx + textWidth / 2f + padH
+        var left = label.cx - textWidth / 2f - padH
+        var right = label.cx + textWidth / 2f + padH
         // Keep the label on screen when an option sits near a side edge.
         val boundL = insetLeft + dp(6f)
         val boundR = width - insetRight - dp(6f)
         if (left < boundL) { right += boundL - left; left = boundL }
         if (right > boundR) { left -= right - boundR; right = boundR }
 
-        // Prefer below the option, but flip above when the option is close to
-        // the bottom - otherwise the label ran off the screen entirely.
-        var top = itemBottom + gap
-        val bottomLimit = height - insetBottom - dp(6f)
-        if (top + boxHeight > bottomLimit) {
-            top = itemBottom - itemRadius * 2 * HOVER_SCALE - gap - boxHeight
-        }
+        // Default above the option: the finger doing the selecting covers
+        // everything below it, so a label drawn under the icon is hidden by
+        // the user's own thumb. Only drop below when there is no room above.
         val topLimit = insetTop + extraTopInset + dp(6f)
-        if (top < topLimit) top = topLimit
+        val bottomLimit = height - insetBottom - dp(6f)
+
+        var top = label.itemTop - gap - boxHeight
+        if (top < topLimit) {
+            val below = label.itemBottom + gap
+            top = if (below + boxHeight <= bottomLimit) below else topLimit
+        }
 
         labelRect.set(left, top, right, top + boxHeight)
+        val accent = label.accent
         val radius = labelRect.height() / 2f
 
         labelBgPaint.color = colorDeepInk

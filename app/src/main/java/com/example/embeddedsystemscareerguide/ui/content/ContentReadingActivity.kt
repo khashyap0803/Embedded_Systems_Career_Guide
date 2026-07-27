@@ -14,6 +14,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import com.example.embeddedsystemscareerguide.R
@@ -23,8 +24,7 @@ import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.progressindicator.LinearProgressIndicator
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.launch
 
 /**
@@ -129,36 +129,47 @@ class ContentReadingActivity : AppCompatActivity() {
             topics = stageTopics
         )
 
-        // Launch on Main dispatcher to ensure callback safety
-        CoroutineScope(Dispatchers.Main).launch {
+        val callback = object : StageContentService.ContentCallback {
+            override fun onProgress(message: String) {
+                safeRunOnUiThread { loadingText.text = message }
+            }
+
+            override fun onSuccess(content: StageContent) {
+                safeRunOnUiThread { displayContent(content) }
+            }
+
+            override fun onDegraded(content: StageContent, reason: String) {
+                // Show what we have, but never let it pass for the real
+                // lesson - the learner is studying from this material and
+                // deserves to know part of it is generic filler, plus a way
+                // to try again. Nothing degraded is cached, so a retry can
+                // still produce the genuine content.
+                safeRunOnUiThread {
+                    displayContent(content)
+                    Snackbar.make(
+                        findViewById(android.R.id.content),
+                        getString(R.string.content_degraded_notice, reason),
+                        Snackbar.LENGTH_INDEFINITE
+                    )
+                        .setAction(R.string.action_regenerate) { loadContent(forceRegenerate = true) }
+                        .show()
+                }
+            }
+
+            override fun onError(error: String) {
+                safeRunOnUiThread { showError(error) }
+            }
+        }
+
+        // lifecycleScope, not a bare CoroutineScope: generation can run for
+        // minutes, and an unmanaged scope kept the whole chain (and this
+        // Activity, captured by the callback) alive after the user left, then
+        // touched views on a destroyed screen.
+        lifecycleScope.launch {
             if (forceRegenerate) {
-                contentService.regenerateContent(stage, object : StageContentService.ContentCallback {
-                    override fun onProgress(message: String) {
-                        safeRunOnUiThread { loadingText.text = message }
-                    }
-
-                    override fun onSuccess(content: StageContent) {
-                        safeRunOnUiThread { displayContent(content) }
-                    }
-
-                    override fun onError(error: String) {
-                        safeRunOnUiThread { showError(error) }
-                    }
-                })
+                contentService.regenerateContent(stage, callback)
             } else {
-                contentService.getStageContent(stage, object : StageContentService.ContentCallback {
-                    override fun onProgress(message: String) {
-                        safeRunOnUiThread { loadingText.text = message }
-                    }
-
-                    override fun onSuccess(content: StageContent) {
-                        safeRunOnUiThread { displayContent(content) }
-                    }
-
-                    override fun onError(error: String) {
-                        safeRunOnUiThread { showError(error) }
-                    }
-                })
+                contentService.getStageContent(stage, callback)
             }
         }
     }

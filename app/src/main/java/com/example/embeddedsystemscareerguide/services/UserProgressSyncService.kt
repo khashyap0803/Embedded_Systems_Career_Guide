@@ -7,7 +7,9 @@ import com.example.embeddedsystemscareerguide.AppConstants
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withTimeout
 
 /**
  * Service for syncing user progress data between local SharedPreferences and Firebase Firestore.
@@ -17,6 +19,14 @@ class UserProgressSyncService(private val context: Context) {
 
     companion object {
         private const val TAG = "UserProgressSync"
+
+        /**
+         * A Firestore write Task only completes once the server acknowledges
+         * it, so awaiting one with no connectivity never returns and the
+         * caller's spinner hangs indefinitely. Every cloud write here is
+         * bounded by this so the UI can always recover and tell the user.
+         */
+        private const val CLOUD_WRITE_TIMEOUT_MS = 15_000L
         
         // SharedPreferences keys (matching LearningPathFragment)
         private const val PREFS_NAME = "learning_progress"
@@ -247,6 +257,24 @@ class UserProgressSyncService(private val context: Context) {
      *
      * Use this anywhere the result feeds a write.
      */
+    /**
+     * Shared by the plain read and by the transactional writes, so both agree
+     * on how a progress document maps onto [UserProgress].
+     */
+    @Suppress("UNCHECKED_CAST")
+    private fun parseProgress(data: Map<String, Any?>): UserProgress = UserProgress(
+        totalXP = (data["totalXP"] as? Number)?.toInt() ?: 0,
+        currentStage = (data["currentStage"] as? Number)?.toInt() ?: 1,
+        streak = (data["streak"] as? Number)?.toInt() ?: 1,
+        bestStreak = (data["bestStreak"] as? Number)?.toInt() ?: 1,
+        lastVisitDate = data["lastVisitDate"] as? String ?: "",
+        completedStages = (data["completedStages"] as? List<String>) ?: emptyList(),
+        stageStars = (data["stageStars"] as? Map<String, Long>)
+            ?.mapValues { it.value.toInt() } ?: emptyMap(),
+        lastUpdated = (data["lastUpdated"] as? Number)?.toLong()
+            ?: System.currentTimeMillis()
+    )
+
     suspend fun loadProgressResult(): ProgressLoad {
         val username = getCurrentUsername()
             ?: return ProgressLoad.Failed(IllegalStateException("No signed-in username"))
@@ -262,21 +290,7 @@ class UserProgressSyncService(private val context: Context) {
             val data = document.takeIf { it.exists() }?.data
                 ?: return ProgressLoad.Absent
 
-            @Suppress("UNCHECKED_CAST")
-            ProgressLoad.Loaded(
-                UserProgress(
-                    totalXP = (data["totalXP"] as? Number)?.toInt() ?: 0,
-                    currentStage = (data["currentStage"] as? Number)?.toInt() ?: 1,
-                    streak = (data["streak"] as? Number)?.toInt() ?: 1,
-                    bestStreak = (data["bestStreak"] as? Number)?.toInt() ?: 1,
-                    lastVisitDate = data["lastVisitDate"] as? String ?: "",
-                    completedStages = (data["completedStages"] as? List<String>) ?: emptyList(),
-                    stageStars = (data["stageStars"] as? Map<String, Long>)
-                        ?.mapValues { it.value.toInt() } ?: emptyMap(),
-                    lastUpdated = (data["lastUpdated"] as? Number)?.toLong()
-                        ?: System.currentTimeMillis()
-                )
-            )
+            ProgressLoad.Loaded(parseProgress(data))
         } catch (e: Exception) {
             Log.e(TAG, "Failed to load progress from cloud", e)
             ProgressLoad.Failed(e)
@@ -462,62 +476,71 @@ class UserProgressSyncService(private val context: Context) {
             return null
         }
 
+        val docRef = progressDocRef(username)
+
         return try {
-            // Load current progress, refusing to proceed if the read FAILED.
+            // Read-modify-write inside a transaction.
             //
-            // This previously did `loadProgressFromCloud() ?: UserProgress()`, which
-            // could not tell "new user" from "read failed". Any offline moment,
-            // permission error, or timeout produced a zeroed UserProgress that was
-            // then merged back over the user's real document, permanently wiping
-            // their XP, stars, and completed stages.
-            val currentProgress = when (val load = loadProgressResult()) {
-                is ProgressLoad.Loaded -> load.progress
-                is ProgressLoad.Absent -> UserProgress()   // genuinely a new user
-                is ProgressLoad.Failed -> {
-                    Log.e(TAG, "Refusing to write stage completion: cloud read failed", load.cause)
-                    return null
-                }
+            // This used to read the document, compute the new totals, then
+            // write them back as two separate operations. Two concurrent
+            // completions - a second device, or completeStageInCloud racing
+            // the streak save that LearningPathFragment launches alongside it -
+            // both read the same starting XP and the later write silently threw
+            // the other's award away. A transaction re-runs on contention, so
+            // the second attempt sees the first one's result.
+            //
+            // The read inside the transaction also distinguishes "absent" from
+            // "failed": a failure throws and is caught below rather than being
+            // mistaken for a new user and overwriting real progress with zeros.
+            val updatedProgress = withTimeout(CLOUD_WRITE_TIMEOUT_MS) {
+                firestore.runTransaction { transaction ->
+                    val snapshot = transaction.get(docRef)
+                    val current = snapshot.data?.let { parseProgress(it) } ?: UserProgress()
+
+                    if (current.completedStages.contains(stageId)) {
+                        Log.d(TAG, "Stage $stageId already completed, skipping XP award")
+                        return@runTransaction current
+                    }
+
+                    val next = current.copy(
+                        totalXP = current.totalXP + xpReward,
+                        // No cap: the generated path length varies per user, so
+                        // clamping to a constant stalled currentStage partway
+                        // through a longer curriculum.
+                        currentStage = (stageId.toIntOrNull() ?: 0) + 1,
+                        completedStages = current.completedStages + stageId,
+                        stageStars = current.stageStars.toMutableMap().apply {
+                            put(stageId, starsEarned)
+                        },
+                        lastUpdated = System.currentTimeMillis()
+                    )
+                    transaction.set(docRef, next.toMap(), SetOptions.merge())
+                    next
+                }.await()
             }
 
-            // Check if stage already completed
-            if (currentProgress.completedStages.contains(stageId)) {
-                Log.d(TAG, "Stage $stageId already completed, skipping XP award")
-                return currentProgress
-            }
-            
-            // Build updated progress
-            val updatedCompletedStages = currentProgress.completedStages + stageId
-            val updatedStageStars = currentProgress.stageStars.toMutableMap().apply {
-                put(stageId, starsEarned)
-            }
-            val nextStageId = (stageId.toIntOrNull() ?: 0) + 1
-            
-            val updatedProgress = currentProgress.copy(
-                totalXP = currentProgress.totalXP + xpReward,
-                currentStage = minOf(nextStageId, 16),
-                completedStages = updatedCompletedStages,
-                stageStars = updatedStageStars,
-                lastUpdated = System.currentTimeMillis()
-            )
-            
-            // Save to cloud
-            firestore.collection(COLLECTION_USERS)
-                .document(username)
-                .collection(COLLECTION_DATA)
-                .document(DOCUMENT_PROGRESS)
-                .set(updatedProgress.toMap(), SetOptions.merge())
-                .await()
-            
             // Update local cache
             saveLocalProgress(updatedProgress)
-            
+
             Log.d(TAG, "Stage $stageId completed in cloud with $starsEarned stars, +$xpReward XP")
             updatedProgress
+        } catch (e: TimeoutCancellationException) {
+            // A Firestore write Task only completes on server acknowledgement,
+            // so with no connectivity this never resolved and the caller's
+            // spinner hung forever. Failing loudly lets the UI recover.
+            Log.e(TAG, "Timed out completing stage $stageId in cloud", e)
+            null
         } catch (e: Exception) {
             Log.e(TAG, "Failed to complete stage in cloud", e)
             null
         }
     }
+
+    private fun progressDocRef(username: String) =
+        firestore.collection(COLLECTION_USERS)
+            .document(username)
+            .collection(COLLECTION_DATA)
+            .document(DOCUMENT_PROGRESS)
     
     /**
      * Update stars for a stage directly in cloud (for retakes)
@@ -531,50 +554,48 @@ class UserProgressSyncService(private val context: Context) {
             return null
         }
 
+        val docRef = progressDocRef(username)
+
         return try {
-            // Same guard as completeStageInCloud: never build a write from a failed
-            // read. Absent is also a no-op here, since there are no stars to improve.
-            val currentProgress = when (val load = loadProgressResult()) {
-                is ProgressLoad.Loaded -> load.progress
-                is ProgressLoad.Absent -> {
-                    Log.d(TAG, "No cloud progress yet, nothing to update stars against")
-                    return null
-                }
-                is ProgressLoad.Failed -> {
-                    Log.e(TAG, "Refusing to write stars: cloud read failed", load.cause)
-                    return null
-                }
+            // Transactional for the same reason as completeStageInCloud: the
+            // read-then-write pair could interleave with a concurrent stage
+            // completion and drop whichever award landed first. A read failure
+            // throws inside the transaction and is caught below, so a write is
+            // never built from a failed read.
+            val updatedProgress = withTimeout(CLOUD_WRITE_TIMEOUT_MS) {
+                firestore.runTransaction { transaction ->
+                    val snapshot = transaction.get(docRef)
+                    val current = snapshot.data?.let { parseProgress(it) }
+                        ?: return@runTransaction null
+
+                    val currentStars = current.stageStars[stageId] ?: 0
+                    if (newStars <= currentStars) {
+                        Log.d(TAG, "New stars ($newStars) not better than current ($currentStars)")
+                        return@runTransaction current
+                    }
+
+                    val next = current.copy(
+                        stageStars = current.stageStars.toMutableMap().apply {
+                            put(stageId, newStars)
+                        },
+                        lastUpdated = System.currentTimeMillis()
+                    )
+                    transaction.set(docRef, next.toMap(), SetOptions.merge())
+                    next
+                }.await()
+            } ?: run {
+                Log.d(TAG, "No cloud progress yet, nothing to update stars against")
+                return null
             }
 
-            val currentStars = currentProgress.stageStars[stageId] ?: 0
-            if (newStars <= currentStars) {
-                Log.d(TAG, "New stars ($newStars) not better than current ($currentStars), no update needed")
-                return currentProgress
-            }
-            
-            // Build updated progress with new stars
-            val updatedStageStars = currentProgress.stageStars.toMutableMap().apply {
-                put(stageId, newStars)
-            }
-            
-            val updatedProgress = currentProgress.copy(
-                stageStars = updatedStageStars,
-                lastUpdated = System.currentTimeMillis()
-            )
-            
-            // Save to cloud
-            firestore.collection(COLLECTION_USERS)
-                .document(username)
-                .collection(COLLECTION_DATA)
-                .document(DOCUMENT_PROGRESS)
-                .set(updatedProgress.toMap(), SetOptions.merge())
-                .await()
-            
             // Update local cache
             saveLocalProgress(updatedProgress)
-            
-            Log.d(TAG, "Stars updated in cloud for stage $stageId: $currentStars -> $newStars")
+
+            Log.d(TAG, "Stars updated in cloud for stage $stageId -> $newStars")
             updatedProgress
+        } catch (e: TimeoutCancellationException) {
+            Log.e(TAG, "Timed out updating stars for stage $stageId", e)
+            null
         } catch (e: Exception) {
             Log.e(TAG, "Failed to update stars in cloud", e)
             null

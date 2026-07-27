@@ -1,6 +1,7 @@
 package com.example.embeddedsystemscareerguide.ui.quiz
 
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -9,7 +10,9 @@ import androidx.lifecycle.lifecycleScope
 import com.example.embeddedsystemscareerguide.AppConstants
 import com.example.embeddedsystemscareerguide.R
 import com.example.embeddedsystemscareerguide.databinding.ActivityQuizBinding
+import com.example.embeddedsystemscareerguide.services.FirestoreManager
 import com.example.embeddedsystemscareerguide.services.GeminiQuizService
+import com.example.embeddedsystemscareerguide.services.QuizResult
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.launch
@@ -24,6 +27,9 @@ class QuizActivity : AppCompatActivity() {
     private var correctAnswers = 0
     private var hasAnswered = false
     
+    /** Wall-clock start, so the saved result records real time spent. */
+    private var quizStartedAtMs: Long = System.currentTimeMillis()
+
     private var stageId: Int = 1
     private var stageTitle: String = "Quiz"
     private var stageTopics: List<String> = emptyList()
@@ -237,6 +243,30 @@ class QuizActivity : AppCompatActivity() {
             percentage >= AppConstants.STAR_2_THRESHOLD -> 2
             percentage >= AppConstants.STAR_1_THRESHOLD -> 1
             else -> 0
+        }
+
+        // Record the attempt. saveQuizResult had no callers at all, so
+        // getQuizHistory always came back empty and every downstream use of it
+        // was dead: collectUserPerformanceData could not derive weak topics,
+        // and the retake dialog's promise that "topics you struggled with will
+        // get more focus" was therefore never true.
+        lifecycleScope.launch {
+            runCatching {
+                FirestoreManager.getInstance(this@QuizActivity).saveQuizResult(
+                    stageId,
+                    QuizResult(
+                        stageId = stageId,
+                        score = percentage,
+                        totalQuestions = questions.size,
+                        correctAnswers = correctAnswers,
+                        starsEarned = stars,
+                        timeSpentSeconds = ((System.currentTimeMillis() - quizStartedAtMs) / 1000).toInt()
+                    )
+                )
+            }.onFailure {
+                // Never block the results screen on history bookkeeping.
+                Log.w("QuizActivity", "Could not save quiz result", it)
+            }
         }
 
         // Create star display

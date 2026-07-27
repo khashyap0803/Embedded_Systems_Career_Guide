@@ -44,6 +44,21 @@ class StageContentService(private val context: Context) {
         fun onProgress(message: String)
         fun onSuccess(content: StageContent)
         fun onError(error: String)
+
+        /**
+         * Some or all of this content is generic filler rather than the
+         * lesson the model was asked to write, because generation failed.
+         *
+         * This exists because the failure path used to call [onSuccess] with
+         * fallback content, so a network blip or a downed LLM silently served
+         * boilerplate as if it were the real stage material - and the caller
+         * had no way to tell the difference. Degraded content is never
+         * cached, so a retry can still produce the real lesson.
+         *
+         * Defaults to [onSuccess] so callers that do not care still compile;
+         * screens a learner reads should override it and say so.
+         */
+        fun onDegraded(content: StageContent, reason: String) = onSuccess(content)
     }
 
     /**
@@ -217,10 +232,15 @@ Return ONLY valid JSON:
                 geminiService.generateContent(theoryPrompt, maxOutputTokens = 8192)
             }
             
+            // Tracks which parts fell back to canned text so the combined
+            // result is not passed off - or cached - as the real lesson.
+            val degradedParts = mutableListOf<String>()
+
             val theory = if (theoryResult.isSuccess) {
                 extractTheoryText(theoryResult.getOrNull() ?: "")
             } else {
                 Log.e(TAG, "Theory generation failed: ${theoryResult.exceptionOrNull()?.message}")
+                degradedParts += "theory"
                 null
             }
 
@@ -263,6 +283,7 @@ Return ONLY valid JSON:
             if (keyPoints.isEmpty()) {
                 Log.w(TAG, "Using fallback key points for stage ${stage.id}")
                 keyPoints = generateFallbackKeyPoints(stageName, topics)
+                degradedParts += "key points"
             }
 
             // ========== PART 3: CODE EXAMPLE WITH EXPLANATION + RETRY ==========
@@ -303,6 +324,7 @@ Return ONLY valid JSON:
             // Final fallback: use default code example
             if (codeExample == null) {
                 Log.w(TAG, "Using fallback code example for stage ${stage.id}")
+                degradedParts += "code example"
                 codeExample = generateFallbackCodeExample(stageName, topics, stage.difficulty)
             }
 
@@ -345,6 +367,7 @@ Return ONLY valid JSON:
             if (tipsData == null) {
                 Log.w(TAG, "Using fallback tips for stage ${stage.id}")
                 tipsData = generateFallbackTipsData(stageName, topics)
+                degradedParts += "tips"
             }
 
             // ========== COMBINE ALL PARTS ==========
@@ -357,21 +380,38 @@ Return ONLY valid JSON:
                 stage = stage
             )
 
-            // Save to Firestore on IO thread
-            withContext(Dispatchers.IO) {
-                firestoreManager.saveStageContent(stage.id, content)
-            }
-            Log.d(TAG, "Successfully generated and cached content for stage ${stage.id}")
-            
-            withContext(Dispatchers.Main) {
-                callback.onSuccess(content)
+            if (degradedParts.isEmpty()) {
+                // Only fully generated content is worth keeping. Caching a
+                // partly-canned lesson used to pin the stage to that filler
+                // forever, because getStageContent() returns any cached
+                // document unconditionally and there is no staleness check.
+                withContext(Dispatchers.IO) {
+                    firestoreManager.saveStageContent(stage.id, content)
+                }
+                Log.d(TAG, "Successfully generated and cached content for stage ${stage.id}")
+                withContext(Dispatchers.Main) {
+                    callback.onSuccess(content)
+                }
+            } else {
+                Log.w(
+                    TAG,
+                    "Not caching stage ${stage.id}: fell back for ${degradedParts.joinToString()}"
+                )
+                withContext(Dispatchers.Main) {
+                    callback.onDegraded(content, degradedParts.joinToString(", "))
+                }
             }
 
         } catch (e: Exception) {
             Log.e(TAG, "Error generating content", e)
-            val fallback = createFallbackContent(stage)
+            // Previously this reported onSuccess(fallback), so an outage
+            // delivered generic boilerplate that looked exactly like the real
+            // AI-written lesson and left the retry UI unreachable.
             withContext(Dispatchers.Main) {
-                callback.onSuccess(fallback)
+                callback.onError(
+                    e.message?.takeIf { it.isNotBlank() }
+                        ?: "Could not generate this lesson. Check your connection and retry."
+                )
             }
         }
     }
