@@ -59,15 +59,21 @@ object NetworkModule {
     }
 
     /**
-     * Long-timeout OkHttpClient for report generation and stage content
-     * 90s connect, 600s read (10 min for large responses), 90s write
+     * Long-timeout OkHttpClient for report generation and stage content.
+     *
+     * The read timeout was 600s. Callers chain several of these calls and each
+     * retries up to three times, so a half-open connection - routine on a
+     * tunnelled endpoint - could keep a single screen "loading" for hours.
+     * 180s is well past a healthy generation on the current model while still
+     * failing inside a span someone might actually wait through, and the
+     * retry ladder now aborts as soon as the caller is cancelled.
      */
     val longTimeoutClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
             .addInterceptor(bypassInterceptor)
-            .connectTimeout(90, TimeUnit.SECONDS)
-            .readTimeout(600, TimeUnit.SECONDS)
-            .writeTimeout(90, TimeUnit.SECONDS)
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(180, TimeUnit.SECONDS)
+            .writeTimeout(60, TimeUnit.SECONDS)
             .build()
     }
 

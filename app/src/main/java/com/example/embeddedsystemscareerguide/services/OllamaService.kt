@@ -6,12 +6,21 @@ import com.google.gson.Gson
 import com.google.gson.JsonObject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import okhttp3.Call
+import okhttp3.Callback
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.Response
+import java.io.IOException
 import java.net.ConnectException
 import java.net.SocketTimeoutException
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 /**
  * OllamaService - Unified AI Service powered by local fine-tuned Qwen3-14B
@@ -529,6 +538,11 @@ RESPOND WITH ONLY THIS JSON:
         var delayMs = INITIAL_DELAY_MS
 
         repeat(MAX_RETRIES) { attempt ->
+            // Without this, cancelling the caller (leaving the screen) did not
+            // stop the retry ladder: each attempt just ran to its own timeout,
+            // and callers chain several of these, so a dead tunnel could keep
+            // the chain alive for hours after the user had gone.
+            currentCoroutineContext().ensureActive()
             try {
                 val response = callOllamaAPI(prompt, maxOutputTokens)
                 return@withContext Result.success(response)
@@ -555,7 +569,18 @@ RESPOND WITH ONLY THIS JSON:
     /**
      * Internal API call to Ollama /api/generate
      */
-    private fun callOllamaAPI(prompt: String, maxOutputTokens: Int = 4096): String {
+    /**
+     * Suspends on the HTTP call in a way that actually responds to
+     * cancellation.
+     *
+     * This used to be a blocking `execute()`. Because OkHttp's blocking call
+     * cannot be interrupted, cancelling the coroutine did nothing until the
+     * read timeout elapsed - up to ten minutes per attempt on the long-timeout
+     * client - so the request kept occupying the tunnel and the caller's
+     * chain stayed alive long after the user left. Enqueuing and cancelling
+     * the Call on coroutine cancellation tears the request down immediately.
+     */
+    private suspend fun callOllamaAPI(prompt: String, maxOutputTokens: Int = 4096): String {
         val requestBody = JsonObject().apply {
             addProperty("model", NetworkModule.DEFAULT_MODEL)
             addProperty("prompt", prompt)
@@ -573,28 +598,52 @@ RESPOND WITH ONLY THIS JSON:
             .addHeader("ngrok-skip-browser-warning", "true")
             .build()
 
-        client.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) {
-                throw Exception("API error: ${response.code} - ${response.message}")
+        val call = client.newCall(request)
+        val responseBody = suspendCancellableCoroutine { continuation ->
+            continuation.invokeOnCancellation {
+                runCatching { call.cancel() }
             }
+            call.enqueue(object : Callback {
+                override fun onFailure(call: Call, e: IOException) {
+                    if (continuation.isActive) continuation.resumeWithException(e)
+                }
 
-            val responseBody = response.body?.string() ?: throw Exception("Empty response")
-            val jsonResponse = gson.fromJson(responseBody, JsonObject::class.java)
-
-            // Track token usage if available
-            jsonResponse.get("prompt_eval_count")?.asLong?.let { totalInputTokens += it }
-            jsonResponse.get("eval_count")?.asLong?.let { totalOutputTokens += it }
-
-            // Ollama returns the response text directly in the "response" field
-            val content = jsonResponse.get("response")?.asString
-                ?: throw Exception("No response text from Ollama")
-
-            // Qwen3 outputs <think>...</think> reasoning blocks before the actual response.
-            // Strip them out so downstream JSON parsers don't break.
-            val cleaned = content.replace(Regex("<think>[\\s\\S]*?</think>", RegexOption.IGNORE_CASE), "").trim()
-
-            return cleaned
+                override fun onResponse(call: Call, response: Response) {
+                    response.use {
+                        if (!it.isSuccessful) {
+                            if (continuation.isActive) {
+                                continuation.resumeWithException(
+                                    Exception("API error: ${it.code} - ${it.message}")
+                                )
+                            }
+                            return
+                        }
+                        val body = it.body?.string()
+                        if (body == null) {
+                            if (continuation.isActive) {
+                                continuation.resumeWithException(Exception("Empty response"))
+                            }
+                        } else if (continuation.isActive) {
+                            continuation.resume(body)
+                        }
+                    }
+                }
+            })
         }
+
+        val jsonResponse = gson.fromJson(responseBody, JsonObject::class.java)
+
+        // Track token usage if available
+        jsonResponse.get("prompt_eval_count")?.asLong?.let { totalInputTokens += it }
+        jsonResponse.get("eval_count")?.asLong?.let { totalOutputTokens += it }
+
+        // Ollama returns the response text directly in the "response" field
+        val content = jsonResponse.get("response")?.asString
+            ?: throw Exception("No response text from Ollama")
+
+        // Qwen3 outputs <think>...</think> reasoning blocks before the actual response.
+        // Strip them out so downstream JSON parsers don't break.
+        return content.replace(Regex("<think>[\\s\\S]*?</think>", RegexOption.IGNORE_CASE), "").trim()
     }
 
     /**

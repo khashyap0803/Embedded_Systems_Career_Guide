@@ -40,6 +40,12 @@ class QuizActivity : AppCompatActivity() {
         const val EXTRA_STAGE_TOPICS = "stage_topics"
         const val RESULT_QUIZ_SCORE = "quiz_score"
         const val RESULT_TOTAL_QUESTIONS = "total_questions"
+
+        private const val STATE_QUESTIONS = "state_questions"
+        private const val STATE_INDEX = "state_index"
+        private const val STATE_CORRECT = "state_correct"
+        private const val STATE_ANSWERED = "state_answered"
+        private const val STATE_STARTED_AT = "state_started_at"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -75,7 +81,46 @@ class QuizActivity : AppCompatActivity() {
         })
 
         setupClickListeners()
-        generateQuiz()
+
+        // Restore an in-progress quiz across a configuration change. Only
+        // `uiMode` is declared in the manifest, so a rotation, font-size or
+        // locale change, split-screen, or process death recreates this
+        // Activity. Without this the questions, position and score were all
+        // lost and onCreate fired generateQuiz() again - burning two more LLM
+        // calls and restarting the learner at question 1 on a *different* set
+        // of questions, with the score they had already earned discarded.
+        val restored = savedInstanceState?.let { restoreQuizState(it) } ?: false
+        if (!restored) {
+            generateQuiz()
+        }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        if (questions.isNotEmpty()) {
+            outState.putString(STATE_QUESTIONS, quizService.toJson(questions))
+            outState.putInt(STATE_INDEX, currentQuestionIndex)
+            outState.putInt(STATE_CORRECT, correctAnswers)
+            outState.putBoolean(STATE_ANSWERED, hasAnswered)
+            outState.putLong(STATE_STARTED_AT, quizStartedAtMs)
+        }
+        super.onSaveInstanceState(outState)
+    }
+
+    /** @return true when a quiz was restored and regeneration must be skipped. */
+    private fun restoreQuizState(state: Bundle): Boolean {
+        val json = state.getString(STATE_QUESTIONS) ?: return false
+        val saved = quizService.fromJson(json)
+        if (saved.isEmpty()) return false
+
+        questions = saved
+        currentQuestionIndex = state.getInt(STATE_INDEX, 0).coerceIn(0, saved.lastIndex)
+        correctAnswers = state.getInt(STATE_CORRECT, 0)
+        hasAnswered = state.getBoolean(STATE_ANSWERED, false)
+        quizStartedAtMs = state.getLong(STATE_STARTED_AT, System.currentTimeMillis())
+
+        showLoading(false)
+        displayQuestion()
+        return true
     }
 
     private fun setupClickListeners() {

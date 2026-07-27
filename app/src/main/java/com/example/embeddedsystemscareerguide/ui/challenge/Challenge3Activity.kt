@@ -46,6 +46,8 @@ class Challenge3Activity : AppCompatActivity() {
     private var lastKnownExtraTime: Long = 0L
     private var timerRunning: Boolean = false  // BUG#7-FIX: prevent duplicate timer starts
     private var extraTimeListener: com.google.firebase.database.ValueEventListener? = null
+    /** Held so the listener is removed from the same ref it was added to. */
+    private var extraTimeRef: com.google.firebase.database.DatabaseReference? = null
     
     // ========== MULTI-QUESTION SUPPORT ==========
     private var currentQuestionIndex: Int = 0
@@ -409,30 +411,55 @@ class Challenge3Activity : AppCompatActivity() {
         }
     }
     
+    /**
+     * Attaches the admin extra-time listener, detaching any previous one first.
+     * See Challenge1Activity.listenForExtraTime for why this must be
+     * idempotent: startTimer() re-invokes it on every foreground cycle, and
+     * leaked listeners could fire a phantom submission after the user left.
+     * Challenge 3 carries the highest weight in the event, so a phantom
+     * submission here costs the most.
+     */
     private fun listenForExtraTime() {
+        detachExtraTimeListener()
+
         val ref = eventService.getParticipantRef(rollNumber).child("challenge3/extraTimeGrantedMs")
-        extraTimeListener = object : com.google.firebase.database.ValueEventListener {
+        val listener = object : com.google.firebase.database.ValueEventListener {
             override fun onDataChange(snapshot: com.google.firebase.database.DataSnapshot) {
+                if (isFinishing || isDestroyed) return
+
                 val newExtraTime = snapshot.getValue(Long::class.java) ?: 0L
                 if (newExtraTime > lastKnownExtraTime) {
                     val additionalTime = newExtraTime - lastKnownExtraTime
                     lastKnownExtraTime = newExtraTime
-                    
+
                     // Add extra time to remaining time
                     timeRemainingMs += additionalTime
-                    
+
                     // Restart timer with new time — reuse startTimer() logic (BUG#3-FIX)
                     startTimer()
-                    
+
                     Toast.makeText(this@Challenge3Activity, "⏰ Admin added ${additionalTime / 60000} minutes!", Toast.LENGTH_LONG).show()
                 }
             }
-            
+
             override fun onCancelled(error: com.google.firebase.database.DatabaseError) {
                 // Ignore errors for extra time listener
             }
         }
-        ref.addValueEventListener(extraTimeListener!!)
+        ref.addValueEventListener(listener)
+        extraTimeRef = ref
+        extraTimeListener = listener
+    }
+
+    /** Removes the extra-time listener from the exact ref it was added to. */
+    private fun detachExtraTimeListener() {
+        val ref = extraTimeRef
+        val listener = extraTimeListener
+        if (ref != null && listener != null) {
+            ref.removeEventListener(listener)
+        }
+        extraTimeRef = null
+        extraTimeListener = null
     }
     
     private fun updateTimerDisplay() {
@@ -744,11 +771,8 @@ class Challenge3Activity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         timer?.cancel()
-        // Clean up extra time listener
-        extraTimeListener?.let { listener ->
-            eventService.getParticipantRef(rollNumber).child("challenge3/extraTimeGrantedMs")
-                .removeEventListener(listener)
-        }
+        timer = null
+        detachExtraTimeListener()
     }
     
     // H-06: Use OnBackPressedCallback instead of deprecated onBackPressed

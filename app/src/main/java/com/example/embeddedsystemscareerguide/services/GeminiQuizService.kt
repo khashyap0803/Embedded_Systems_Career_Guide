@@ -33,6 +33,21 @@ class GeminiQuizService {
     )
 
     /**
+     * Serialises questions so an in-progress quiz survives a configuration
+     * change. Regenerating instead would cost two more model calls and hand
+     * the learner a different set of questions mid-quiz.
+     */
+    fun toJson(questions: List<QuizQuestion>): String = gson.toJson(questions)
+
+    fun fromJson(json: String): List<QuizQuestion> = try {
+        val type = object : TypeToken<List<QuizQuestion>>() {}.type
+        gson.fromJson<List<QuizQuestion>>(json, type) ?: emptyList()
+    } catch (e: Exception) {
+        Log.e(TAG, "Could not restore saved quiz: ${e.message}")
+        emptyList()
+    }
+
+    /**
      * Generate quiz questions for a specific stage
      * Makes 2 API calls to get 10 questions total (5 per call to avoid truncation)
      */

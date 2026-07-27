@@ -54,6 +54,8 @@ class Challenge1Activity : AppCompatActivity() {
     private var lastKnownExtraTime: Long = 0L
     private var timerRunning: Boolean = false  // BUG-FIX: prevent duplicate timer starts
     private var extraTimeListener: com.google.firebase.database.ValueEventListener? = null
+    /** Held so the listener is removed from the same ref it was added to. */
+    private var extraTimeRef: com.google.firebase.database.DatabaseReference? = null
     private var challengeStartTime: Long = 0L   // BUG-H2: actual start time for time bonus
     private var backgroundEnteredRealtime: Long = 0L // BUG-M4: track when app goes to background
     
@@ -950,30 +952,60 @@ class Challenge1Activity : AppCompatActivity() {
         }
     }
     
+    /**
+     * Attaches the admin extra-time listener, detaching any previous one first.
+     *
+     * startTimer() calls this whenever timerRunning is false, and onStop()
+     * clears that flag - so every background/foreground cycle used to add
+     * another listener while overwriting the only reference to the previous
+     * one. onDestroy could then remove just the last, leaving the rest
+     * attached, each holding this Activity through its anonymous inner class.
+     * A leaked listener firing after the user left called startTimer() and
+     * updateTimerDisplay() on dead views, and its CountDownTimer.onFinish
+     * could raise a phantom submission against the participant's record.
+     */
     private fun listenForExtraTime() {
+        detachExtraTimeListener()
+
         val ref = eventService.getParticipantRef(rollNumber).child("challenge1/extraTimeGrantedMs")
-        extraTimeListener = object : com.google.firebase.database.ValueEventListener {
+        val listener = object : com.google.firebase.database.ValueEventListener {
             override fun onDataChange(snapshot: com.google.firebase.database.DataSnapshot) {
+                // Firebase can deliver one last callback after teardown begins.
+                if (isFinishing || isDestroyed) return
+
                 val newExtraTime = snapshot.getValue(Long::class.java) ?: 0L
                 if (newExtraTime > lastKnownExtraTime) {
                     val additionalTime = newExtraTime - lastKnownExtraTime
                     lastKnownExtraTime = newExtraTime
-                    
+
                     // Add extra time to remaining time
                     timeRemainingMs += additionalTime
-                    
+
                     // BUG-FIX: Reuse startTimer() instead of duplicating timer logic
                     startTimer()
-                    
+
                     Toast.makeText(this@Challenge1Activity, "⏰ Admin added ${additionalTime / 60000} minutes!", Toast.LENGTH_LONG).show()
                 }
             }
-            
+
             override fun onCancelled(error: com.google.firebase.database.DatabaseError) {
                 // Ignore errors for extra time listener
             }
         }
-        ref.addValueEventListener(extraTimeListener!!)
+        ref.addValueEventListener(listener)
+        extraTimeRef = ref
+        extraTimeListener = listener
+    }
+
+    /** Removes the extra-time listener from the exact ref it was added to. */
+    private fun detachExtraTimeListener() {
+        val ref = extraTimeRef
+        val listener = extraTimeListener
+        if (ref != null && listener != null) {
+            ref.removeEventListener(listener)
+        }
+        extraTimeRef = null
+        extraTimeListener = null
     }
     
     private fun updateTimerDisplay() {
@@ -1361,11 +1393,8 @@ class Challenge1Activity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         timer?.cancel()
-        // Clean up extra time listener
-        extraTimeListener?.let { listener ->
-            eventService.getParticipantRef(rollNumber).child("challenge1/extraTimeGrantedMs")
-                .removeEventListener(listener)
-        }
+        timer = null
+        detachExtraTimeListener()
     }
     
     // H-06: Use OnBackPressedCallback instead of deprecated onBackPressed

@@ -101,6 +101,8 @@
     <string name="quick_actions_title">Quick actions</string>
     <string name="content_degraded_notice">Couldn\'t generate the %1$s for this lesson, so placeholder text is shown instead. It hasn\'t been saved.</string>
     <string name="action_regenerate">Regenerate</string>
+    <string name="action_cancel_generation">Cancel</string>
+    <string name="content_generation_cancelled">Generation cancelled.</string>
 
     <!-- Content Descriptions -->
 

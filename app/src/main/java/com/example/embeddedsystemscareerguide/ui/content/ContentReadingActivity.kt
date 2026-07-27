@@ -51,12 +51,15 @@ class ContentReadingActivity : AppCompatActivity() {
     private lateinit var errorLayout: View
     private lateinit var errorText: TextView
     private lateinit var retryButton: MaterialButton
+    private lateinit var cancelLoadingButton: MaterialButton
     private lateinit var bottomNavCard: MaterialCardView
     private lateinit var pageIndicator: TextView
     private lateinit var readingProgress: LinearProgressIndicator
     private lateinit var readingTime: TextView
 
     private lateinit var contentService: StageContentService
+    /** In-flight generation, so it can be cancelled or superseded. */
+    private var loadJob: kotlinx.coroutines.Job? = null
     private var stageId: Int = 0
     private var stageTitle: String = ""
     private var stageTopics: List<String> = emptyList()
@@ -94,6 +97,7 @@ class ContentReadingActivity : AppCompatActivity() {
         errorLayout = findViewById(R.id.errorLayout)
         errorText = findViewById(R.id.errorText)
         retryButton = findViewById(R.id.retryButton)
+        cancelLoadingButton = findViewById(R.id.cancelLoadingButton)
         bottomNavCard = findViewById(R.id.bottomNavCard)
         pageIndicator = findViewById(R.id.pageIndicator)
         readingProgress = findViewById(R.id.readingProgress)
@@ -101,6 +105,9 @@ class ContentReadingActivity : AppCompatActivity() {
 
         retryButton.setOnClickListener {
             loadContent(forceRegenerate = true)
+        }
+        cancelLoadingButton.setOnClickListener {
+            cancelLoading()
         }
     }
 
@@ -165,13 +172,25 @@ class ContentReadingActivity : AppCompatActivity() {
         // minutes, and an unmanaged scope kept the whole chain (and this
         // Activity, captured by the callback) alive after the user left, then
         // touched views on a destroyed screen.
-        lifecycleScope.launch {
+        loadJob?.cancel()
+        loadJob = lifecycleScope.launch {
             if (forceRegenerate) {
                 contentService.regenerateContent(stage, callback)
             } else {
                 contentService.getStageContent(stage, callback)
             }
         }
+    }
+
+    /**
+     * Aborts an in-flight generation. OllamaService now cancels the underlying
+     * HTTP call and stops its retry ladder as soon as this job is cancelled,
+     * so this genuinely stops the work rather than just hiding the spinner.
+     */
+    private fun cancelLoading() {
+        loadJob?.cancel()
+        loadJob = null
+        showError(getString(R.string.content_generation_cancelled))
     }
     
     /**
