@@ -1,5 +1,7 @@
 package com.example.embeddedsystemscareerguide
 
+import com.example.embeddedsystemscareerguide.services.ThemeManager
+
 import android.content.Intent
 import android.graphics.RenderEffect
 import android.graphics.Shader
@@ -45,6 +47,7 @@ class MainActivity : AppCompatActivity() {
     private var navController: NavController? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        ThemeManager.applyTo(this)
         super.onCreate(savedInstanceState)
 
         // Check if user is logged in

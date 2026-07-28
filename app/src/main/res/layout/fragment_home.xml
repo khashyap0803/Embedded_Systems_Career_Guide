@@ -10,7 +10,7 @@
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@drawable/bg_gradient_tech_dark"
+        android:background="?attr/appWindowBackground"
         android:fillViewport="true"
         android:scrollbars="none"
         android:overScrollMode="never">
@@ -27,7 +27,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginBottom="24dp"
-            app:cardBackgroundColor="@color/glass_primary"
+            app:cardBackgroundColor="?attr/appSurface"
             app:cardCornerRadius="24dp"
             app:cardElevation="12dp"
             app:layout_constraintEnd_toEndOf="parent"
@@ -47,7 +47,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textAppearance="@style/TextAppearance.Material3.HeadlineSmall"
-                    android:textColor="@color/slate_300"
+                    android:textColor="?attr/appTextSecondary"
                     android:letterSpacing="0.02"
                     tools:text="Good Morning 👋" />
 
@@ -57,7 +57,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
                     android:textAppearance="@style/TextAppearance.Material3.HeadlineLarge"
-                    android:textColor="@color/white"
+                    android:textColor="?attr/appTextPrimary"
                     android:textStyle="bold"
                     android:letterSpacing="0.01"
                     tools:text="Welcome back, Developer!" />
@@ -69,7 +69,7 @@
                     android:layout_marginTop="16dp"
                     android:fontFamily="serif"
                     android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
-                    android:textColor="@color/slate_300"
+                    android:textColor="?attr/appTextSecondary"
                     android:textStyle="italic"
                     android:lineSpacingExtra="2dp"
                     android:text="Every expert was once a beginner. Every pro was once an amateur." />
@@ -80,7 +80,7 @@
                     android:layout_height="1dp"
                     android:layout_marginTop="16dp"
                     android:layout_marginBottom="12dp"
-                    android:background="@color/slate_600" />
+                    android:background="?attr/appOutline" />
 
                 <TextView
                     android:id="@+id/text_daily_insight"
@@ -105,7 +105,7 @@
                     android:gravity="center"
                     android:text="@string/tap_for_full_tip"
                     android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
-                    android:textColor="@color/slate_500"
+                    android:textColor="?attr/appTextTertiary"
                     android:visibility="gone"
                     tools:visibility="visible" />
 
@@ -118,7 +118,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginBottom="24dp"
-            app:cardBackgroundColor="@color/glass_primary"
+            app:cardBackgroundColor="?attr/appSurface"
             app:cardCornerRadius="20dp"
             app:cardElevation="8dp"
             app:layout_constraintEnd_toEndOf="parent"
@@ -146,7 +146,7 @@
                         android:layout_weight="1"
                         android:text="📊 Your Progress"
                         android:textAppearance="@style/TextAppearance.Material3.TitleLarge"
-                        android:textColor="@color/white"
+                        android:textColor="?attr/appTextPrimary"
                         android:textStyle="bold" />
 
                     <TextView
@@ -192,7 +192,7 @@
                             android:layout_marginTop="4dp"
                             android:text="Total XP"
                             android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                            android:textColor="@color/slate_400" />
+                            android:textColor="?attr/appTextSecondary" />
 
                     </LinearLayout>
 
@@ -222,7 +222,7 @@
                             android:layout_marginTop="4dp"
                             android:text="Streak"
                             android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                            android:textColor="@color/slate_400" />
+                            android:textColor="?attr/appTextSecondary" />
 
                     </LinearLayout>
 
@@ -252,7 +252,7 @@
                             android:layout_marginTop="4dp"
                             android:text="Current Level"
                             android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                            android:textColor="@color/slate_400" />
+                            android:textColor="?attr/appTextSecondary" />
 
                     </LinearLayout>
 
@@ -278,7 +278,7 @@
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-                            android:textColor="@color/slate_300"
+                            android:textColor="?attr/appTextSecondary"
                             tools:text="35% Complete" />
 
                         <TextView
@@ -286,7 +286,7 @@
                             android:layout_height="wrap_content"
                             android:text="Overall"
                             android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                            android:textColor="@color/slate_400" />
+                            android:textColor="?attr/appTextSecondary" />
 
                     </LinearLayout>
 
@@ -296,7 +296,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="16dp"
                         app:indicatorColor="@color/cyan_400"
-                        app:trackColor="@color/slate_700"
+                        app:trackColor="?attr/appSurfaceElevated"
                         app:trackCornerRadius="4dp"
                         app:indicatorSize="8dp"
                         tools:progress="35" />
@@ -315,7 +315,7 @@
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-                            android:textColor="@color/slate_300"
+                            android:textColor="?attr/appTextSecondary"
                             tools:text="5 / 15 Stages" />
 
                         <TextView
@@ -323,7 +323,7 @@
                             android:layout_height="wrap_content"
                             android:text="Stages"
                             android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                            android:textColor="@color/slate_400" />
+                            android:textColor="?attr/appTextSecondary" />
 
                     </LinearLayout>
 
@@ -332,7 +332,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         app:indicatorColor="@color/indigo_400"
-                        app:trackColor="@color/slate_700"
+                        app:trackColor="?attr/appSurfaceElevated"
                         app:trackCornerRadius="4dp"
                         app:indicatorSize="8dp"
                         tools:progress="33" />
@@ -348,7 +348,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginBottom="24dp"
-            app:cardBackgroundColor="@color/glass_primary"
+            app:cardBackgroundColor="?attr/appSurface"
             app:cardCornerRadius="20dp"
             app:cardElevation="8dp"
             app:layout_constraintEnd_toEndOf="parent"
@@ -369,7 +369,7 @@
                     android:layout_marginBottom="16dp"
                     android:text="🔥 Study Streak"
                     android:textAppearance="@style/TextAppearance.Material3.TitleLarge"
-                    android:textColor="@color/white"
+                    android:textColor="?attr/appTextPrimary"
                     android:textStyle="bold" />
 
                 <!-- Streak Calendar -->
@@ -385,7 +385,7 @@
                         android:layout_height="wrap_content"
                         android:text="M"
                         android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                        android:textColor="@color/slate_400"
+                        android:textColor="?attr/appTextSecondary"
                         android:gravity="center"
                         android:layout_weight="1" />
 
@@ -394,7 +394,7 @@
                         android:layout_height="wrap_content"
                         android:text="T"
                         android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                        android:textColor="@color/slate_400"
+                        android:textColor="?attr/appTextSecondary"
                         android:gravity="center"
                         android:layout_weight="1" />
 
@@ -403,7 +403,7 @@
                         android:layout_height="wrap_content"
                         android:text="W"
                         android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                        android:textColor="@color/slate_400"
+                        android:textColor="?attr/appTextSecondary"
                         android:gravity="center"
                         android:layout_weight="1" />
 
@@ -412,7 +412,7 @@
                         android:layout_height="wrap_content"
                         android:text="T"
                         android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                        android:textColor="@color/slate_400"
+                        android:textColor="?attr/appTextSecondary"
                         android:gravity="center"
                         android:layout_weight="1" />
 
@@ -421,7 +421,7 @@
                         android:layout_height="wrap_content"
                         android:text="F"
                         android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                        android:textColor="@color/slate_400"
+                        android:textColor="?attr/appTextSecondary"
                         android:gravity="center"
                         android:layout_weight="1" />
 
@@ -430,7 +430,7 @@
                         android:layout_height="wrap_content"
                         android:text="S"
                         android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                        android:textColor="@color/slate_400"
+                        android:textColor="?attr/appTextSecondary"
                         android:gravity="center"
                         android:layout_weight="1" />
 
@@ -439,7 +439,7 @@
                         android:layout_height="wrap_content"
                         android:text="S"
                         android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                        android:textColor="@color/slate_400"
+                        android:textColor="?attr/appTextSecondary"
                         android:gravity="center"
                         android:layout_weight="1" />
 
@@ -531,7 +531,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginBottom="24dp"
-            app:cardBackgroundColor="@color/glass_primary"
+            app:cardBackgroundColor="?attr/appSurface"
             app:cardCornerRadius="20dp"
             app:cardElevation="8dp"
             app:layout_constraintEnd_toEndOf="parent"
@@ -552,7 +552,7 @@
                     android:layout_marginBottom="16dp"
                     android:text="🚀 Quick Actions"
                     android:textAppearance="@style/TextAppearance.Material3.TitleLarge"
-                    android:textColor="@color/white"
+                    android:textColor="?attr/appTextPrimary"
                     android:textStyle="bold" />
 
                 <!-- Actions Grid -->
@@ -577,7 +577,7 @@
                             android:layout_marginEnd="8dp"
                             android:clickable="true"
                             android:focusable="true"
-                            app:cardBackgroundColor="@color/glass_secondary"
+                            app:cardBackgroundColor="?attr/appSurfaceElevated"
                             app:cardCornerRadius="16dp"
                             app:cardElevation="4dp"
                             app:strokeColor="@color/blue_400"
@@ -602,7 +602,7 @@
                                     android:layout_height="wrap_content"
                                     android:text="Assessment"
                                     android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
-                                    android:textColor="@color/white"
+                                    android:textColor="?attr/appTextPrimary"
                                     android:textStyle="bold"
                                     android:gravity="center" />
 
@@ -612,7 +612,7 @@
                                     android:layout_marginTop="4dp"
                                     android:text="Test your skills"
                                     android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                                    android:textColor="@color/slate_400"
+                                    android:textColor="?attr/appTextSecondary"
                                     android:gravity="center" />
 
                             </LinearLayout>
@@ -627,7 +627,7 @@
                             android:layout_marginStart="8dp"
                             android:clickable="true"
                             android:focusable="true"
-                            app:cardBackgroundColor="@color/glass_secondary"
+                            app:cardBackgroundColor="?attr/appSurfaceElevated"
                             app:cardCornerRadius="16dp"
                             app:cardElevation="4dp"
                             app:strokeColor="@color/emerald_400"
@@ -652,7 +652,7 @@
                                     android:layout_height="wrap_content"
                                     android:text="Learning Path"
                                     android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
-                                    android:textColor="@color/white"
+                                    android:textColor="?attr/appTextPrimary"
                                     android:textStyle="bold"
                                     android:gravity="center" />
 
@@ -662,7 +662,7 @@
                                     android:layout_marginTop="4dp"
                                     android:text="Continue learning"
                                     android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                                    android:textColor="@color/slate_400"
+                                    android:textColor="?attr/appTextSecondary"
                                     android:gravity="center" />
 
                             </LinearLayout>
@@ -686,7 +686,7 @@
                             android:layout_marginEnd="8dp"
                             android:clickable="true"
                             android:focusable="true"
-                            app:cardBackgroundColor="@color/glass_secondary"
+                            app:cardBackgroundColor="?attr/appSurfaceElevated"
                             app:cardCornerRadius="16dp"
                             app:cardElevation="4dp"
                             app:strokeColor="@color/amber_400"
@@ -711,7 +711,7 @@
                                     android:layout_height="wrap_content"
                                     android:text="Practice"
                                     android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
-                                    android:textColor="@color/white"
+                                    android:textColor="?attr/appTextPrimary"
                                     android:textStyle="bold"
                                     android:gravity="center" />
 
@@ -721,7 +721,7 @@
                                     android:layout_marginTop="4dp"
                                     android:text="Quick practice"
                                     android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                                    android:textColor="@color/slate_400"
+                                    android:textColor="?attr/appTextSecondary"
                                     android:gravity="center" />
 
                             </LinearLayout>
@@ -736,7 +736,7 @@
                             android:layout_marginStart="8dp"
                             android:clickable="true"
                             android:focusable="true"
-                            app:cardBackgroundColor="@color/glass_secondary"
+                            app:cardBackgroundColor="?attr/appSurfaceElevated"
                             app:cardCornerRadius="16dp"
                             app:cardElevation="4dp"
                             app:strokeColor="@color/purple_400"
@@ -761,7 +761,7 @@
                                     android:layout_height="wrap_content"
                                     android:text="Profile"
                                     android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
-                                    android:textColor="@color/white"
+                                    android:textColor="?attr/appTextPrimary"
                                     android:textStyle="bold"
                                     android:gravity="center" />
 
@@ -771,7 +771,7 @@
                                     android:layout_marginTop="4dp"
                                     android:text="View progress"
                                     android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                                    android:textColor="@color/slate_400"
+                                    android:textColor="?attr/appTextSecondary"
                                     android:gravity="center" />
 
                             </LinearLayout>
@@ -786,7 +786,7 @@
                         android:layout_height="wrap_content"
                         android:clickable="true"
                         android:focusable="true"
-                        app:cardBackgroundColor="@color/glass_secondary"
+                        app:cardBackgroundColor="?attr/appSurfaceElevated"
                         app:cardCornerRadius="16dp"
                         app:cardElevation="4dp"
                         app:strokeColor="@color/cyan_400"
@@ -817,7 +817,7 @@
                                     android:layout_height="wrap_content"
                                     android:text="AI Tutor"
                                     android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
-                                    android:textColor="@color/white"
+                                    android:textColor="?attr/appTextPrimary"
                                     android:textStyle="bold" />
 
                                 <TextView
@@ -852,7 +852,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginBottom="24dp"
-            app:cardBackgroundColor="@color/glass_primary"
+            app:cardBackgroundColor="?attr/appSurface"
             app:cardCornerRadius="20dp"
             app:cardElevation="8dp"
             app:layout_constraintEnd_toEndOf="parent"
@@ -880,7 +880,7 @@
                         android:layout_weight="1"
                         android:text="🏆 Recent Achievements"
                         android:textAppearance="@style/TextAppearance.Material3.TitleLarge"
-                        android:textColor="@color/white"
+                        android:textColor="?attr/appTextPrimary"
                         android:textStyle="bold" />
 
                     <TextView
@@ -927,7 +927,7 @@
                         android:layout_height="wrap_content"
                         android:text="Start learning to unlock achievements!"
                         android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
-                        android:textColor="@color/slate_400"
+                        android:textColor="?attr/appTextSecondary"
                         android:gravity="center" />
 
                 </LinearLayout>

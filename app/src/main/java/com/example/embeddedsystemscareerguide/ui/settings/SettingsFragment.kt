@@ -20,7 +20,7 @@ import com.example.embeddedsystemscareerguide.databinding.FragmentSettingsBindin
 import com.example.embeddedsystemscareerguide.services.AuthManager
 import com.example.embeddedsystemscareerguide.services.DailyReminderManager
 import com.example.embeddedsystemscareerguide.services.ThemeManager
-import com.example.embeddedsystemscareerguide.services.ThemeMode
+import com.example.embeddedsystemscareerguide.services.AppTheme
 import com.example.embeddedsystemscareerguide.ui.auth.LoginActivity
 import com.google.firebase.auth.FirebaseAuth
 
@@ -67,25 +67,24 @@ class SettingsFragment : Fragment() {
     }
 
     /**
-     * Appearance dropdown. Driven off [ThemeMode.entries] so adding a mode to
+     * Appearance dropdown. Driven off [AppTheme.entries] so adding a theme to
      * that enum is the only change needed to surface it here.
      */
     private fun setupThemeSelector() {
-        val modes = ThemeMode.selectable()
-        val labels = modes.map { getString(it.labelRes) }
+        val themes = AppTheme.entries
+        val labels = themes.map { getString(it.labelRes) }
 
         binding.dropdownThemeMode.setSimpleItems(labels.toTypedArray())
         binding.dropdownThemeMode.setText(
-            getString(ThemeManager.getMode(requireContext()).labelRes),
+            getString(ThemeManager.getTheme(requireContext()).labelRes),
             false
         )
 
         binding.dropdownThemeMode.setOnItemClickListener { _, _, position, _ ->
-            val chosen = modes[position]
-            if (chosen == ThemeManager.getMode(requireContext())) return@setOnItemClickListener
-            // Applying a night mode recreates the Activity, which is how every
-            // already-inflated screen picks up the new palette.
-            ThemeManager.setMode(requireContext(), chosen)
+            // Recreates the Activity, which is how already-inflated screens
+            // pick up the new palette - a resolved ?attr colour is baked into
+            // each View at inflation time.
+            ThemeManager.setTheme(requireActivity(), themes[position])
         }
     }
 

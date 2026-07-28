@@ -8,7 +8,7 @@
     app:cardCornerRadius="16dp"
     app:cardElevation="8dp"
     app:strokeWidth="2dp"
-    app:strokeColor="@color/slate_600">
+    app:strokeColor="?attr/appOutline">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
@@ -31,7 +31,7 @@
             android:text="Stage Title"
             android:textSize="18sp"
             android:textStyle="bold"
-            android:textColor="@color/text_primary"
+            android:textColor="?attr/appTextPrimary"
             android:layout_marginStart="16dp"
             app:layout_constraintStart_toEndOf="@id/stageIcon"
             app:layout_constraintTop_toTopOf="@id/stageIcon"
@@ -43,7 +43,7 @@
             android:layout_height="wrap_content"
             android:text="Stage description"
             android:textSize="14sp"
-            android:textColor="@color/text_secondary"
+            android:textColor="?attr/appTextSecondary"
             android:layout_marginStart="16dp"
             app:layout_constraintStart_toEndOf="@id/stageIcon"
             app:layout_constraintTop_toBottomOf="@id/stageTitle"
@@ -76,7 +76,7 @@
             android:layout_height="8dp"
             android:layout_marginTop="12dp"
             android:progressTint="@color/emerald_400"
-            android:progressBackgroundTint="@color/slate_600"
+            android:progressBackgroundTint="?attr/appOutline"
             app:layout_constraintStart_toStartOf="@id/stageIcon"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@id/stageDescription" />
@@ -87,7 +87,7 @@
             android:layout_height="wrap_content"
             android:text="0%"
             android:textSize="12sp"
-            android:textColor="@color/text_secondary"
+            android:textColor="?attr/appTextSecondary"
             android:layout_marginTop="4dp"
             app:layout_constraintStart_toStartOf="@id/stageProgress"
             app:layout_constraintTop_toBottomOf="@id/stageProgress" />

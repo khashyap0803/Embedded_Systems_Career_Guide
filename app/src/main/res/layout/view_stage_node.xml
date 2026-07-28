@@ -9,7 +9,7 @@
     android:clickable="true"
     android:focusable="true"
     android:foreground="?android:attr/selectableItemBackground"
-    app:cardBackgroundColor="@color/slate_700"
+    app:cardBackgroundColor="?attr/appSurfaceElevated"
     app:cardCornerRadius="16dp"
     app:cardElevation="8dp">
 
@@ -54,7 +54,7 @@
             android:contentDescription="@null"
             app:layout_constraintTop_toTopOf="@id/imageStageIcon"
             app:layout_constraintEnd_toEndOf="@id/imageStageIcon"
-            app:tint="@color/slate_400" />
+            app:tint="?attr/appTextSecondary" />
 
         <!-- Stage Title -->
         <TextView
@@ -63,7 +63,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:gravity="center"
-            android:textColor="@color/white"
+            android:textColor="?attr/appTextPrimary"
             android:textSize="13sp"
             android:textStyle="bold"
             android:maxLines="1"
@@ -80,7 +80,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
             android:gravity="center"
-            android:textColor="@color/slate_300"
+            android:textColor="?attr/appTextSecondary"
             android:textSize="11sp"
             android:maxLines="1"
             android:ellipsize="end"

@@ -17,7 +17,7 @@
         android:orientation="horizontal"
         android:gravity="center_vertical"
         android:padding="12dp"
-        android:background="@color/slate_800">
+        android:background="?attr/appSurface">
 
         <!-- Drag Handle -->
         <ImageView
@@ -35,7 +35,7 @@
             android:layout_height="wrap_content"
             android:text="1"
             android:textSize="12sp"
-            android:textColor="@color/slate_400"
+            android:textColor="?attr/appTextSecondary"
             android:textAlignment="center"
             android:fontFamily="monospace"
             android:layout_marginStart="8dp" />
@@ -48,7 +48,7 @@
             android:layout_weight="1"
             android:text="pinMode(LED_PIN, OUTPUT);"
             android:textSize="13sp"
-            android:textColor="@color/slate_100"
+            android:textColor="?attr/appTextPrimary"
             android:fontFamily="monospace"
             android:layout_marginStart="8dp"
             android:maxLines="3"

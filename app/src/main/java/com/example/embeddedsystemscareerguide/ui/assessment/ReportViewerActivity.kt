@@ -1,5 +1,7 @@
 package com.example.embeddedsystemscareerguide.ui.assessment
 
+import com.example.embeddedsystemscareerguide.services.ThemeManager
+
 import android.Manifest
 import android.content.ContentValues
 import android.content.Intent
@@ -40,6 +42,7 @@ class ReportViewerActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        ThemeManager.applyTo(this)
         super.onCreate(savedInstanceState)
         binding = ActivityReportViewerBinding.inflate(layoutInflater)
         setContentView(binding.root)

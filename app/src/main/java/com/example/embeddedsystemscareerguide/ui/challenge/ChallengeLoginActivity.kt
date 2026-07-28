@@ -1,5 +1,7 @@
 package com.example.embeddedsystemscareerguide.ui.challenge
 
+import com.example.embeddedsystemscareerguide.services.ThemeManager
+
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
@@ -24,6 +26,7 @@ class ChallengeLoginActivity : AppCompatActivity() {
     private lateinit var eventService: PreReleaseEventService
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        ThemeManager.applyTo(this)
         super.onCreate(savedInstanceState)
         binding = ActivityChallengeLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)

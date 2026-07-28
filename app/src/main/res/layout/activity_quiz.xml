@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_gradient_tech_dark"
+    android:background="?attr/appWindowBackground"
     android:fitsSystemWindows="true"
     android:fillViewport="true">
 
@@ -18,7 +18,7 @@
             android:id="@+id/card_header"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            app:cardBackgroundColor="@color/glass_primary"
+            app:cardBackgroundColor="?attr/appSurface"
             app:cardCornerRadius="20dp"
             app:cardElevation="8dp"
             app:layout_constraintEnd_toEndOf="parent"
@@ -38,7 +38,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:textAppearance="@style/TextAppearance.Material3.TitleLarge"
-                    android:textColor="@color/white"
+                    android:textColor="?attr/appTextPrimary"
                     android:textStyle="bold"
                     tools:text="Stage 3: Microcontroller Basics" />
 
@@ -73,7 +73,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
                     app:indicatorColor="@color/indigo_400"
-                    app:trackColor="@color/slate_700"
+                    app:trackColor="?attr/appSurfaceElevated"
                     app:trackCornerRadius="4dp"
                     tools:progress="20" />
 
@@ -86,13 +86,13 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            app:cardBackgroundColor="@color/glass_primary"
+            app:cardBackgroundColor="?attr/appSurface"
             app:cardCornerRadius="20dp"
             app:cardElevation="8dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/card_header"
-            app:strokeColor="@color/slate_600"
+            app:strokeColor="?attr/appOutline"
             app:strokeWidth="1dp">
 
             <LinearLayout
@@ -106,7 +106,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
-                    android:textColor="@color/white"
+                    android:textColor="?attr/appTextPrimary"
                     android:lineSpacingExtra="4dp"
                     tools:text="What is the primary purpose of a microcontroller?" />
 
@@ -131,10 +131,10 @@
                 android:layout_marginBottom="8dp"
                 android:clickable="true"
                 android:focusable="true"
-                app:cardBackgroundColor="@color/glass_secondary"
+                app:cardBackgroundColor="?attr/appSurfaceElevated"
                 app:cardCornerRadius="12dp"
                 app:cardElevation="4dp"
-                app:strokeColor="@color/slate_600"
+                app:strokeColor="?attr/appOutline"
                 app:strokeWidth="1dp">
 
                 <TextView
@@ -143,7 +143,7 @@
                     android:layout_height="wrap_content"
                     android:padding="16dp"
                     android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
-                    android:textColor="@color/slate_200"
+                    android:textColor="?attr/appTextSecondary"
                     tools:text="A. Option A text here" />
 
             </com.google.android.material.card.MaterialCardView>
@@ -155,10 +155,10 @@
                 android:layout_marginBottom="8dp"
                 android:clickable="true"
                 android:focusable="true"
-                app:cardBackgroundColor="@color/glass_secondary"
+                app:cardBackgroundColor="?attr/appSurfaceElevated"
                 app:cardCornerRadius="12dp"
                 app:cardElevation="4dp"
-                app:strokeColor="@color/slate_600"
+                app:strokeColor="?attr/appOutline"
                 app:strokeWidth="1dp">
 
                 <TextView
@@ -167,7 +167,7 @@
                     android:layout_height="wrap_content"
                     android:padding="16dp"
                     android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
-                    android:textColor="@color/slate_200"
+                    android:textColor="?attr/appTextSecondary"
                     tools:text="B. Option B text here" />
 
             </com.google.android.material.card.MaterialCardView>
@@ -179,10 +179,10 @@
                 android:layout_marginBottom="8dp"
                 android:clickable="true"
                 android:focusable="true"
-                app:cardBackgroundColor="@color/glass_secondary"
+                app:cardBackgroundColor="?attr/appSurfaceElevated"
                 app:cardCornerRadius="12dp"
                 app:cardElevation="4dp"
-                app:strokeColor="@color/slate_600"
+                app:strokeColor="?attr/appOutline"
                 app:strokeWidth="1dp">
 
                 <TextView
@@ -191,7 +191,7 @@
                     android:layout_height="wrap_content"
                     android:padding="16dp"
                     android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
-                    android:textColor="@color/slate_200"
+                    android:textColor="?attr/appTextSecondary"
                     tools:text="C. Option C text here" />
 
             </com.google.android.material.card.MaterialCardView>
@@ -202,10 +202,10 @@
                 android:layout_height="wrap_content"
                 android:clickable="true"
                 android:focusable="true"
-                app:cardBackgroundColor="@color/glass_secondary"
+                app:cardBackgroundColor="?attr/appSurfaceElevated"
                 app:cardCornerRadius="12dp"
                 app:cardElevation="4dp"
-                app:strokeColor="@color/slate_600"
+                app:strokeColor="?attr/appOutline"
                 app:strokeWidth="1dp">
 
                 <TextView
@@ -214,7 +214,7 @@
                     android:layout_height="wrap_content"
                     android:padding="16dp"
                     android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
-                    android:textColor="@color/slate_200"
+                    android:textColor="?attr/appTextSecondary"
                     tools:text="D. Option D text here" />
 
             </com.google.android.material.card.MaterialCardView>
@@ -228,7 +228,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:visibility="gone"
-            app:cardBackgroundColor="@color/glass_primary"
+            app:cardBackgroundColor="?attr/appSurface"
             app:cardCornerRadius="16dp"
             app:cardElevation="4dp"
             app:layout_constraintEnd_toEndOf="parent"
@@ -257,7 +257,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
                     android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-                    android:textColor="@color/slate_300"
+                    android:textColor="?attr/appTextSecondary"
                     tools:text="Explanation: This is why this answer is correct..." />
 
             </LinearLayout>
@@ -300,7 +300,7 @@
                 android:layout_height="wrap_content"
                 android:indeterminate="true"
                 app:indicatorColor="@color/cyan_400"
-                app:trackColor="@color/slate_700" />
+                app:trackColor="?attr/appSurfaceElevated" />
 
             <TextView
                 android:layout_width="wrap_content"

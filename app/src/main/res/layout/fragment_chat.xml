@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_gradient_tech_dark">
+    android:background="?attr/appWindowBackground">
 
     <!-- Header Card -->
     <com.google.android.material.card.MaterialCardView
@@ -12,7 +12,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_margin="16dp"
-        app:cardBackgroundColor="@color/glass_primary"
+        app:cardBackgroundColor="?attr/appSurface"
         app:cardCornerRadius="20dp"
         app:cardElevation="8dp"
         app:layout_constraintEnd_toEndOf="parent"
@@ -48,7 +48,7 @@
                     android:layout_height="wrap_content"
                     android:text="EmbedBot"
                     android:textAppearance="@style/TextAppearance.Material3.TitleLarge"
-                    android:textColor="@color/white"
+                    android:textColor="?attr/appTextPrimary"
                     android:textStyle="bold" />
 
                 <TextView
@@ -67,7 +67,7 @@
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="Clear chat"
                 android:src="@drawable/ic_delete"
-                app:tint="@color/slate_400" />
+                app:tint="?attr/appTextSecondary" />
 
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
@@ -104,7 +104,7 @@
             android:layout_marginBottom="12dp"
             android:text="💡 Try asking about:"
             android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
-            android:textColor="@color/slate_300" />
+            android:textColor="?attr/appTextSecondary" />
 
         <com.google.android.material.chip.ChipGroup
             android:id="@+id/chip_group_suggestions"
@@ -117,8 +117,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="What is an embedded system?"
-                android:textColor="@color/white"
-                app:chipBackgroundColor="@color/glass_secondary"
+                android:textColor="?attr/appTextPrimary"
+                app:chipBackgroundColor="?attr/appSurfaceElevated"
                 app:chipStrokeColor="@color/cyan_400"
                 app:chipStrokeWidth="1dp" />
 
@@ -128,8 +128,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Explain GPIO basics"
-                android:textColor="@color/white"
-                app:chipBackgroundColor="@color/glass_secondary"
+                android:textColor="?attr/appTextPrimary"
+                app:chipBackgroundColor="?attr/appSurfaceElevated"
                 app:chipStrokeColor="@color/indigo_400"
                 app:chipStrokeWidth="1dp" />
 
@@ -139,8 +139,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="How does I2C work?"
-                android:textColor="@color/white"
-                app:chipBackgroundColor="@color/glass_secondary"
+                android:textColor="?attr/appTextPrimary"
+                app:chipBackgroundColor="?attr/appSurfaceElevated"
                 app:chipStrokeColor="@color/emerald_400"
                 app:chipStrokeWidth="1dp" />
 
@@ -150,8 +150,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="What is RTOS?"
-                android:textColor="@color/white"
-                app:chipBackgroundColor="@color/glass_secondary"
+                android:textColor="?attr/appTextPrimary"
+                app:chipBackgroundColor="?attr/appSurfaceElevated"
                 app:chipStrokeColor="@color/amber_400"
                 app:chipStrokeWidth="1dp" />
 
@@ -164,13 +164,13 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_margin="16dp"
-        app:cardBackgroundColor="@color/glass_primary"
+        app:cardBackgroundColor="?attr/appSurface"
         app:cardCornerRadius="28dp"
         app:cardElevation="8dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:strokeColor="@color/slate_600"
+        app:strokeColor="?attr/appOutline"
         app:strokeWidth="1dp">
 
         <LinearLayout
@@ -191,8 +191,8 @@
                 android:maxLines="4"
                 android:paddingStart="16dp"
                 android:paddingEnd="8dp"
-                android:textColor="@color/white"
-                android:textColorHint="@color/slate_500" />
+                android:textColor="?attr/appTextPrimary"
+                android:textColorHint="?attr/appTextHint" />
 
             <com.google.android.material.floatingactionbutton.FloatingActionButton
                 android:id="@+id/btn_send"
@@ -218,6 +218,6 @@
         app:layout_constraintBottom_toTopOf="@id/card_input"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:trackColor="@color/slate_700" />
+        app:trackColor="?attr/appSurfaceElevated" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

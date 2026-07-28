@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/slate_950">
+    android:background="?attr/appBackground">
 
     <!-- Animated Background with better transparency -->
     <ImageView
@@ -41,7 +41,7 @@
                 android:layout_height="wrap_content"
                 android:layout_alignParentTop="true"
                 android:layout_marginBottom="30dp"
-                app:cardBackgroundColor="@color/glass_primary"
+                app:cardBackgroundColor="?attr/appSurface"
                 app:cardCornerRadius="24dp"
                 app:cardElevation="16dp"
                 app:strokeColor="@color/indigo_400"
@@ -57,9 +57,9 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="center"
-                        android:text="ðŸŽ¯ Embedded Systems Journey"
+                        android:text="🎯 Embedded Systems Journey"
                         android:textAppearance="@style/TextAppearance.Material3.HeadlineSmall"
-                        android:textColor="@color/white"
+                        android:textColor="?attr/appTextPrimary"
                         android:textStyle="bold" />
 
                     <!-- User Progress Stats with reset values -->
@@ -92,7 +92,7 @@
                                 android:layout_height="wrap_content"
                                 android:text="Total XP"
                                 android:textAppearance="@style/TextAppearance.Material3.LabelMedium"
-                                android:textColor="@color/slate_300" />
+                                android:textColor="?attr/appTextSecondary" />
                         </LinearLayout>
 
                         <!-- Current Stage - Start with 1 -->
@@ -117,7 +117,7 @@
                                 android:layout_height="wrap_content"
                                 android:text="Stage"
                                 android:textAppearance="@style/TextAppearance.Material3.LabelMedium"
-                                android:textColor="@color/slate_300" />
+                                android:textColor="?attr/appTextSecondary" />
                         </LinearLayout>
 
                         <!-- Streak - Start with 1 for today -->
@@ -140,9 +140,9 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="ðŸ”¥ Streak"
+                                android:text="🔥 Streak"
                                 android:textAppearance="@style/TextAppearance.Material3.LabelMedium"
-                                android:textColor="@color/slate_300" />
+                                android:textColor="?attr/appTextSecondary" />
                         </LinearLayout>
                     </LinearLayout>
 
@@ -154,7 +154,7 @@
                         android:layout_marginTop="20dp"
                         android:progress="0"
                         app:indicatorColor="@color/emerald_400"
-                        app:trackColor="@color/slate_700"
+                        app:trackColor="?attr/appSurfaceElevated"
                         app:trackCornerRadius="8dp"
                         app:trackThickness="8dp" />
 
@@ -164,9 +164,9 @@
                         android:layout_height="wrap_content"
                         android:layout_gravity="center"
                         android:layout_marginTop="8dp"
-                        android:text="0% Complete â€¢ 0 of 16 stages"
+                        android:text="0% Complete"
                         android:textAppearance="@style/TextAppearance.Material3.LabelMedium"
-                        android:textColor="@color/slate_400" />
+                        android:textColor="?attr/appTextSecondary" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 

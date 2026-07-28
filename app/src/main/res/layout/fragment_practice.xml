@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_gradient_tech_dark"
+    android:background="?attr/appWindowBackground"
     android:fillViewport="true"
     android:scrollbars="none">
 
@@ -20,7 +20,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginBottom="24dp"
-            app:cardBackgroundColor="@color/glass_primary"
+            app:cardBackgroundColor="?attr/appSurface"
             app:cardCornerRadius="24dp"
             app:cardElevation="12dp"
             app:layout_constraintEnd_toEndOf="parent"
@@ -40,7 +40,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:textAppearance="@style/TextAppearance.Material3.HeadlineLarge"
-                    android:textColor="@color/white"
+                    android:textColor="?attr/appTextPrimary"
                     android:textStyle="bold"
                     android:gravity="center"
                     tools:text="Practice Mode, Developer!" />
@@ -51,7 +51,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
                     android:textAppearance="@style/TextAppearance.Material3.BodyLarge"
-                    android:textColor="@color/slate_300"
+                    android:textColor="?attr/appTextSecondary"
                     android:gravity="center"
                     tools:text="Sharpen your embedded systems skills" />
 
@@ -85,7 +85,7 @@
                             android:layout_marginTop="4dp"
                             android:text="Total XP"
                             android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                            android:textColor="@color/slate_400" />
+                            android:textColor="?attr/appTextSecondary" />
 
                     </LinearLayout>
 
@@ -111,7 +111,7 @@
                             android:layout_marginTop="4dp"
                             android:text="Progress"
                             android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                            android:textColor="@color/slate_400" />
+                            android:textColor="?attr/appTextSecondary" />
 
                     </LinearLayout>
 
@@ -146,7 +146,7 @@
                     android:layout_marginEnd="8dp"
                     android:clickable="true"
                     android:focusable="true"
-                    app:cardBackgroundColor="@color/glass_secondary"
+                    app:cardBackgroundColor="?attr/appSurfaceElevated"
                     app:cardCornerRadius="20dp"
                     app:cardElevation="8dp"
                     app:strokeColor="@color/blue_400"
@@ -171,7 +171,7 @@
                             android:layout_height="wrap_content"
                             android:text="Quick Practice"
                             android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
-                            android:textColor="@color/white"
+                            android:textColor="?attr/appTextPrimary"
                             android:textStyle="bold"
                             android:gravity="center" />
 
@@ -181,7 +181,7 @@
                             android:layout_marginTop="8dp"
                             android:text="Random questions\nfor quick review"
                             android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                            android:textColor="@color/slate_400"
+                            android:textColor="?attr/appTextSecondary"
                             android:gravity="center" />
 
                     </LinearLayout>
@@ -196,7 +196,7 @@
                     android:layout_marginStart="8dp"
                     android:clickable="true"
                     android:focusable="true"
-                    app:cardBackgroundColor="@color/glass_secondary"
+                    app:cardBackgroundColor="?attr/appSurfaceElevated"
                     app:cardCornerRadius="20dp"
                     app:cardElevation="8dp"
                     app:strokeColor="@color/emerald_400"
@@ -221,7 +221,7 @@
                             android:layout_height="wrap_content"
                             android:text="Topic Practice"
                             android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
-                            android:textColor="@color/white"
+                            android:textColor="?attr/appTextPrimary"
                             android:textStyle="bold"
                             android:gravity="center" />
 
@@ -231,7 +231,7 @@
                             android:layout_marginTop="8dp"
                             android:text="Focus on specific\ntopics or stages"
                             android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                            android:textColor="@color/slate_400"
+                            android:textColor="?attr/appTextSecondary"
                             android:gravity="center" />
 
                     </LinearLayout>
@@ -254,7 +254,7 @@
                     android:layout_marginEnd="8dp"
                     android:clickable="true"
                     android:focusable="true"
-                    app:cardBackgroundColor="@color/glass_secondary"
+                    app:cardBackgroundColor="?attr/appSurfaceElevated"
                     app:cardCornerRadius="20dp"
                     app:cardElevation="8dp"
                     app:strokeColor="@color/orange_400"
@@ -279,7 +279,7 @@
                             android:layout_height="wrap_content"
                             android:text="Project Challenges"
                             android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
-                            android:textColor="@color/white"
+                            android:textColor="?attr/appTextPrimary"
                             android:textStyle="bold"
                             android:gravity="center" />
 
@@ -289,7 +289,7 @@
                             android:layout_marginTop="8dp"
                             android:text="AI-suggested projects\nmatched to your level"
                             android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                            android:textColor="@color/slate_400"
+                            android:textColor="?attr/appTextSecondary"
                             android:gravity="center" />
 
                     </LinearLayout>
@@ -304,7 +304,7 @@
                     android:layout_marginStart="8dp"
                     android:clickable="true"
                     android:focusable="true"
-                    app:cardBackgroundColor="@color/glass_secondary"
+                    app:cardBackgroundColor="?attr/appSurfaceElevated"
                     app:cardCornerRadius="20dp"
                     app:cardElevation="8dp"
                     app:strokeColor="@color/purple_400"
@@ -329,7 +329,7 @@
                             android:layout_height="wrap_content"
                             android:text="Interview Prep"
                             android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
-                            android:textColor="@color/white"
+                            android:textColor="?attr/appTextPrimary"
                             android:textStyle="bold"
                             android:gravity="center" />
 
@@ -339,7 +339,7 @@
                             android:layout_marginTop="8dp"
                             android:text="Practice real\ninterview questions"
                             android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                            android:textColor="@color/slate_400"
+                            android:textColor="?attr/appTextSecondary"
                             android:gravity="center" />
 
                     </LinearLayout>

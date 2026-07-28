@@ -25,17 +25,17 @@
             android:id="@+id/appBarLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@color/slate_900"
+            android:background="?attr/appBackground"
             app:elevation="0dp">
 
             <com.google.android.material.appbar.MaterialToolbar
                 android:id="@+id/toolbar"
                 android:layout_width="match_parent"
                 android:layout_height="?attr/actionBarSize"
-                android:background="@color/slate_900"
+                android:background="?attr/appBackground"
                 android:theme="@style/Theme.EmbeddedSystemsCareerGuide.AppBarOverlay"
                 app:popupTheme="@style/Theme.EmbeddedSystemsCareerGuide.PopupOverlay"
-                app:titleTextColor="@color/text_primary" />
+                app:titleTextColor="?attr/appTextPrimary" />
 
         </com.google.android.material.appbar.AppBarLayout>
 

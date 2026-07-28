@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/slate_900"
+    android:background="?attr/appBackground"
     tools:context=".ui.introduction.IntroductionActivity">
 
     <!-- Animated Background -->
@@ -74,7 +74,7 @@
                 android:gravity="center"
                 android:lineSpacingExtra="4dp"
                 android:text="Welcome to your comprehensive career guidance and training platform for Embedded Systems.\n\nThis platform will assess your current knowledge, provide personalized learning paths, and guide you through your embedded systems journey."
-                android:textColor="@color/slate_100"
+                android:textColor="?attr/appTextPrimary"
                 android:textSize="16sp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
@@ -86,7 +86,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
-                android:backgroundTint="@color/slate_700"
+                android:backgroundTint="?attr/appSurfaceElevated"
                 app:cardCornerRadius="12dp"
                 app:cardElevation="4dp"
                 app:layout_constraintEnd_toEndOf="parent"
@@ -126,7 +126,7 @@
                             android:layout_height="24dp"
                             android:src="@drawable/ic_question_mark"
                             android:importantForAccessibility="no"
-                            android:tint="@color/slate_400" />
+                            android:tint="?attr/appTextSecondary" />
 
                         <TextView
                             android:layout_width="0dp"
@@ -134,7 +134,7 @@
                             android:layout_marginStart="12dp"
                             android:layout_weight="1"
                             android:text="No. of Questions: 50"
-                            android:textColor="@color/slate_300"
+                            android:textColor="?attr/appTextSecondary"
                             android:textSize="14sp" />
 
                     </LinearLayout>
@@ -151,7 +151,7 @@
                             android:layout_height="24dp"
                             android:src="@drawable/ic_difficulty"
                             android:importantForAccessibility="no"
-                            android:tint="@color/slate_400" />
+                            android:tint="?attr/appTextSecondary" />
 
                         <TextView
                             android:layout_width="0dp"
@@ -159,7 +159,7 @@
                             android:layout_marginStart="12dp"
                             android:layout_weight="1"
                             android:text="Difficulty Level: Basic / Fundamentals"
-                            android:textColor="@color/slate_300"
+                            android:textColor="?attr/appTextSecondary"
                             android:textSize="14sp" />
 
                     </LinearLayout>

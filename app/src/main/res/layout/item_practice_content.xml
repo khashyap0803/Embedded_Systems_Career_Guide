@@ -9,7 +9,7 @@
     android:layout_marginBottom="14dp"
     android:clickable="true"
     android:focusable="true"
-    app:cardBackgroundColor="@color/glass_secondary"
+    app:cardBackgroundColor="?attr/appSurfaceElevated"
     app:cardCornerRadius="18dp"
     app:cardElevation="6dp"
     app:strokeColor="@color/indigo_400"
@@ -50,7 +50,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
-                android:textColor="@color/slate_400"
+                android:textColor="?attr/appTextSecondary"
                 android:visibility="gone"
                 tools:text="~8h"
                 tools:visibility="visible" />
@@ -64,7 +64,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
             android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
-            android:textColor="@color/white"
+            android:textColor="?attr/appTextPrimary"
             android:textStyle="bold"
             tools:text="What does the volatile keyword do in embedded C?" />
 
@@ -75,7 +75,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
             android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-            android:textColor="@color/slate_300"
+            android:textColor="?attr/appTextSecondary"
             android:lineSpacingExtra="2dp"
             tools:text="It tells the compiler a variable may change unexpectedly and must not be optimized away." />
 
@@ -87,7 +87,7 @@
             android:gravity="center"
             android:text="@string/tap_to_reveal"
             android:textAppearance="@style/TextAppearance.Material3.LabelSmall"
-            android:textColor="@color/slate_500" />
+            android:textColor="?attr/appTextTertiary" />
 
         <!-- Flashcard review actions -->
         <LinearLayout

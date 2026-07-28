@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/slate_900"
+    android:background="?attr/appBackground"
     android:fillViewport="true"
     tools:context=".ui.settings.SettingsFragment">
 
@@ -20,7 +20,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="32dp"
             android:text="Settings"
-            android:textColor="@color/white"
+            android:textColor="?attr/appTextPrimary"
             android:textSize="32sp"
             android:textStyle="bold"
             app:layout_constraintEnd_toEndOf="parent"
@@ -33,7 +33,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
-            app:cardBackgroundColor="@color/slate_800"
+            app:cardBackgroundColor="?attr/appSurface"
             app:cardCornerRadius="16dp"
             app:cardElevation="8dp"
             app:layout_constraintEnd_toEndOf="parent"
@@ -50,7 +50,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Account"
-                    android:textColor="@color/white"
+                    android:textColor="?attr/appTextPrimary"
                     android:textSize="18sp"
                     android:textStyle="bold"
                     android:layout_marginBottom="12dp" />
@@ -59,7 +59,7 @@
                     android:id="@+id/text_settings_username"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textColor="@color/slate_100"
+                    android:textColor="?attr/appTextPrimary"
                     android:textSize="16sp"
                     android:textStyle="bold"
                     tools:text="@johndoe" />
@@ -69,7 +69,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
-                    android:textColor="@color/slate_400"
+                    android:textColor="?attr/appTextSecondary"
                     android:textSize="14sp"
                     tools:text="johndoe@example.com" />
 
@@ -83,7 +83,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            app:cardBackgroundColor="@color/slate_800"
+            app:cardBackgroundColor="?attr/appSurface"
             app:cardCornerRadius="16dp"
             app:cardElevation="8dp"
             app:layout_constraintEnd_toEndOf="parent"
@@ -107,7 +107,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/settings_daily_reminder_title"
-                        android:textColor="@color/white"
+                        android:textColor="?attr/appTextPrimary"
                         android:textSize="16sp"
                         android:textStyle="bold" />
 
@@ -116,7 +116,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
                         android:text="@string/settings_daily_reminder_subtitle"
-                        android:textColor="@color/slate_400"
+                        android:textColor="?attr/appTextSecondary"
                         android:textSize="13sp" />
 
                 </LinearLayout>
@@ -137,7 +137,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            app:cardBackgroundColor="@color/card_background"
+            app:cardBackgroundColor="?attr/appSurface"
             app:cardCornerRadius="16dp"
             app:cardElevation="8dp"
             app:layout_constraintEnd_toEndOf="parent"
@@ -154,7 +154,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/settings_theme_title"
-                    android:textColor="@color/text_primary"
+                    android:textColor="?attr/appTextPrimary"
                     android:textSize="18sp"
                     android:textStyle="bold" />
 
@@ -175,7 +175,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:inputType="none"
-                        android:textColor="@color/text_primary" />
+                        android:textColor="?attr/appTextPrimary" />
 
                 </com.google.android.material.textfield.TextInputLayout>
 
@@ -189,7 +189,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            app:cardBackgroundColor="@color/card_background"
+            app:cardBackgroundColor="?attr/appSurface"
             app:cardCornerRadius="16dp"
             app:cardElevation="8dp"
             app:layout_constraintEnd_toEndOf="parent"
@@ -222,7 +222,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
                     android:text="Sign out of your account"
-                    android:textColor="@color/slate_400"
+                    android:textColor="?attr/appTextSecondary"
                     android:textSize="14sp" />
 
             </LinearLayout>
@@ -236,7 +236,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:layout_marginBottom="24dp"
-            app:cardBackgroundColor="@color/slate_800"
+            app:cardBackgroundColor="?attr/appSurface"
             app:cardCornerRadius="16dp"
             app:cardElevation="8dp"
             app:layout_constraintEnd_toEndOf="parent"
@@ -253,7 +253,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="App Settings"
-                    android:textColor="@color/white"
+                    android:textColor="?attr/appTextPrimary"
                     android:textSize="18sp"
                     android:textStyle="bold"
                     android:layout_marginBottom="16dp" />
@@ -262,7 +262,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/settings_dark_mode_line"
-                    android:textColor="@color/slate_300"
+                    android:textColor="?attr/appTextSecondary"
                     android:textSize="16sp"
                     android:layout_marginBottom="8dp" />
 
@@ -270,7 +270,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/settings_autosave_line"
-                    android:textColor="@color/slate_300"
+                    android:textColor="?attr/appTextSecondary"
                     android:textSize="16sp"
                     android:layout_marginBottom="16dp" />
 
@@ -278,7 +278,7 @@
                     android:id="@+id/text_app_version"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textColor="@color/slate_500"
+                    android:textColor="?attr/appTextTertiary"
                     android:textSize="13sp"
                     tools:text="Version 1.0 (1)" />
 

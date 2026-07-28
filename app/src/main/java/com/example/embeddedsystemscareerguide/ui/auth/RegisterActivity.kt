@@ -1,5 +1,7 @@
 package com.example.embeddedsystemscareerguide.ui.auth
 
+import com.example.embeddedsystemscareerguide.services.ThemeManager
+
 import android.content.Context
 import android.content.Intent
 import android.net.ConnectivityManager
@@ -37,6 +39,7 @@ class RegisterActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        ThemeManager.applyTo(this)
         super.onCreate(savedInstanceState)
         binding = ActivityRegisterBinding.inflate(layoutInflater)
         setContentView(binding.root)

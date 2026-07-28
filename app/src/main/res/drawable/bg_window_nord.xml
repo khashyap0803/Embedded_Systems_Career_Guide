@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Window backdrop for the Nord theme.
+
+  The colours are literal rather than ?attr/ references: a <gradient> inside a
+  <shape> does not reliably resolve theme attributes against the *applied*
+  theme, so a single shared drawable rendered the default palette on every
+  theme. Each theme points appWindowBackground at its own copy instead, which
+  the View resolves at inflation.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <gradient
+        android:angle="135"
+        android:startColor="#20242E"
+        android:centerColor="#20242E"
+        android:endColor="#2B303B"
+        android:type="linear" />
+</shape>

@@ -1,87 +1,116 @@
 package com.example.embeddedsystemscareerguide.services
 
+import android.app.Activity
+import android.app.Application
 import android.content.Context
+import android.os.Build
+import android.os.Bundle
 import androidx.appcompat.app.AppCompatDelegate
 import com.example.embeddedsystemscareerguide.PrefsKeys
 import com.example.embeddedsystemscareerguide.R
 
 /**
- * Owns the app's appearance setting.
+ * A user-selectable theme.
  *
- * Kept as an enum keyed by a stable string rather than by ordinal so new modes
- * can be appended without invalidating what users already have stored, and so
- * a mode that is later removed degrades to [SYSTEM] instead of crashing.
+ * Each entry names a full theme style from `themes_palettes.xml`, which
+ * supplies the semantic `app*` attributes the layouts resolve against. Adding
+ * a theme is a style plus one entry here.
+ *
+ * Keyed by a stable string rather than by ordinal so reordering or removing an
+ * entry cannot silently repoint someone's saved choice at a different theme;
+ * an unknown key falls back to [MIDNIGHT].
+ *
+ * [isLight] only drives the night-mode flag, which keeps framework widgets
+ * that are not styled by us (date pickers, autofill popups) on the right side
+ * of light/dark. The palette itself comes entirely from [styleRes].
  */
-enum class ThemeMode(
+enum class AppTheme(
     val key: String,
     val labelRes: Int,
-    val nightMode: Int,
-    /**
-     * Whether this mode is offered in the UI yet.
-     *
-     * LIGHT is deliberately withheld. The theme layer itself is ready - the
-     * semantic colour names flip correctly between values/ and values-night/ -
-     * but roughly 185 references across the layouts still name absolute dark
-     * swatches (slate_800 cards, white label text) instead of those semantic
-     * names. Enabling LIGHT today produces a half-converted screen: migrated
-     * cards turn white while their neighbours stay dark, and white text lands
-     * on white surfaces. Flip this to true once those references are migrated;
-     * nothing else here needs to change.
-     */
-    val selectable: Boolean = true
+    val styleRes: Int,
+    val isLight: Boolean = false
 ) {
-    SYSTEM("system", R.string.theme_system, AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM),
-    LIGHT("light", R.string.theme_light, AppCompatDelegate.MODE_NIGHT_NO, selectable = false),
-    DARK("dark", R.string.theme_dark, AppCompatDelegate.MODE_NIGHT_YES);
+    MIDNIGHT("midnight", R.string.theme_midnight, R.style.Theme_App_Midnight),
+    DAYLIGHT("daylight", R.string.theme_daylight, R.style.Theme_App_Daylight, isLight = true),
+    NEON("neon", R.string.theme_neon, R.style.Theme_App_Neon),
+    OCEAN("ocean", R.string.theme_ocean, R.style.Theme_App_Ocean),
+    FOREST("forest", R.string.theme_forest, R.style.Theme_App_Forest),
+    SUNSET("sunset", R.string.theme_sunset, R.style.Theme_App_Sunset),
+    NORD("nord", R.string.theme_nord, R.style.Theme_App_Nord);
 
     companion object {
-        fun fromKey(key: String?): ThemeMode =
-            entries.firstOrNull { it.key == key } ?: SYSTEM
-
-        /** Modes offered in Settings, in display order. */
-        fun selectable(): List<ThemeMode> = entries.filter { it.selectable }
+        fun fromKey(key: String?): AppTheme =
+            entries.firstOrNull { it.key == key } ?: MIDNIGHT
     }
 }
 
 object ThemeManager {
 
-    private const val KEY_THEME_MODE = "theme_mode"
+    private const val KEY_THEME = "app_theme"
 
-    /**
-     * Default is DARK rather than SYSTEM: every screen in this app is authored
-     * against the dark palette, so following a light system setting would show
-     * a half-converted UI to users who never asked to change anything. Users
-     * who do want light can pick it explicitly.
-     */
-    private val DEFAULT_MODE = ThemeMode.DARK
+    /** Matches how the app was designed before themes existed. */
+    private val DEFAULT = AppTheme.MIDNIGHT
 
-    fun getMode(context: Context): ThemeMode {
+    fun getTheme(context: Context): AppTheme {
         val prefs = context.applicationContext
             .getSharedPreferences(PrefsKeys.PREFS_USER, Context.MODE_PRIVATE)
-        return if (prefs.contains(KEY_THEME_MODE)) {
-            ThemeMode.fromKey(prefs.getString(KEY_THEME_MODE, null))
-        } else {
-            DEFAULT_MODE
-        }
-    }
-
-    fun setMode(context: Context, mode: ThemeMode) {
-        context.applicationContext
-            .getSharedPreferences(PrefsKeys.PREFS_USER, Context.MODE_PRIVATE)
-            .edit()
-            .putString(KEY_THEME_MODE, mode.key)
-            .apply()
-        apply(mode)
+        return AppTheme.fromKey(prefs.getString(KEY_THEME, DEFAULT.key))
     }
 
     /**
-     * Applies the stored mode. Call once as early as possible - from
-     * Application.onCreate - so the first Activity inflates with the right
-     * configuration instead of visibly re-theming after it is already on screen.
+     * Persists [theme] and repaints the app.
+     *
+     * Activities are recreated rather than re-themed in place because a
+     * resolved `?attr` colour is baked into each View when it inflates -
+     * changing the theme afterwards does not re-resolve them.
      */
-    fun applyStoredMode(context: Context) = apply(getMode(context))
+    fun setTheme(activity: Activity, theme: AppTheme) {
+        if (theme == getTheme(activity)) return
+        activity.applicationContext
+            .getSharedPreferences(PrefsKeys.PREFS_USER, Context.MODE_PRIVATE)
+            .edit()
+            .putString(KEY_THEME, theme.key)
+            .apply()
+        applyNightMode(theme)
+        activity.recreate()
+    }
 
-    private fun apply(mode: ThemeMode) {
-        AppCompatDelegate.setDefaultNightMode(mode.nightMode)
+    /** Applies the stored theme to [activity]; call before `setContentView`. */
+    fun applyTo(activity: Activity) {
+        activity.setTheme(getTheme(activity).styleRes)
+    }
+
+    private fun applyNightMode(theme: AppTheme) {
+        AppCompatDelegate.setDefaultNightMode(
+            if (theme.isLight) AppCompatDelegate.MODE_NIGHT_NO
+            else AppCompatDelegate.MODE_NIGHT_YES
+        )
+    }
+
+    /**
+     * Applies the stored theme to every Activity automatically.
+     *
+     * Registered from Application.onCreate. `onActivityPreCreated` runs before
+     * the Activity's own onCreate, which is the last point a theme can be set
+     * and still affect inflation - so no Activity needs to remember to do it,
+     * and a newly added screen is themed by default rather than by convention.
+     */
+    fun install(app: Application) {
+        applyNightMode(getTheme(app))
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return
+        app.registerActivityLifecycleCallbacks(object : Application.ActivityLifecycleCallbacks {
+            override fun onActivityPreCreated(activity: Activity, savedInstanceState: Bundle?) {
+                applyTo(activity)
+            }
+
+            override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) = Unit
+            override fun onActivityStarted(activity: Activity) = Unit
+            override fun onActivityResumed(activity: Activity) = Unit
+            override fun onActivityPaused(activity: Activity) = Unit
+            override fun onActivityStopped(activity: Activity) = Unit
+            override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) = Unit
+            override fun onActivityDestroyed(activity: Activity) = Unit
+        })
     }
 }

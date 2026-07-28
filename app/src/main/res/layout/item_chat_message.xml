@@ -27,7 +27,7 @@
             android:layout_height="wrap_content"
             android:padding="12dp"
             android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-            android:textColor="@color/white"
+            android:textColor="?attr/appTextPrimary"
             tools:text="What is a microcontroller?" />
 
     </com.google.android.material.card.MaterialCardView>
@@ -59,10 +59,10 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            app:cardBackgroundColor="@color/glass_secondary"
+            app:cardBackgroundColor="?attr/appSurfaceElevated"
             app:cardCornerRadius="16dp"
             app:cardElevation="4dp"
-            app:strokeColor="@color/slate_600"
+            app:strokeColor="?attr/appOutline"
             app:strokeWidth="1dp">
 
             <TextView
@@ -71,7 +71,7 @@
                 android:layout_height="wrap_content"
                 android:padding="12dp"
                 android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-                android:textColor="@color/slate_200"
+                android:textColor="?attr/appTextSecondary"
                 tools:text="A microcontroller is a compact integrated circuit designed to govern a specific operation in an embedded system..." />
 
         </com.google.android.material.card.MaterialCardView>

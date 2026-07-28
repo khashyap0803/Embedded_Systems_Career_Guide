@@ -5,7 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/slate_900"
+    android:background="?attr/appBackground"
     android:fitsSystemWindows="true">
 
     <!-- Top Bar with Timer and Warning -->

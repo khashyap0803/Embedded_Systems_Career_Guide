@@ -9,7 +9,7 @@
     android:layout_margin="6dp"
     android:clickable="true"
     android:focusable="true"
-    app:cardBackgroundColor="@color/slate_700"
+    app:cardBackgroundColor="?attr/appSurfaceElevated"
     app:cardCornerRadius="32dp"
     app:cardElevation="0dp"
     app:strokeColor="@color/cyan_400"

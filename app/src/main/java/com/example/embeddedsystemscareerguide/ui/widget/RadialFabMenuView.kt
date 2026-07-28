@@ -205,13 +205,23 @@ class RadialFabMenuView @JvmOverloads constructor(
         typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
     }
 
-    private val colorGlassFill = themeColor(R.color.radial_glass_fill, 0xB00F172A.toInt())
-    private val colorGlassHighlight = themeColor(R.color.radial_glass_highlight, 0x26FFFFFF)
-    private val colorScrim = themeColor(R.color.radial_scrim, 0xFF0B1120.toInt())
-    private val colorOnSurface = themeColor(R.color.text_primary, 0xFFF1F5F9.toInt())
-    private val colorDeepInk = themeColor(R.color.slate_900, 0xFF0F172A.toInt())
-    private val colorFabStart = themeColor(R.color.indigo_500, 0xFF6366F1.toInt())
-    private val colorFabEnd = themeColor(R.color.purple_500, 0xFFA855F7.toInt())
+    // Resolved from the active theme so the menu repaints with everything else
+    // rather than staying navy in Neon, Forest, Daylight and so on. The
+    // fallbacks are only reached if a theme forgets one of these attributes.
+    private val colorSurface = themeAttr(R.attr.appSurface, 0xFF131C31.toInt())
+    private val colorBackground = themeAttr(R.attr.appBackground, 0xFF0B1120.toInt())
+    private val colorGlassFill = withAlpha(colorSurface, 0xE0)
+    private val colorGlassHighlight = 0x26FFFFFF
+    private val colorScrim = colorBackground
+    private val colorOnSurface = themeAttr(R.attr.appTextPrimary, 0xFFFFFFFF.toInt())
+    /** Glyph colour on a bright hovered fill - the theme's own darkest tone. */
+    private val colorDeepInk = colorBackground
+    private val colorFabStart = themeAttr(
+        androidx.appcompat.R.attr.colorPrimary, 0xFF6366F1.toInt()
+    )
+    private val colorFabEnd = themeAttr(
+        androidx.appcompat.R.attr.colorAccent, 0xFFA855F7.toInt()
+    )
 
     private val iconCache = mutableMapOf<Int, Drawable>()
     private val accentCache = mutableMapOf<Int, Int>()
@@ -827,6 +837,19 @@ class RadialFabMenuView @JvmOverloads constructor(
     } catch (e: Exception) {
         fallback
     }
+
+    /** Resolves a colour theme attribute against this View's context. */
+    private fun themeAttr(attr: Int, fallback: Int): Int {
+        val tv = android.util.TypedValue()
+        return if (context.theme.resolveAttribute(attr, tv, true) && tv.data != 0) {
+            if (tv.resourceId != 0) themeColor(tv.resourceId, fallback) else tv.data
+        } else {
+            fallback
+        }
+    }
+
+    private fun withAlpha(color: Int, alpha: Int): Int =
+        (color and 0x00FFFFFF) or (alpha shl 24)
 
     companion object {
         private const val PREFS_NAME = "radial_fab_prefs"

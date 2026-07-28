@@ -13,6 +13,6 @@ import com.example.embeddedsystemscareerguide.services.ThemeManager
 class EsCareerGuideApp : Application() {
     override fun onCreate() {
         super.onCreate()
-        ThemeManager.applyStoredMode(this)
+        ThemeManager.install(this)
     }
 }

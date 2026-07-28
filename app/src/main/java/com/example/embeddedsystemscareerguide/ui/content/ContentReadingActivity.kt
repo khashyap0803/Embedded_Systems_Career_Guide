@@ -1,5 +1,7 @@
 package com.example.embeddedsystemscareerguide.ui.content
 
+import com.example.embeddedsystemscareerguide.services.ThemeManager
+
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -69,6 +71,7 @@ class ContentReadingActivity : AppCompatActivity() {
     private val mainHandler = Handler(Looper.getMainLooper())
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        ThemeManager.applyTo(this)
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_content_reading)
 

@@ -1,5 +1,7 @@
 package com.example.embeddedsystemscareerguide.ui.challenge
 
+import com.example.embeddedsystemscareerguide.services.ThemeManager
+
 import android.content.Intent
 import android.os.Bundle
 import android.os.CountDownTimer
@@ -75,6 +77,7 @@ class Challenge1Activity : AppCompatActivity() {
     private lateinit var codeBlocksAdapter: CodeBlockAdapter
     
     override fun onCreate(savedInstanceState: Bundle?) {
+        ThemeManager.applyTo(this)
         super.onCreate(savedInstanceState)
         binding = ActivityChallenge1Binding.inflate(layoutInflater)
         setContentView(binding.root)

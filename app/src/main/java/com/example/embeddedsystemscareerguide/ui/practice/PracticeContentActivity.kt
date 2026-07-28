@@ -1,5 +1,7 @@
 package com.example.embeddedsystemscareerguide.ui.practice
 
+import com.example.embeddedsystemscareerguide.services.ThemeManager
+
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
@@ -54,6 +56,7 @@ class PracticeContentActivity : AppCompatActivity() {
     private var currentStage: PersonalizedStage? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        ThemeManager.applyTo(this)
         super.onCreate(savedInstanceState)
         binding = ActivityPracticeContentBinding.inflate(layoutInflater)
         setContentView(binding.root)

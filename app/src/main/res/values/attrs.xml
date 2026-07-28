@@ -1,5 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+
+    <!--
+      Semantic palette, resolved from the active theme.
+
+      Layouts reference these instead of fixed colours so a theme can repaint
+      the whole app by supplying different values. A plain @color/ reference
+      cannot do this: colour resources vary by resource *configuration* (day,
+      night, locale), not by theme, so a user-selectable theme has no way to
+      change one. Every screen-level surface and text colour goes through
+      these nine attributes.
+    -->
+    <attr name="appBackground" format="color" />
+    <attr name="appSurface" format="color" />
+    <attr name="appSurfaceElevated" format="color" />
+    <attr name="appOutline" format="color" />
+    <attr name="appInputBackground" format="color" />
+    <attr name="appTextPrimary" format="color" />
+    <attr name="appTextSecondary" format="color" />
+    <attr name="appTextTertiary" format="color" />
+    <attr name="appTextHint" format="color" />
+    <attr name="appAccentMuted" format="color" />
+
+    <!--
+      Window backdrop drawable, supplied per theme. This is a reference rather
+      than a colour because the backdrop is a gradient, and a <gradient> inside
+      a <shape> does not reliably resolve ?attr/ colours against the applied
+      theme — one shared drawable painted the default palette on every theme.
+      Pointing each theme at its own drawable makes the View resolve it at
+      inflation, which does work.
+    -->
+    <attr name="appWindowBackground" format="reference" />
+
     <declare-styleable name="CircularProgressView">
         <attr name="progress" format="integer" />
         <attr name="maxProgress" format="integer" />

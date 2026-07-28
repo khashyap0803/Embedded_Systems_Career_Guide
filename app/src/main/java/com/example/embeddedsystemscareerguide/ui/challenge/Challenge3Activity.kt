@@ -1,5 +1,7 @@
 package com.example.embeddedsystemscareerguide.ui.challenge
 
+import com.example.embeddedsystemscareerguide.services.ThemeManager
+
 import android.content.Intent
 import android.os.Bundle
 import android.os.CountDownTimer
@@ -55,6 +57,7 @@ class Challenge3Activity : AppCompatActivity() {
     private val questionAnswers = mutableListOf<String>()
     
     override fun onCreate(savedInstanceState: Bundle?) {
+        ThemeManager.applyTo(this)
         super.onCreate(savedInstanceState)
         binding = ActivityChallenge3Binding.inflate(layoutInflater)
         setContentView(binding.root)

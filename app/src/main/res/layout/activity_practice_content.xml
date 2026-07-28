@@ -5,12 +5,12 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_gradient_tech_dark">
+    android:background="?attr/appWindowBackground">
 
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/slate_900"
+        android:background="?attr/appBackground"
         app:elevation="0dp">
 
         <com.google.android.material.appbar.MaterialToolbar
@@ -20,7 +20,7 @@
             android:theme="@style/Theme.EmbeddedSystemsCareerGuide.AppBarOverlay"
             app:navigationIcon="@drawable/ic_arrow_back"
             app:popupTheme="@style/Theme.EmbeddedSystemsCareerGuide.PopupOverlay"
-            app:titleTextColor="@color/white"
+            app:titleTextColor="?attr/appTextPrimary"
             tools:title="Flashcards" />
 
     </com.google.android.material.appbar.AppBarLayout>
@@ -63,7 +63,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
                     android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-                    android:textColor="@color/slate_300"
+                    android:textColor="?attr/appTextSecondary"
                     tools:text="Loading flashcards…" />
 
             </LinearLayout>
@@ -91,7 +91,7 @@
                     android:layout_marginTop="12dp"
                     android:gravity="center"
                     android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-                    android:textColor="@color/slate_400"
+                    android:textColor="?attr/appTextSecondary"
                     tools:text="No flashcards yet for this stage." />
 
             </LinearLayout>

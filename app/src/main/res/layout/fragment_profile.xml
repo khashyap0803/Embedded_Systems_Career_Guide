@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/slate_900"
+    android:background="?attr/appBackground"
     android:padding="24dp"
     tools:context=".ui.profile.ProfileFragment">
 
@@ -15,7 +15,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="32dp"
         android:text="Profile"
-        android:textColor="@color/white"
+        android:textColor="?attr/appTextPrimary"
         android:textSize="32sp"
         android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
@@ -28,7 +28,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="48dp"
-        app:cardBackgroundColor="@color/slate_800"
+        app:cardBackgroundColor="?attr/appSurface"
         app:cardCornerRadius="16dp"
         app:cardElevation="8dp"
         app:layout_constraintEnd_toEndOf="parent"
@@ -85,7 +85,7 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
                 android:text="User Name"
-                android:textColor="@color/white"
+                android:textColor="?attr/appTextPrimary"
                 android:textSize="24sp"
                 android:textStyle="bold"
                 android:layout_marginBottom="8dp" />
@@ -97,7 +97,7 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
                 android:text="user@example.com"
-                android:textColor="@color/slate_300"
+                android:textColor="?attr/appTextSecondary"
                 android:textSize="16sp" />
 
         </LinearLayout>
@@ -110,7 +110,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
-        app:cardBackgroundColor="@color/slate_800"
+        app:cardBackgroundColor="?attr/appSurface"
         app:cardCornerRadius="16dp"
         app:cardElevation="8dp"
         app:layout_constraintEnd_toEndOf="parent"
@@ -127,7 +127,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Your Progress"
-                android:textColor="@color/white"
+                android:textColor="?attr/appTextPrimary"
                 android:textSize="18sp"
                 android:textStyle="bold"
                 android:layout_marginBottom="16dp" />
@@ -158,7 +158,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Completed"
-                        android:textColor="@color/slate_400"
+                        android:textColor="?attr/appTextSecondary"
                         android:textSize="12sp" />
 
                 </LinearLayout>
@@ -183,7 +183,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="XP Earned"
-                        android:textColor="@color/slate_400"
+                        android:textColor="?attr/appTextSecondary"
                         android:textSize="12sp" />
 
                 </LinearLayout>
@@ -208,7 +208,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Streak"
-                        android:textColor="@color/slate_400"
+                        android:textColor="?attr/appTextSecondary"
                         android:textSize="12sp" />
 
                 </LinearLayout>
@@ -225,7 +225,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
-        app:cardBackgroundColor="@color/slate_800"
+        app:cardBackgroundColor="?attr/appSurface"
         app:cardCornerRadius="16dp"
         app:cardElevation="8dp"
         app:layout_constraintEnd_toEndOf="parent"
@@ -242,7 +242,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Account"
-                android:textColor="@color/white"
+                android:textColor="?attr/appTextPrimary"
                 android:textSize="18sp"
                 android:textStyle="bold"
                 android:layout_marginBottom="16dp" />
@@ -267,7 +267,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:text="Sign out and return to login screen"
-                android:textColor="@color/slate_400"
+                android:textColor="?attr/appTextSecondary"
                 android:textSize="14sp" />
 
         </LinearLayout>

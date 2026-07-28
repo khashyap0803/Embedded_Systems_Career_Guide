@@ -1,5 +1,7 @@
 package com.example.embeddedsystemscareerguide.ui.quiz
 
+import com.example.embeddedsystemscareerguide.services.ThemeManager
+
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -49,6 +51,7 @@ class QuizActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        ThemeManager.applyTo(this)
         super.onCreate(savedInstanceState)
         binding = ActivityQuizBinding.inflate(layoutInflater)
         setContentView(binding.root)

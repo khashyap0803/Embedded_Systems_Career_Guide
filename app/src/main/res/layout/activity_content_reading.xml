@@ -5,7 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/surface_dark"
+    android:background="?attr/appBackground"
     tools:context=".ui.content.ContentReadingActivity">
 
     <!-- Top App Bar -->
@@ -13,7 +13,7 @@
         android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/surface_dark"
+        android:background="?attr/appBackground"
         app:elevation="0dp">
 
         <com.google.android.material.appbar.MaterialToolbar
@@ -21,8 +21,8 @@
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             app:navigationIcon="@drawable/ic_arrow_back"
-            app:titleTextColor="@color/text_primary"
-            app:subtitleTextColor="@color/text_secondary" />
+            app:titleTextColor="?attr/appTextPrimary"
+            app:subtitleTextColor="?attr/appTextSecondary" />
 
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -54,7 +54,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:text="Generating content..."
-                android:textColor="@color/text_secondary"
+                android:textColor="?attr/appTextSecondary"
                 android:textSize="16sp" />
 
             <!--
@@ -70,7 +70,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
                 android:text="@string/action_cancel_generation"
-                android:textColor="@color/text_secondary" />
+                android:textColor="?attr/appTextSecondary" />
 
         </LinearLayout>
 
@@ -104,7 +104,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:text="Failed to load content"
-                android:textColor="@color/text_primary"
+                android:textColor="?attr/appTextPrimary"
                 android:textSize="18sp"
                 android:textAlignment="center" />
 
@@ -126,7 +126,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        app:cardBackgroundColor="@color/surface_elevated"
+        app:cardBackgroundColor="?attr/appSurfaceElevated"
         app:cardCornerRadius="16dp"
         app:cardElevation="8dp"
         android:layout_marginStart="16dp"
@@ -148,7 +148,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="1 of 6"
-                android:textColor="@color/text_secondary"
+                android:textColor="?attr/appTextSecondary"
                 android:textSize="14sp" />
 
             <!-- Progress Bar -->
@@ -169,7 +169,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="~10 min"
-                android:textColor="@color/text_secondary"
+                android:textColor="?attr/appTextSecondary"
                 android:textSize="14sp" />
 
         </LinearLayout>

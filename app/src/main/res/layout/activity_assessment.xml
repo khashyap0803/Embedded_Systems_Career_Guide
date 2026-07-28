@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/slate_900"
+    android:background="?attr/appBackground"
     android:fitsSystemWindows="true"
     tools:context=".ui.assessment.AssessmentActivity">
 
@@ -39,7 +39,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:text="@string/assessment_title"
-            android:textColor="@color/text_primary"
+            android:textColor="?attr/appTextPrimary"
             android:textSize="24sp"
             android:textStyle="bold"
             android:gravity="center"
@@ -56,7 +56,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:text="Question 1 of 50"
-            android:textColor="@color/text_secondary"
+            android:textColor="?attr/appTextSecondary"
             android:textSize="16sp"
             android:textStyle="bold"
             app:layout_constraintStart_toStartOf="parent"
@@ -72,7 +72,7 @@
             android:max="100"
             android:progress="2"
             android:progressDrawable="@drawable/progress_gradient"
-            android:background="@color/slate_700"
+            android:background="?attr/appSurfaceElevated"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/text_question_counter" />
@@ -86,7 +86,7 @@
         android:layout_height="0dp"
         android:layout_margin="16dp"
         android:layout_marginTop="8dp"
-        app:cardBackgroundColor="@color/glass_primary"
+        app:cardBackgroundColor="?attr/appSurface"
         app:cardCornerRadius="20dp"
         app:cardElevation="16dp"
         app:layout_constraintBottom_toTopOf="@id/controls_container"
@@ -111,7 +111,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="What is the primary difference between a microprocessor and a microcontroller? Explain with examples."
-                    android:textColor="@color/text_primary"
+                    android:textColor="?attr/appTextPrimary"
                     android:textSize="18sp"
                     android:textStyle="bold"
                     android:lineSpacingExtra="4dp"
@@ -125,11 +125,11 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:hint="@string/your_answer_hint"
-                    app:boxBackgroundColor="@color/slate_800"
+                    app:boxBackgroundColor="?attr/appInputBackground"
                     app:boxStrokeColor="@color/indigo_400"
                     app:boxStrokeWidth="2dp"
-                    app:hintTextColor="@color/text_secondary"
-                    app:helperTextTextColor="@color/text_secondary">
+                    app:hintTextColor="?attr/appTextSecondary"
+                    app:helperTextTextColor="?attr/appTextSecondary">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/edit_text_answer"
@@ -139,8 +139,8 @@
                         android:inputType="textMultiLine|textCapSentences"
                         android:maxLines="10"
                         android:scrollbars="vertical"
-                        android:textColor="@color/text_primary"
-                        android:textColorHint="@color/text_secondary"
+                        android:textColor="?attr/appTextPrimary"
+                        android:textColorHint="?attr/appTextSecondary"
                         android:textSize="16sp"
                         android:background="@android:color/transparent" />
 
@@ -158,21 +158,21 @@
                         android:layout_width="0dp"
                         android:layout_height="1dp"
                         android:layout_weight="1"
-                        android:background="@color/slate_600" />
+                        android:background="?attr/appOutline" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginHorizontal="16dp"
                         android:text="or use voice input"
-                        android:textColor="@color/text_secondary"
+                        android:textColor="?attr/appTextSecondary"
                         android:textSize="14sp" />
 
                     <View
                         android:layout_width="0dp"
                         android:layout_height="1dp"
                         android:layout_weight="1"
-                        android:background="@color/slate_600" />
+                        android:background="?attr/appOutline" />
 
                 </LinearLayout>
 
@@ -189,7 +189,7 @@
                     app:borderWidth="0dp"
                     app:elevation="8dp"
                     app:fabSize="normal"
-                    app:tint="@color/text_primary" />
+                    app:tint="?attr/appTextPrimary" />
 
                 <!-- Recording Indicator -->
                 <TextView
@@ -199,7 +199,7 @@
                     android:layout_gravity="center"
                     android:layout_marginTop="8dp"
                     android:text="Tap to start voice input"
-                    android:textColor="@color/text_secondary"
+                    android:textColor="?attr/appTextSecondary"
                     android:textSize="14sp"
                     android:visibility="visible" />
 
@@ -229,10 +229,10 @@
             android:layout_height="56dp"
             android:layout_marginEnd="8dp"
             android:text="@string/back_button"
-            android:textColor="@color/text_primary"
+            android:textColor="?attr/appTextPrimary"
             android:textSize="16sp"
             android:textStyle="bold"
-            app:strokeColor="@color/slate_600"
+            app:strokeColor="?attr/appOutline"
             app:strokeWidth="2dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@id/button_next"
@@ -246,7 +246,7 @@
             android:layout_height="56dp"
             android:layout_marginStart="8dp"
             android:text="@string/next_button"
-            android:textColor="@color/text_primary"
+            android:textColor="?attr/appTextPrimary"
             android:textSize="16sp"
             android:textStyle="bold"
             app:backgroundTint="@color/indigo_600"
@@ -262,7 +262,7 @@
         android:id="@+id/loading_overlay"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@color/slate_900"
+        android:background="?attr/appBackground"
         android:clickable="true"
         android:focusable="true"
         android:visibility="gone"
@@ -280,7 +280,7 @@
             android:gravity="center"
             android:orientation="vertical"
             android:padding="32dp"
-            android:background="@color/slate_900">
+            android:background="?attr/appBackground">
 
             <!-- AI Icon with Animation -->
             <TextView
@@ -308,7 +308,7 @@
                 android:max="100"
                 android:progress="0"
                 android:progressDrawable="@drawable/progress_gradient"
-                android:background="@color/slate_700" />
+                android:background="?attr/appSurfaceElevated" />
 
             <!-- Phase Counter -->
             <TextView
@@ -329,7 +329,7 @@
                 android:layout_marginTop="20dp"
                 android:gravity="center"
                 android:text="Generating your personalized report..."
-                android:textColor="@color/text_primary"
+                android:textColor="?attr/appTextPrimary"
                 android:textSize="18sp"
                 android:textStyle="bold" />
 
@@ -341,7 +341,7 @@
                 android:layout_marginTop="8dp"
                 android:gravity="center"
                 android:text="Analyzing your answers with AI..."
-                android:textColor="@color/slate_400"
+                android:textColor="?attr/appTextSecondary"
                 android:textSize="14sp" />
 
             <!-- Quote Card -->
@@ -349,7 +349,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="32dp"
-                app:cardBackgroundColor="@color/glass_primary"
+                app:cardBackgroundColor="?attr/appSurface"
                 app:cardCornerRadius="16dp"
                 app:cardElevation="8dp">
 
@@ -373,7 +373,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
                         android:text="&quot;The expert in anything was once a beginner.&quot; – Helen Hayes"
-                        android:textColor="@color/slate_300"
+                        android:textColor="?attr/appTextSecondary"
                         android:textSize="14sp"
                         android:fontFamily="serif"
                         android:lineSpacingExtra="4dp" />
@@ -388,7 +388,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
                 android:text="⏱️ This may take 2-3 minutes..."
-                android:textColor="@color/slate_500"
+                android:textColor="?attr/appTextTertiary"
                 android:textSize="12sp" />
 
         </LinearLayout>
@@ -402,7 +402,7 @@
             android:orientation="vertical"
             android:padding="32dp"
             android:visibility="gone"
-            android:background="@color/slate_900">
+            android:background="?attr/appBackground">
 
             <!-- Success Icon -->
             <TextView
@@ -426,7 +426,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 android:text="Your personalized career report is ready.\nYou can preview it now or continue to home."
-                android:textColor="@color/slate_300"
+                android:textColor="?attr/appTextSecondary"
                 android:textSize="16sp"
                 android:gravity="center" />
 
@@ -458,9 +458,9 @@
                     android:layout_height="56dp"
                     android:layout_marginTop="12dp"
                     android:text="Continue to Home"
-                    android:textColor="@color/slate_300"
+                    android:textColor="?attr/appTextSecondary"
                     android:textSize="16sp"
-                    app:strokeColor="@color/slate_600"
+                    app:strokeColor="?attr/appOutline"
                     app:strokeWidth="2dp"
                     app:cornerRadius="16dp" />
 

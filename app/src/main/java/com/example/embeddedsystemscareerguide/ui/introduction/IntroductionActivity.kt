@@ -1,5 +1,7 @@
 package com.example.embeddedsystemscareerguide.ui.introduction
 
+import com.example.embeddedsystemscareerguide.services.ThemeManager
+
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
@@ -17,6 +19,7 @@ class IntroductionActivity : AppCompatActivity() {
     private val firestore = FirebaseFirestore.getInstance()
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        ThemeManager.applyTo(this)
         super.onCreate(savedInstanceState)
         binding = ActivityIntroductionBinding.inflate(layoutInflater)
         setContentView(binding.root)

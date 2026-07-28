@@ -1,5 +1,7 @@
 package com.example.embeddedsystemscareerguide.ui.challenge
 
+import com.example.embeddedsystemscareerguide.services.ThemeManager
+
 import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -42,6 +44,7 @@ class AdminDashboardActivity : AppCompatActivity() {
     private var participantsJob: kotlinx.coroutines.Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        ThemeManager.applyTo(this)
         super.onCreate(savedInstanceState)
         binding = ActivityAdminDashboardBinding.inflate(layoutInflater)
         setContentView(binding.root)

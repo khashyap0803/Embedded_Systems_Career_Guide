@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  User-selectable themes.
+
+  Each supplies the full semantic palette (the app* attributes from attrs.xml)
+  plus the Material3 colour roles, so switching repaints every screen without
+  touching a layout. Adding a theme means a style here and one entry in
+  AppTheme - nothing else.
+
+  Contrast targets, chosen because the first cut of these palettes looked
+  washed out. The original design drew cards as a 10%-alpha slate over a navy
+  background, which composites to roughly #131A2C - far darker than the
+  opaque #1E293B that replaced it, so cards drifted toward the background and
+  text lost its edge.
+
+    - surfaces sit only 3-6% above their background, keeping the deep,
+      high-contrast base the app was designed around
+    - primary text is at or near pure white (>= 15:1 on its surface), which is
+      what reads as "sharp"
+    - secondary text stays >= 7:1 rather than the ~4.5:1 it had been
+    - outlines and accents stay saturated so the UI reads colourful rather
+      than dusty
+-->
+<resources>
+
+    <!-- ============ Midnight (default) - deep navy ============ -->
+    <style name="Theme.App.Midnight" parent="Theme.EmbeddedSystemsCareerGuide">
+        <item name="appBackground">#0B1120</item>
+        <item name="appSurface">#131C31</item>
+        <item name="appSurfaceElevated">#1B2742</item>
+        <item name="appOutline">#31415C</item>
+        <item name="appInputBackground">#1B2742</item>
+        <item name="appTextPrimary">#FFFFFF</item>
+        <item name="appTextSecondary">#B4C3DA</item>
+        <item name="appTextTertiary">#8C9DB8</item>
+        <item name="appTextHint">#7B8CA8</item>
+        <item name="appAccentMuted">#2E6366F1</item>
+        <item name="appWindowBackground">@drawable/bg_window_midnight</item>
+
+        <item name="colorPrimary">#818CF8</item>
+        <item name="colorOnPrimary">#0B1120</item>
+        <item name="colorSecondary">#22D3EE</item>
+        <item name="colorOnSecondary">#0B1120</item>
+        <item name="android:colorBackground">#0B1120</item>
+        <item name="colorSurface">#131C31</item>
+        <item name="colorOnSurface">#FFFFFF</item>
+        <item name="colorOnBackground">#FFFFFF</item>
+        <item name="colorSurfaceVariant">#1B2742</item>
+        <item name="colorOnSurfaceVariant">#B4C3DA</item>
+        <item name="colorOutline">#31415C</item>
+        <item name="android:textColorPrimary">#FFFFFF</item>
+        <item name="android:textColorSecondary">#B4C3DA</item>
+        <item name="android:statusBarColor">#0B1120</item>
+        <item name="android:navigationBarColor">#0B1120</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+    </style>
+
+    <!-- ============ Daylight - crisp white ============ -->
+    <style name="Theme.App.Daylight" parent="Theme.EmbeddedSystemsCareerGuide">
+        <item name="appBackground">#F4F7FC</item>
+        <item name="appSurface">#FFFFFF</item>
+        <item name="appSurfaceElevated">#E9EEF6</item>
+        <item name="appOutline">#BCC8DA</item>
+        <item name="appInputBackground">#E9EEF6</item>
+        <item name="appTextPrimary">#050B18</item>
+        <item name="appTextSecondary">#3D4A61</item>
+        <item name="appTextTertiary">#5B6980</item>
+        <item name="appTextHint">#78859B</item>
+        <item name="appAccentMuted">#E5E9FF</item>
+        <item name="appWindowBackground">@drawable/bg_window_daylight</item>
+
+        <item name="colorPrimary">#4338CA</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorSecondary">#0E7490</item>
+        <item name="colorOnSecondary">#FFFFFF</item>
+        <item name="android:colorBackground">#F4F7FC</item>
+        <item name="colorSurface">#FFFFFF</item>
+        <item name="colorOnSurface">#050B18</item>
+        <item name="colorOnBackground">#050B18</item>
+        <item name="colorSurfaceVariant">#E9EEF6</item>
+        <item name="colorOnSurfaceVariant">#3D4A61</item>
+        <item name="colorOutline">#BCC8DA</item>
+        <item name="android:textColorPrimary">#050B18</item>
+        <item name="android:textColorSecondary">#3D4A61</item>
+        <item name="android:statusBarColor">#F4F7FC</item>
+        <item name="android:navigationBarColor">#F4F7FC</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+    </style>
+
+    <!-- ============ Neon - near-black with electric accents ============ -->
+    <style name="Theme.App.Neon" parent="Theme.EmbeddedSystemsCareerGuide">
+        <item name="appBackground">#05030D</item>
+        <item name="appSurface">#0F0A1E</item>
+        <item name="appSurfaceElevated">#181030</item>
+        <item name="appOutline">#8B2FFF</item>
+        <item name="appInputBackground">#181030</item>
+        <item name="appTextPrimary">#FFFFFF</item>
+        <item name="appTextSecondary">#CBB6FF</item>
+        <item name="appTextTertiary">#A08FD8</item>
+        <item name="appTextHint">#8877C4</item>
+        <item name="appAccentMuted">#3300E5FF</item>
+        <item name="appWindowBackground">@drawable/bg_window_neon</item>
+
+        <item name="colorPrimary">#C64BFF</item>
+        <item name="colorOnPrimary">#05030D</item>
+        <item name="colorSecondary">#00F0FF</item>
+        <item name="colorOnSecondary">#05030D</item>
+        <item name="android:colorBackground">#05030D</item>
+        <item name="colorSurface">#0F0A1E</item>
+        <item name="colorOnSurface">#FFFFFF</item>
+        <item name="colorOnBackground">#FFFFFF</item>
+        <item name="colorSurfaceVariant">#181030</item>
+        <item name="colorOnSurfaceVariant">#CBB6FF</item>
+        <item name="colorOutline">#8B2FFF</item>
+        <item name="android:textColorPrimary">#FFFFFF</item>
+        <item name="android:textColorSecondary">#CBB6FF</item>
+        <item name="android:statusBarColor">#05030D</item>
+        <item name="android:navigationBarColor">#05030D</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+    </style>
+
+    <!-- ============ Ocean - deep sea blue ============ -->
+    <style name="Theme.App.Ocean" parent="Theme.EmbeddedSystemsCareerGuide">
+        <item name="appBackground">#021320</item>
+        <item name="appSurface">#062134</item>
+        <item name="appSurfaceElevated">#0C2F49</item>
+        <item name="appOutline">#17567F</item>
+        <item name="appInputBackground">#0C2F49</item>
+        <item name="appTextPrimary">#FFFFFF</item>
+        <item name="appTextSecondary">#A9CFE8</item>
+        <item name="appTextTertiary">#82AEC9</item>
+        <item name="appTextHint">#6E9BB6</item>
+        <item name="appAccentMuted">#2E0EA5E9</item>
+        <item name="appWindowBackground">@drawable/bg_window_ocean</item>
+
+        <item name="colorPrimary">#38BDF8</item>
+        <item name="colorOnPrimary">#021320</item>
+        <item name="colorSecondary">#2DD4BF</item>
+        <item name="colorOnSecondary">#021320</item>
+        <item name="android:colorBackground">#021320</item>
+        <item name="colorSurface">#062134</item>
+        <item name="colorOnSurface">#FFFFFF</item>
+        <item name="colorOnBackground">#FFFFFF</item>
+        <item name="colorSurfaceVariant">#0C2F49</item>
+        <item name="colorOnSurfaceVariant">#A9CFE8</item>
+        <item name="colorOutline">#17567F</item>
+        <item name="android:textColorPrimary">#FFFFFF</item>
+        <item name="android:textColorSecondary">#A9CFE8</item>
+        <item name="android:statusBarColor">#021320</item>
+        <item name="android:navigationBarColor">#021320</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+    </style>
+
+    <!-- ============ Forest - deep green ============ -->
+    <style name="Theme.App.Forest" parent="Theme.EmbeddedSystemsCareerGuide">
+        <item name="appBackground">#061109</item>
+        <item name="appSurface">#0C1F14</item>
+        <item name="appSurfaceElevated">#142D1E</item>
+        <item name="appOutline">#2A6340</item>
+        <item name="appInputBackground">#142D1E</item>
+        <item name="appTextPrimary">#FFFFFF</item>
+        <item name="appTextSecondary">#AEDCC1</item>
+        <item name="appTextTertiary">#88B89C</item>
+        <item name="appTextHint">#74A188</item>
+        <item name="appAccentMuted">#2E34D399</item>
+        <item name="appWindowBackground">@drawable/bg_window_forest</item>
+
+        <item name="colorPrimary">#4ADE80</item>
+        <item name="colorOnPrimary">#061109</item>
+        <item name="colorSecondary">#FBBF24</item>
+        <item name="colorOnSecondary">#061109</item>
+        <item name="android:colorBackground">#061109</item>
+        <item name="colorSurface">#0C1F14</item>
+        <item name="colorOnSurface">#FFFFFF</item>
+        <item name="colorOnBackground">#FFFFFF</item>
+        <item name="colorSurfaceVariant">#142D1E</item>
+        <item name="colorOnSurfaceVariant">#AEDCC1</item>
+        <item name="colorOutline">#2A6340</item>
+        <item name="android:textColorPrimary">#FFFFFF</item>
+        <item name="android:textColorSecondary">#AEDCC1</item>
+        <item name="android:statusBarColor">#061109</item>
+        <item name="android:navigationBarColor">#061109</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+    </style>
+
+    <!-- ============ Sunset - warm ember ============ -->
+    <style name="Theme.App.Sunset" parent="Theme.EmbeddedSystemsCareerGuide">
+        <item name="appBackground">#140810</item>
+        <item name="appSurface">#23111B</item>
+        <item name="appSurfaceElevated">#331926</item>
+        <item name="appOutline">#7A3350</item>
+        <item name="appInputBackground">#331926</item>
+        <item name="appTextPrimary">#FFFFFF</item>
+        <item name="appTextSecondary">#F3B9A8</item>
+        <item name="appTextTertiary">#CB9384</item>
+        <item name="appTextHint">#B27F71</item>
+        <item name="appAccentMuted">#33FB923C</item>
+        <item name="appWindowBackground">@drawable/bg_window_sunset</item>
+
+        <item name="colorPrimary">#FB7185</item>
+        <item name="colorOnPrimary">#140810</item>
+        <item name="colorSecondary">#FDBA74</item>
+        <item name="colorOnSecondary">#140810</item>
+        <item name="android:colorBackground">#140810</item>
+        <item name="colorSurface">#23111B</item>
+        <item name="colorOnSurface">#FFFFFF</item>
+        <item name="colorOnBackground">#FFFFFF</item>
+        <item name="colorSurfaceVariant">#331926</item>
+        <item name="colorOnSurfaceVariant">#F3B9A8</item>
+        <item name="colorOutline">#7A3350</item>
+        <item name="android:textColorPrimary">#FFFFFF</item>
+        <item name="android:textColorSecondary">#F3B9A8</item>
+        <item name="android:statusBarColor">#140810</item>
+        <item name="android:navigationBarColor">#140810</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+    </style>
+
+    <!-- ============ Nord - the arctic editor palette ============ -->
+    <style name="Theme.App.Nord" parent="Theme.EmbeddedSystemsCareerGuide">
+        <item name="appBackground">#20242E</item>
+        <item name="appSurface">#2B303B</item>
+        <item name="appSurfaceElevated">#3B4252</item>
+        <item name="appOutline">#4C566A</item>
+        <item name="appInputBackground">#3B4252</item>
+        <item name="appTextPrimary">#FFFFFF</item>
+        <item name="appTextSecondary">#CBD5E4</item>
+        <item name="appTextTertiary">#A6B2C4</item>
+        <item name="appTextHint">#93A0B4</item>
+        <item name="appAccentMuted">#3388C0D0</item>
+        <item name="appWindowBackground">@drawable/bg_window_nord</item>
+
+        <item name="colorPrimary">#88C0D0</item>
+        <item name="colorOnPrimary">#20242E</item>
+        <item name="colorSecondary">#A3BE8C</item>
+        <item name="colorOnSecondary">#20242E</item>
+        <item name="android:colorBackground">#20242E</item>
+        <item name="colorSurface">#2B303B</item>
+        <item name="colorOnSurface">#FFFFFF</item>
+        <item name="colorOnBackground">#FFFFFF</item>
+        <item name="colorSurfaceVariant">#3B4252</item>
+        <item name="colorOnSurfaceVariant">#CBD5E4</item>
+        <item name="colorOutline">#4C566A</item>
+        <item name="android:textColorPrimary">#FFFFFF</item>
+        <item name="android:textColorSecondary">#CBD5E4</item>
+        <item name="android:statusBarColor">#20242E</item>
+        <item name="android:navigationBarColor">#20242E</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+    </style>
+
+</resources>
