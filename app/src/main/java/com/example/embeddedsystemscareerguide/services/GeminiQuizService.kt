@@ -4,6 +4,7 @@ import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.google.gson.reflect.TypeToken
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
@@ -140,6 +141,11 @@ Generate 5 SHORT questions now:
         repeat(maxRetries) { attempt ->
             try {
                 return@withContext executeApiCall(prompt)
+            } catch (e: CancellationException) {
+                // Without this the retry ladder below would treat a cancelled
+                // coroutine as a failed attempt and keep backing off and
+                // retrying, since CancellationException is an Exception.
+                throw e
             } catch (e: Exception) {
                 lastException = e
                 Log.w(TAG, "API attempt ${attempt + 1}/$maxRetries failed: ${e.message}")
@@ -159,7 +165,7 @@ Generate 5 SHORT questions now:
         throw lastException ?: Exception("Max retries exceeded")
     }
     
-    private fun executeApiCall(prompt: String): String {
+    private suspend fun executeApiCall(prompt: String): String {
         val requestBody = JsonObject().apply {
             addProperty("model", NetworkModule.DEFAULT_MODEL)
             addProperty("prompt", prompt)
@@ -176,17 +182,18 @@ Generate 5 SHORT questions now:
             .addHeader("ngrok-skip-browser-warning", "true")
             .build()
 
-        val response = client.newCall(request).execute()
-        val responseBody = response.body?.string() ?: throw Exception("Empty response")
+        return client.newCall(request).awaitResponse().use { response ->
+            val responseBody = response.body?.string() ?: throw Exception("Empty response")
 
-        if (!response.isSuccessful) {
-            Log.e(TAG, "API Error: ${response.code}")
-            throw Exception("API call failed: ${response.code}")
+            if (!response.isSuccessful) {
+                Log.e(TAG, "API Error: ${response.code}")
+                throw Exception("API call failed: ${response.code}")
+            }
+
+            val jsonResponse = gson.fromJson(responseBody, JsonObject::class.java)
+            jsonResponse.get("response")?.asString
+                ?: throw Exception("No response text from Ollama")
         }
-
-        val jsonResponse = gson.fromJson(responseBody, JsonObject::class.java)
-        return jsonResponse.get("response")?.asString
-            ?: throw Exception("No response text from Ollama")
     }
 
     private fun parseQuizResponse(response: String): List<QuizQuestion> {

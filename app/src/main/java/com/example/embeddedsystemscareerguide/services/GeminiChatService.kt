@@ -139,23 +139,24 @@ When providing code examples, format them properly for readability.
                 .addHeader("ngrok-skip-browser-warning", "true")
                 .build()
 
-            val response = client.newCall(request).execute()
-            val responseBody = response.body?.string() ?: throw Exception("Empty response")
+            val cleaned = client.newCall(request).awaitResponse().use { response ->
+                val responseBody = response.body?.string() ?: throw Exception("Empty response")
 
-            if (!response.isSuccessful) {
-                Log.e(TAG, "API Error: ${response.code} - $responseBody")
-                throw Exception("API call failed: ${response.code}")
+                if (!response.isSuccessful) {
+                    Log.e(TAG, "API Error: ${response.code} - $responseBody")
+                    throw Exception("API call failed: ${response.code}")
+                }
+
+                // Parse Ollama chat response
+                val jsonResponse = gson.fromJson(responseBody, JsonObject::class.java)
+                val content = jsonResponse
+                    .getAsJsonObject("message")
+                    ?.get("content")?.asString
+                    ?: throw Exception("No content in response")
+
+                // Strip Qwen3 <think>...</think> reasoning blocks — they must not appear in UI
+                content.replace(Regex("<think>[\\s\\S]*?</think>", RegexOption.IGNORE_CASE), "").trim()
             }
-
-            // Parse Ollama chat response
-            val jsonResponse = gson.fromJson(responseBody, JsonObject::class.java)
-            val content = jsonResponse
-                .getAsJsonObject("message")
-                ?.get("content")?.asString
-                ?: throw Exception("No content in response")
-
-            // Strip Qwen3 <think>...</think> reasoning blocks — they must not appear in UI
-            val cleaned = content.replace(Regex("<think>[\\s\\S]*?</think>", RegexOption.IGNORE_CASE), "").trim()
 
             return@withContext cleaned
 

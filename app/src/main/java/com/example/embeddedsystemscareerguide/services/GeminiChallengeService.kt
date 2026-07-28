@@ -6,6 +6,7 @@ import com.example.embeddedsystemscareerguide.models.challenge.*
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.google.gson.reflect.TypeToken
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
@@ -981,7 +982,7 @@ Return ONLY this JSON (no markdown, no explanation):
             try {
                 Log.d(TAG, "API call attempt ${attempt + 1}/$maxRetries")
                 
-                client.newCall(request).execute().use { response ->
+                client.newCall(request).awaitResponse().use { response ->
                     val responseCode = response.code
                     
                     if (responseCode == 429) {
@@ -1023,6 +1024,11 @@ Return ONLY this JSON (no markdown, no explanation):
                 }
             } catch (e: ClientException) {
                 Log.e(TAG, "Non-retryable client error: ${e.message}")
+                throw e
+            } catch (e: CancellationException) {
+                // CancellationException is an Exception, so without this the
+                // ladder below would sleep and retry after the caller has
+                // already given up.
                 throw e
             } catch (e: Exception) {
                 lastException = e

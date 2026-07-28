@@ -1,5 +1,7 @@
 package com.example.embeddedsystemscareerguide.ui.assessment
 
+import com.example.embeddedsystemscareerguide.services.ThemeManager
+
 import android.content.Intent
 import android.os.Bundle
 import android.speech.RecognizerIntent
@@ -69,6 +71,7 @@ class AssessmentActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        ThemeManager.applyTo(this)
         super.onCreate(savedInstanceState)
         binding = ActivityAssessmentBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -293,13 +296,27 @@ class AssessmentActivity : AppCompatActivity() {
                 }
 
                 // Generate report using Gemini API with progress callback
-                val reportHtml = geminiService.generateReport(userName, userEmail, qaList, progressCallback)
+                val report = geminiService.generateReport(userName, userEmail, qaList, progressCallback)
 
                 // Save report to Firebase and WAIT for completion
                 binding.progressText.text = "Saving your report to cloud..."
                 binding.progressSubstatus.text = "Almost done..."
                 binding.phaseProgressBar.progress = 100
-                val saveSuccess = saveReportToFirebaseSync(reportHtml, userId, userName, userEmail)
+                val saveSuccess = saveReportToFirebaseSync(report.html, userId, userName, userEmail)
+
+                // Say so when the model could not be reached and part of this
+                // report is filler. Silently handing a student a canned career
+                // roadmap that reads like a real one is worse than telling them
+                // to regenerate it.
+                if (report.isDegraded) {
+                    Toast.makeText(
+                        this@AssessmentActivity,
+                        "Some of this report could not be generated and uses generic " +
+                            "content. Retake the assessment when you're back online " +
+                            "for a full personalised report.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
 
                 if (saveSuccess) {
                     // CLOUD-ONLY: Report saved to Firebase is the source of truth
@@ -356,6 +373,11 @@ class AssessmentActivity : AppCompatActivity() {
                     throw Exception("Failed to save report to cloud")
                 }
 
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                // The scope is already gone when this fires (the screen is
+                // finishing), so touching the views below would be both
+                // pointless and a leak. Let cancellation propagate.
+                throw e
             } catch (e: Exception) {
                 binding.loadingOverlay.isVisible = false
                 // Restore the back gesture alongside the buttons. Without this, a

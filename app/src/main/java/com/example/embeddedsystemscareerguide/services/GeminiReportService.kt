@@ -4,6 +4,7 @@ import android.util.Log
 import com.example.embeddedsystemscareerguide.models.QuestionAnswer
 import com.google.gson.Gson
 import com.google.gson.JsonObject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -69,6 +70,19 @@ class GeminiReportService {
     }
 
     /**
+     * A generated report, plus whether any part of it is filler.
+     *
+     * Generation degrades in three independent ways - per-question feedback can
+     * fall back to a canned summary, the surrounding report shell can fall back
+     * to a template, and a critical failure can produce an emergency report.
+     * Every one of those used to be indistinguishable from a real report at the
+     * call site, so a student could be handed a career roadmap assembled from
+     * filler and told nothing. [isDegraded] is true when any of them happened,
+     * so the UI can say so.
+     */
+    data class ReportResult(val html: String, val isDegraded: Boolean)
+
+    /**
      * Generate complete assessment report using two-phase approach
      * With robust error handling to prevent blank reports
      * @param progressCallback Optional callback to report progress updates
@@ -78,21 +92,30 @@ class GeminiReportService {
         userEmail: String,
         questions: List<QuestionAnswer>,
         progressCallback: ProgressCallback? = null
-    ): String = withContext(Dispatchers.IO) {
+    ): ReportResult = withContext(Dispatchers.IO) {
 
         try {
             Log.d(TAG, "Starting report generation for ${questions.size} questions")
-            
+
             val chunks = questions.chunked(CHUNK_SIZE)
             val totalChunks = chunks.size
             // Total phases: chunks + 1 (structuring) + 1 (finalizing)
             val totalPhases = totalChunks + 2
 
+            var degraded = false
+
             // Phase 1 to N: Generate feedback for chunks
             val feedbackChunks = try {
                 generateDetailedFeedbackWithProgress(questions, totalPhases, progressCallback)
+            } catch (e: CancellationException) {
+                // A cancelled generation must not fall through to a fallback:
+                // CancellationException is an Exception, so the handler below
+                // would otherwise turn "the user backed out" into a report
+                // built from filler and present it as a real one.
+                throw e
             } catch (e: Exception) {
                 Log.w(TAG, "Failed to generate detailed feedback, using minimal feedback", e)
+                degraded = true
                 listOf(generateMinimalFeedback(questions))
             }
 
@@ -108,8 +131,11 @@ class GeminiReportService {
             
             val reportShell = try {
                 generateOverallReport(userName, userEmail, questions)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.w(TAG, "Failed to generate report shell, using fallback", e)
+                degraded = true
                 "" // Will trigger fallback in assembleReport
             }
 
@@ -124,20 +150,28 @@ class GeminiReportService {
             }
             
             val completeReport = assembleReport(reportShell, feedbackChunks)
-            
+
             // Log report length for debugging blank reports
-            Log.d(TAG, "Report generation completed, length: ${completeReport.length} chars")
-            
-            if (completeReport.length < 500) {
+            Log.d(TAG, "Report generation completed, length: ${completeReport.html.length} chars")
+
+            if (completeReport.html.length < 500) {
                 Log.w(TAG, "Report seems too short, may be incomplete")
             }
 
-            return@withContext completeReport
+            return@withContext ReportResult(
+                html = completeReport.html,
+                isDegraded = degraded || completeReport.isDegraded
+            )
 
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Critical error generating report, using emergency fallback", e)
             // Emergency fallback - return basic report
-            return@withContext generateEmergencyReport(userName, userEmail, questions)
+            return@withContext ReportResult(
+                html = generateEmergencyReport(userName, userEmail, questions),
+                isDegraded = true
+            )
         }
     }
     
@@ -598,21 +632,22 @@ $userInputText
                 .addHeader("ngrok-skip-browser-warning", "true")
                 .build()
 
-            val response = client.newCall(request).execute()
-            val responseBody = response.body?.string() ?: throw Exception("Empty response")
+            val cleaned = client.newCall(request).awaitResponse().use { response ->
+                val responseBody = response.body?.string() ?: throw Exception("Empty response")
 
-            if (!response.isSuccessful) {
-                Log.e(TAG, "API Error: ${response.code} - $responseBody")
-                throw Exception("API call failed: ${response.code}")
+                if (!response.isSuccessful) {
+                    Log.e(TAG, "API Error: ${response.code} - $responseBody")
+                    throw Exception("API call failed: ${response.code}")
+                }
+
+                val jsonResponse = gson.fromJson(responseBody, JsonObject::class.java)
+                val content = jsonResponse.get("response")?.asString
+                    ?: throw Exception("No response text from Ollama")
+
+                // Strip Qwen3 <think>...</think> reasoning blocks before returning HTML content
+                content.replace(Regex("<think>[\\s\\S]*?</think>", RegexOption.IGNORE_CASE), "").trim()
             }
 
-            val jsonResponse = gson.fromJson(responseBody, JsonObject::class.java)
-            val content = jsonResponse.get("response")?.asString
-                ?: throw Exception("No response text from Ollama")
-            
-            // Strip Qwen3 <think>...</think> reasoning blocks before returning HTML content
-            val cleaned = content.replace(Regex("<think>[\\s\\S]*?</think>", RegexOption.IGNORE_CASE), "").trim()
-            
             Log.d(TAG, "API response length: ${cleaned.length} chars")
 
             return@withContext cleaned
@@ -627,21 +662,23 @@ $userInputText
      * Assemble final report by injecting feedback chunks into report shell
      * With fallback handling for blank or truncated content
      */
-    private fun assembleReport(reportShell: String, feedbackChunks: List<String>): String {
+    private fun assembleReport(reportShell: String, feedbackChunks: List<String>): ReportResult {
         val combinedFeedback = feedbackChunks.joinToString("\n\n")
-        
+
         // Check if the report shell is truncated (has DOCTYPE but no closing html tag)
         val isTruncated = reportShell.contains("<!DOCTYPE html>") && !reportShell.contains("</html>")
-        
+
         if (isTruncated) {
             Log.w(TAG, "Report shell is truncated (has opening but no closing HTML tags)")
             // Don't try to use truncated content - use the fallback with actual feedback
-            return generateFallbackReport(combinedFeedback)
+            return ReportResult(generateFallbackReport(combinedFeedback), isDegraded = true)
         }
-        
+
         // Validate the report shell is not blank or malformed
+        var degraded = false
         val validatedShell = if (reportShell.isBlank() || !reportShell.contains("<!DOCTYPE html>")) {
             Log.w(TAG, "Report shell was blank or malformed, using fallback template")
+            degraded = true
             generateFallbackReport(combinedFeedback)
         } else {
             reportShell.replace(
@@ -649,14 +686,14 @@ $userInputText
                 combinedFeedback
             )
         }
-        
+
         // Final validation - ensure we have valid complete HTML
         return if (validatedShell.contains("<html") && validatedShell.contains("</html>") && validatedShell.contains("</body>")) {
-            validatedShell
+            ReportResult(validatedShell, isDegraded = degraded)
         } else {
             Log.w(TAG, "Final report validation failed, using emergency fallback")
             // Use fallback with feedback content instead of trying to wrap partial content
-            generateFallbackReport(combinedFeedback)
+            ReportResult(generateFallbackReport(combinedFeedback), isDegraded = true)
         }
     }
     
