@@ -703,18 +703,47 @@ class LoginActivity : AppCompatActivity() {
 
     public override fun onStart() {
         super.onStart()
-        // Check if user is signed in AND has a saved username
-        // This prevents auto-redirect when user needs to set up username
-        val currentUser = auth.currentUser
+
+        val currentUser = auth.currentUser ?: return
         val savedUsername = getSharedPreferences("user_prefs", MODE_PRIVATE)
             .getString("current_username", null)
-        
-        if (currentUser != null && !savedUsername.isNullOrEmpty()) {
-            // User is logged in and has profile set up
-            navigateToIntroduction()
+
+        if (savedUsername.isNullOrEmpty()) {
+            // Signed in but no username yet - resolve it from the uid rather
+            // than sitting on the login form the user cannot get past.
+            checkUserProfileAndNavigate(currentUser)
+            return
         }
-        // If currentUser exists but no savedUsername, let them proceed to login
-        // so checkUserProfileAndNavigate can handle the profile setup
+
+        // The saved username is the key for every cloud path the app touches,
+        // so it has to belong to the session actually signed in. This used to
+        // auto-navigate whenever a session and *any* saved username both
+        // existed. When the two drifted apart - a different account signed in,
+        // or a stale value left behind - the app silently ran as a user that
+        // did not own the session: it read no report at users/{stale}/data and
+        // so demanded a fresh assessment, then failed the write at the end
+        // with PERMISSION_DENIED, having never offered a way back to login.
+        firestore.collection("usernames").document(savedUsername)
+            .get()
+            .addOnSuccessListener { doc ->
+                if (doc.exists() && doc.getString("uid") == currentUser.uid) {
+                    navigateToIntroduction()
+                } else {
+                    // Not this account's username. Drop it and re-derive the
+                    // real one from the uid, which also repairs the prefs.
+                    getSharedPreferences("user_prefs", MODE_PRIVATE)
+                        .edit()
+                        .remove("current_username")
+                        .apply()
+                    checkUserProfileAndNavigate(currentUser)
+                }
+            }
+            .addOnFailureListener {
+                // Offline, or the lookup was rejected. A check we cannot run is
+                // not evidence of a mismatch, so keep the existing behaviour
+                // rather than locking a legitimate user out of the app.
+                navigateToIntroduction()
+            }
     }
 
     /**
