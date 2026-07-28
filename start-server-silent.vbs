@@ -17,13 +17,15 @@ For Each proc In colOllama
 Next
 
 If Not ollamaRunning Then
-    ' Flash Attention's MMA CUDA kernel crashes llama-server on this GPU
-    ' (exit 0xc0000409, "CUDA error: shared object initialization failed").
-    ' Disabling it trades ~31 tok/s for ~7 tok/s but the server no longer
-    ' dies on the first generate call. WshShell.Run does not inherit a
-    ' Dim'd VBS variable as a process env var, so set it in the child
-    ' cmd.exe's own environment instead.
-    WshShell.Run "cmd /c set OLLAMA_FLASH_ATTENTION=false&& ollama serve", 0, False
+    ' Keep these four in sync with start-server.bat, which documents why each
+    ' one is set. In short: flash attention no longer crashes on driver 610.62
+    ' and is a large prefill win; q8_0 halves the KV cache and must be paired
+    ' with flash attention; two slots at 16384 tokens each is what fits in
+    ' 16 GB; and without CONTEXT_LENGTH Ollama silently defaults this card to
+    ' 4096 and then context-shifts away the prompt mid-generation.
+    ' WshShell.Run does not inherit a Dim'd VBS variable as a process env var,
+    ' so set them in the child cmd.exe's own environment instead.
+    WshShell.Run "cmd /c set OLLAMA_FLASH_ATTENTION=1&& set OLLAMA_KV_CACHE_TYPE=q8_0&& set OLLAMA_NUM_PARALLEL=2&& set OLLAMA_CONTEXT_LENGTH=16384&& ollama serve", 0, False
     WScript.Sleep 5000  ' Wait 5s for Ollama to initialize
 End If
 
