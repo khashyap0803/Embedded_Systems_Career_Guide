@@ -415,12 +415,22 @@ class AssessmentActivity : AppCompatActivity() {
                     // was always empty, so a learning path was in practice chosen
                     // by how many words the student typed.
                     val score = calculateAssessmentScore()
-                    val topicScores = topicPercentages
-                        .mapValues { (_, percentage) ->
+                    // score/maxScore carry the EVIDENCE, not just the average.
+                    //
+                    // Writing maxScore = 100 for every topic loses how many
+                    // questions backed it, and categorizeTopics recovers the
+                    // count as maxScore/100 to shrink single-question topics
+                    // toward the mean. With a constant 100 that count is always
+                    // 1, the divisor is always 2, and the shrunk value becomes
+                    // (percentage + 50) / 2 - a monotonic transform of the
+                    // percentage, so the ordering is identical to not shrinking
+                    // at all and the correction silently does nothing.
+                    val topicScores = topicRollup
+                        .mapValues { (_, rollup) ->
                             com.example.embeddedsystemscareerguide.services.StageGeneratorService.TopicScore(
-                                score = percentage,
-                                maxScore = 100,
-                                percentage = percentage
+                                score = rollup.totalScore,
+                                maxScore = rollup.questionCount * 100,
+                                percentage = rollup.percentage
                             )
                         }
                     if (topicScores.isNotEmpty()) {

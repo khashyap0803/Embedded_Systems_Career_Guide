@@ -104,8 +104,4 @@ object AnswerKeyRepository {
             }
         }
     }
-
-    /** Entries indexed by question id, empty when no usable key is present. */
-    fun entriesById(context: Context): Map<Int, AnswerKeyEntry> =
-        load(context)?.entries?.associateBy { it.id } ?: emptyMap()
 }

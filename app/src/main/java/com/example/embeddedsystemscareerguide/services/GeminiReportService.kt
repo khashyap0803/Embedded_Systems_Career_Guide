@@ -1131,9 +1131,9 @@ markdown, no preamble.
         // withhold automatic certification and defer to the model, which
         // AnswerGrader already does by forcing NEEDS_MODEL - and the model, which
         // has actually read the answer, then sets the score.
-        return model?.let {
+        return (model?.let {
             maxOf(floor, minOf(it.score, floor + MAX_MODEL_SCORE_LIFT))
-        } ?: floor
+        } ?: floor).coerceIn(0, 100)
     }
 
     private fun wrapReport(
