@@ -567,11 +567,30 @@ class AssessmentActivity : AppCompatActivity() {
             // report with one built partly from filler, irreversibly. The
             // student is better served keeping what they had.
             if (isDegraded) {
-                val existing = runCatching { reportRef.get().await() }.getOrNull()
-                val hadGoodReport = existing != null && existing.exists() &&
-                    existing.getBoolean("isDegraded") != true &&
-                    !existing.getString("reportHtml").isNullOrBlank()
-                if (hadGoodReport) {
+                // Fails CLOSED. isDegraded is usually caused by network trouble,
+                // and network trouble is exactly what makes this read fail - so
+                // treating a failed read as "no existing report" would overwrite
+                // a good report precisely when the guard is needed most. The
+                // field accessors are inside the runCatching too: a wrong-typed
+                // field would otherwise throw to the outer catch and report a
+                // save failure for a report that was fine.
+                val verdict = runCatching {
+                    val existing = reportRef.get().await()
+                    val isFresh = existing.exists() &&
+                        !existing.getString("reportHtml").isNullOrBlank()
+                    val wasGood = existing.getBoolean("isDegraded") != true
+                    isFresh && wasGood
+                }
+                if (verdict.isFailure) {
+                    android.util.Log.w(
+                        "AssessmentActivity",
+                        "Could not check for an existing report; keeping it rather than " +
+                            "risking overwriting a good one with a degraded one",
+                        verdict.exceptionOrNull()
+                    )
+                    return SaveOutcome.KEPT_EXISTING
+                }
+                if (verdict.getOrDefault(false)) {
                     android.util.Log.w(
                         "AssessmentActivity",
                         "Refusing to overwrite an existing complete report with a degraded one"

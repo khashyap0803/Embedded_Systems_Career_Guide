@@ -306,7 +306,7 @@ class GeminiReportService {
         withContext(Dispatchers.IO) {
 
         val prompt = buildFeedbackPrompt(questionChunk)
-        val response = callGeminiAPI(prompt)
+        val response = callGeminiAPIWithRetry(prompt)
 
         return@withContext response
     }
@@ -321,7 +321,7 @@ class GeminiReportService {
     ): String = withContext(Dispatchers.IO) {
 
         val prompt = buildReportPrompt(userName, userEmail, questions)
-        val response = callGeminiAPI(prompt)
+        val response = callGeminiAPIWithRetry(prompt)
 
         return@withContext response
     }
@@ -637,7 +637,8 @@ $userInputText
         prompt: String,
         maxTokens: Int = 16384,
         temperature: Double = 0.7,
-        maxRetries: Int = 3
+        maxRetries: Int = 3,
+        deadlineNanos: Long? = null
     ): String {
         var last: Exception? = null
         var delayMs = 1000L
@@ -646,9 +647,20 @@ $userInputText
                 return callGeminiAPI(prompt, maxTokens, temperature)
             } catch (e: CancellationException) {
                 throw e
+            } catch (e: TruncatedResponseException) {
+                // Retrying is pointless: the same prompt and the same ceiling
+                // produce the same truncation, three times, slowly.
+                throw e
+            } catch (e: ClientErrorException) {
+                throw e
             } catch (e: Exception) {
                 last = e
-                Log.w(TAG, "Report API attempt ${'$'}{attempt + 1}/${'$'}maxRetries failed: ${'$'}{e.message}")
+                Log.w(TAG, "Report API attempt ${attempt + 1}/$maxRetries failed: ${e.message}")
+                val outOfTime = deadlineNanos != null && System.nanoTime() > deadlineNanos
+                if (outOfTime) {
+                    Log.w(TAG, "Retry budget exhausted; giving up on this call")
+                    throw e
+                }
                 if (attempt < maxRetries - 1) {
                     kotlinx.coroutines.delay(delayMs)
                     delayMs *= 2
@@ -686,10 +698,26 @@ $userInputText
 
                 if (!response.isSuccessful) {
                     Log.e(TAG, "API Error: ${response.code} - $responseBody")
+                    if (response.code in 400..499) {
+                        throw ClientErrorException("API call failed: ${response.code}")
+                    }
                     throw Exception("API call failed: ${response.code}")
                 }
 
                 val jsonResponse = gson.fromJson(responseBody, JsonObject::class.java)
+
+                // Ollama reports why generation stopped. "length" means the
+                // completion hit num_predict, so what came back is a fragment -
+                // a 12-week roadmap cut off at week 6, or JSON missing its
+                // closing bracket. Crucially the fragment is NON-BLANK, so every
+                // isBlank() degradation guard downstream sees success. Treat it
+                // as the failure it is, at the only point that can still tell.
+                if (jsonResponse.get("done_reason")?.asString == "length") {
+                    throw TruncatedResponseException(
+                        "Generation hit the ${'$'}maxTokens token limit and was cut off"
+                    )
+                }
+
                 val content = jsonResponse.get("response")?.asString
                     ?: throw Exception("No response text from Ollama")
 
@@ -767,9 +795,18 @@ $userInputText
      *  timeout even at a degraded ~15 tok/s, not for throughput. */
     private val ADJUDICATION_CHUNK = 5
 
+    /** Wall-clock ceiling for one report, across every call and retry. */
+    private val REPORT_BUDGET_MINUTES = 10L
+
+    /** Retrying this changes nothing: the same prompt hits the same ceiling. */
+    private class TruncatedResponseException(message: String) : Exception(message)
+
+    /** A 4xx is a request the server will keep rejecting. */
+    private class ClientErrorException(message: String) : Exception(message)
+
     /** Completion caps, so one call cannot outrun the 180s read timeout. */
-    private val ADJUDICATION_MAX_TOKENS = 1024
-    private val ROADMAP_MAX_TOKENS = 1800
+    private val ADJUDICATION_MAX_TOKENS = 2048
+    private val ROADMAP_MAX_TOKENS = 4096
 
     /** How far above its measured coverage the model may lift a score. Stops a
      *  generous grader turning a thin answer into a good one. */
@@ -843,6 +880,11 @@ $userInputText
         progressCallback: ProgressCallback? = null
     ): ReportResult = withContext(Dispatchers.IO) {
 
+        // One budget for the whole report. Without it, three attempts on each
+        // of ten chunks plus backoff can reach ~99 minutes behind a full-screen
+        // overlay with back disabled - far past anything a student will wait for.
+        val deadline = System.nanoTime() + REPORT_BUDGET_MINUTES * 60L * 1_000_000_000L
+
         val entries = key.entries.associateBy { it.id }
         val verdicts = graded.associateBy { it.questionId }
 
@@ -868,7 +910,8 @@ $userInputText
                 val raw = callGeminiAPIWithRetry(
                     buildAdjudicationPrompt(chunk, verdicts, entries),
                     maxTokens = ADJUDICATION_MAX_TOKENS,
-                    temperature = 0.3
+                    temperature = 0.3,
+                    deadlineNanos = deadline
                 )
                 parseAdjudication(raw, chunk.map { it.keyId }).forEach {
                     // An entry with no feedback text would otherwise satisfy the
@@ -876,7 +919,7 @@ $userInputText
                     // still carry its score lift - a blank gap where the
                     // personalised feedback should be, reported as a success.
                     if (it.feedbackText.isBlank()) {
-                        Log.w(TAG, "Adjudication returned no feedback for id ${'$'}{it.id}")
+                        Log.w(TAG, "Adjudication returned no feedback for id ${it.id}")
                         degraded = true
                     } else {
                         adjudicated[it.id] = it
@@ -911,7 +954,8 @@ $userInputText
             callGeminiAPIWithRetry(
                 buildRoadmapPrompt(userName, topicPercentages),
                 maxTokens = ROADMAP_MAX_TOKENS,
-                temperature = 0.5
+                temperature = 0.5,
+                deadlineNanos = deadline
             )
         } catch (e: CancellationException) {
             throw e
@@ -956,12 +1000,21 @@ $userInputText
                 ?.joinToString("; ") { kp -> kp.any.firstOrNull().orEmpty() }
                 .orEmpty()
             val coverage = verdicts[q.keyId]?.coverage ?: 0.0
+            val flagged = verdicts[q.keyId]?.matchedMisconceptions.orEmpty()
+            // Framed as a hypothesis, never a verdict. These triggers are short
+            // substrings that demonstrably fire on correct answers, so the model
+            // must check the claim rather than act on it - but sending nothing
+            // at all made every authored note in the key dead weight and let a
+            // student holding a documented misconception score full marks.
+            val misconceptionLine = if (flagged.isEmpty()) "" else
+                "\n            POSSIBLE MISCONCEPTION (verify against the answer, " +
+                    "do not assume it is present): " + flagged.joinToString("; ")
             """
             ID: ${q.keyId}
             QUESTION: ${q.q}
             STUDENT ANSWER: ${InputSanitizer.sanitizeForApi(q.u, 1200)}
             EXPECTED POINTS: $points
-            AUTOMATED COVERAGE: ${(coverage * 100).toInt()}%
+            AUTOMATED COVERAGE: ${(coverage * 100).toInt()}%${misconceptionLine}
             """.trimIndent()
         }
         return """
