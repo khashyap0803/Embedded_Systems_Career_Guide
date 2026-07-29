@@ -128,11 +128,40 @@ class ReportAssemblyTest {
     }
 
     @Test
-    fun `a hit misconception caps the score at 50`() {
+    fun `a misconception withholds certification but does NOT cap the score`() {
+        // It used to cap at 50. These triggers are short substrings and several
+        // are ordinary topic vocabulary, so they fire on correct answers -
+        // Q1's own reference answer tripped three of Q1's own triggers. The
+        // heuristic may withhold auto-certification; only the model, which read
+        // the answer, may set the number.
         val e = entry(misconceptions = listOf(Misconception(listOf("i2c is full duplex"), "no")))
         val v = AnswerGrader.grade(e, "alpha beta i2c is full duplex ${"word ".repeat(30)}")
         assertTrue(v.matchedMisconceptions.isNotEmpty())
-        assertEquals(50, svc.finalScore(v, GeminiReportService.Adjudicated(1, 100, "x")))
+        assertEquals(AnswerGrader.Verdict.NEEDS_MODEL, v.verdict)
+        assertEquals(100, svc.finalScore(v, GeminiReportService.Adjudicated(1, 100, "x")))
+    }
+
+    @Test
+    fun `roadmap keeps allowed tags but strips attributes and everything else`() {
+        val hostile = "<h3 onclick=\"steal()\">Week 1</h3><ul><li>Read <strong>RM0090</strong></li></ul>" +
+            "<script>bad()</script><iframe src=x></iframe>"
+        val out = svc.sanitizeModelHtml(hostile)
+        assertTrue("bare allowed tags survive", out.contains("<ul>") && out.contains("<li>"))
+        assertTrue(out.contains("<strong>RM0090</strong>"))
+        // Same bar as the student-answer case: the word survives as inert text
+        // inside an escaped tag, but no ELEMENT carrying it can form.
+        assertFalse("no tag with attributes may form", out.contains("<h3 "))
+        assertTrue("it is escaped, not executed", out.contains("&lt;h3 onclick"))
+        assertFalse(out.contains("<script>"))
+        assertFalse(out.contains("<iframe"))
+        assertTrue("disallowed markup is escaped, not dropped", out.contains("&lt;script&gt;"))
+    }
+
+    @Test
+    fun `roadmap sanitiser does not double escape plain text`() {
+        val out = svc.sanitizeModelHtml("<p>Use I2C &amp; SPI</p>")
+        assertTrue(out.contains("<p>"))
+        assertFalse(out.contains("&amp;amp;"))
     }
 
     @Test

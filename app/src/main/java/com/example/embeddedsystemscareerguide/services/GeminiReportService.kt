@@ -614,15 +614,28 @@ $userInputText
     /**
      * Make API call to Ollama
      */
-    private suspend fun callGeminiAPI(prompt: String): String = withContext(Dispatchers.IO) {
+    /**
+     * @param maxTokens completion cap. The default 16384 is what the legacy
+     *   whole-document path needs; the answer-key path passes something far
+     *   smaller, because ADJUDICATION_CHUNK bounds the PROMPT and nothing was
+     *   bounding the completion. At a degraded 15 tok/s the 180s read timeout
+     *   is reached around 2,700 tokens, so a 16384 budget lets a single call
+     *   blow the timeout no matter how small its prompt was.
+     * @param temperature lower for structured output than for prose.
+     */
+    private suspend fun callGeminiAPI(
+        prompt: String,
+        maxTokens: Int = 16384,
+        temperature: Double = 0.7
+    ): String = withContext(Dispatchers.IO) {
         try {
             val requestBody = JsonObject().apply {
                 addProperty("model", NetworkModule.DEFAULT_MODEL)
                 addProperty("prompt", prompt)
                 addProperty("stream", false)
                 add("options", JsonObject().apply {
-                    addProperty("temperature", 0.7)
-                    addProperty("num_predict", 16384)
+                    addProperty("temperature", temperature)
+                    addProperty("num_predict", maxTokens)
                     addProperty("top_p", 0.95)
                 })
             }
@@ -719,12 +732,51 @@ $userInputText
      *  timeout even at a degraded ~15 tok/s, not for throughput. */
     private val ADJUDICATION_CHUNK = 5
 
+    /** Completion caps, so one call cannot outrun the 180s read timeout. */
+    private val ADJUDICATION_MAX_TOKENS = 1024
+    private val ROADMAP_MAX_TOKENS = 1800
+
     /** How far above its measured coverage the model may lift a score. Stops a
      *  generous grader turning a thin answer into a good one. */
     private val MAX_MODEL_SCORE_LIFT = 25
 
     // internal rather than private so the escaping lanes and score
     // reconciliation can be unit-tested; both are easy to get silently wrong.
+    /**
+     * Tags the model is allowed to emit, with NO attributes.
+     *
+     * The roadmap is meant to BE markup, so esc() would show students literal
+     * &lt;h3&gt;. But it is model output reaching a document that is persisted to
+     * Firestore and re-rendered on every later view, so it cannot go in raw
+     * either - the endpoint it comes from is a public ngrok tunnel. Allowlisting
+     * bare tags keeps the formatting and removes every attribute, which is where
+     * the event handlers and javascript: URIs live.
+     */
+    private val ESCAPED_ALLOWED_TAG = Regex(
+        "&lt;(/?)(p|br|ul|ol|li|h3|h4|h5|strong|em|b|i|code|pre)&gt;",
+        RegexOption.IGNORE_CASE
+    )
+
+    internal fun sanitizeModelHtml(html: String): String {
+        // Escape everything, then restore only BARE allowed tags. Doing it in
+        // this order is what makes attributes impossible: "<p onclick=x>"
+        // escapes to "&lt;p onclick=x&gt;" and never matches the bare-tag
+        // pattern, so it stays inert text rather than becoming an element.
+        val escaped = esc(html)
+            // esc() turns a pre-escaped "&amp;" into "&amp;amp;", which renders
+            // to the student as literal "&amp;". Collapse the one level of
+            // over-escaping back. This cannot re-enable markup: "&lt;" renders
+            // as the character "<", never as the start of a tag.
+            .replace("&amp;lt;", "&lt;")
+            .replace("&amp;gt;", "&gt;")
+            .replace("&amp;amp;", "&amp;")
+            .replace("&amp;quot;", "&quot;")
+            .replace("&amp;#39;", "&#39;")
+        return ESCAPED_ALLOWED_TAG.replace(escaped) { m ->
+            "<" + m.groupValues[1] + m.groupValues[2].lowercase() + ">"
+        }
+    }
+
     internal data class Adjudicated(
         val id: Int,
         val score: Int,
@@ -737,7 +789,7 @@ $userInputText
      * matches the pre-existing behaviour for the contiguous 1..50 asset.
      */
     internal val QuestionAnswer.keyId: Int
-        get() = if (id != 0) id else n
+        get() = id
 
     /**
      * Build the report from the precomputed key.
@@ -778,8 +830,23 @@ $userInputText
                 )
             }
             try {
-                val raw = callGeminiAPI(buildAdjudicationPrompt(chunk, verdicts, entries))
-                parseAdjudication(raw, chunk.map { it.keyId }).forEach { adjudicated[it.id] = it }
+                val raw = callGeminiAPI(
+                    buildAdjudicationPrompt(chunk, verdicts, entries),
+                    maxTokens = ADJUDICATION_MAX_TOKENS,
+                    temperature = 0.3
+                )
+                parseAdjudication(raw, chunk.map { it.keyId }).forEach {
+                    // An entry with no feedback text would otherwise satisfy the
+                    // omitted-id check below, render as an empty paragraph, and
+                    // still carry its score lift - a blank gap where the
+                    // personalised feedback should be, reported as a success.
+                    if (it.feedbackText.isBlank()) {
+                        Log.w(TAG, "Adjudication returned no feedback for id ${'$'}{it.id}")
+                        degraded = true
+                    } else {
+                        adjudicated[it.id] = it
+                    }
+                }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -799,7 +866,11 @@ $userInputText
             )
         }
         val roadmap = try {
-            callGeminiAPI(buildRoadmapPrompt(userName, topicPercentages))
+            callGeminiAPI(
+                buildRoadmapPrompt(userName, topicPercentages),
+                maxTokens = ROADMAP_MAX_TOKENS,
+                temperature = 0.5
+            )
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -807,6 +878,12 @@ $userInputText
             degraded = true
             ""
         }
+        // A call that succeeds and returns nothing - Ollama returning an empty
+        // response, or output that was entirely a stripped <think> block - is
+        // still a missing roadmap. Without this the report prints "could not be
+        // generated" while isDegraded stays false, so the human-readable and
+        // machine-readable signals contradict each other.
+        if (roadmap.isBlank()) degraded = true
 
         withContext(Dispatchers.Main) {
             progressCallback?.onProgress(
@@ -959,9 +1036,25 @@ markdown, no preamble.
             append("</div>")
         }
 
-        val score = finalScore(verdict, model)
-        if (score != null) {
-            append("<div class=\"rating\">Score: ").append(score).append("/100</div>")
+        // Only show a number when the model actually judged the answer.
+        //
+        // Without one, the score is weighted keyword coverage, and that is not a
+        // grade: run the key's own reference answers through it and 8 of 50
+        // score below 80, the worst at 43, because ".data"/".bss" normalise to
+        // "data"/"bss" and never contain the literal stem "data section". A
+        // student writing the canonical answer would be shown "Score: 43/100".
+        // Coverage is a good enough signal to decide whether to spend a model
+        // call; it is not good enough to print as a mark.
+        when {
+            verdict?.verdict == AnswerGrader.Verdict.UNANSWERED ->
+                append("<div class=\"rating\">Not answered</div>")
+
+            model != null ->
+                append("<div class=\"rating\">Score: ")
+                    .append(finalScore(verdict, model)).append("/100</div>")
+
+            verdict?.verdict == AnswerGrader.Verdict.CORRECT ->
+                append("<div class=\"rating\">Covers the expected points</div>")
         }
         append("</div>")
     }
@@ -979,11 +1072,20 @@ markdown, no preamble.
         if (verdict == null) return null
         if (verdict.verdict == AnswerGrader.Verdict.UNANSWERED) return 0
         val floor = verdict.score
-        val withModel = model?.let {
+        // A matched misconception deliberately does NOT cap the score.
+        //
+        // It used to cap at 50. But these triggers are short substrings, and
+        // several are ordinary topic vocabulary a correct answer would contain -
+        // "synchronous communication" appears in the correct statement that
+        // UART is asynchronous unlike SPI, and Q1's own reference answer tripped
+        // three of Q1's own triggers. A keyword heuristic that can fire on a
+        // right answer must not be allowed to hard-cap a grade. Its job is to
+        // withhold automatic certification and defer to the model, which
+        // AnswerGrader already does by forcing NEEDS_MODEL - and the model, which
+        // has actually read the answer, then sets the score.
+        return model?.let {
             maxOf(floor, minOf(it.score, floor + MAX_MODEL_SCORE_LIFT))
         } ?: floor
-        // A hit misconception caps the score regardless of everything above.
-        return if (verdict.matchedMisconceptions.isNotEmpty()) minOf(withModel, 50) else withModel
     }
 
     private fun wrapReport(
@@ -1004,7 +1106,7 @@ markdown, no preamble.
         } else ""
         val roadmapSection = if (roadmapHtml.isBlank()) {
             "<p>Your roadmap could not be generated this time. The feedback above still applies.</p>"
-        } else roadmapHtml
+        } else sanitizeModelHtml(roadmapHtml)
         return generateFallbackReport(
             buildString {
                 append("<p>Prepared for ").append(esc(userName))
@@ -1012,7 +1114,13 @@ markdown, no preamble.
                 append("</p>")
                 append(notice)
                 if (topicRows.isNotEmpty()) {
-                    append("<h2>Topic Breakdown</h2><ul>").append(topicRows).append("</ul>")
+                    // Labelled for what it is. These are keyword-coverage
+                    // figures used to steer the learning path, not marks, and
+                    // presenting them as "Topic Breakdown: 43%" reads as a grade.
+                    append("<h2>Where to focus</h2>")
+                    append("<p>Ranked by how much of each topic's expected points ")
+                    append("your answers covered. This guides your learning path.</p>")
+                    append("<ul>").append(topicRows).append("</ul>")
                 }
                 append(blocks)
                 append("<h2>Your 12-Week Roadmap</h2>")

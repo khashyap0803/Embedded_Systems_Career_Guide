@@ -52,24 +52,10 @@
       "misconceptions": [
         {
           "any": [
-            "general purpose",
-            "not embedded"
-          ],
-          "note": "Some students may confuse embedded systems with general-purpose computers by thinking they are used for a wide range of tasks, but embedded systems are specifically designed for one or a few dedicated functions."
-        },
-        {
-          "any": [
             "no real-time",
             "not required"
           ],
           "note": "A common misconception is that all embedded systems do not require real-time operation. However, many embedded systems—like those in automotive or medical devices—must respond within strict time limits to ensure safety and functionality."
-        },
-        {
-          "any": [
-            "high interaction",
-            "user input"
-          ],
-          "note": "Some students might think embedded systems require a lot of user interaction, but they often operate autonomously without direct human intervention, such as in smart thermostats or traffic light controllers."
         }
       ],
       "selfCoverage": 1.0,

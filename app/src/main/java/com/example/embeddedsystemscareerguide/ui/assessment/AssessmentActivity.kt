@@ -24,6 +24,8 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.util.*
@@ -277,20 +279,28 @@ class AssessmentActivity : AppCompatActivity() {
                 // separately, on AssessmentAnswerKey.reviewed. An empty key
                 // yields an empty list here and everything downstream falls back
                 // to the previous behaviour.
-                val answerKey = com.example.embeddedsystemscareerguide.services
-                    .AnswerKeyRepository.load(this@AssessmentActivity)
-                val gradedResults = answerKey?.entries?.associateBy { it.id }
-                    .orEmpty()
-                    .let { keyed ->
-                        questions.mapNotNull { q ->
-                            keyed[q.id]?.let { entry ->
-                                com.example.embeddedsystemscareerguide.services.AnswerGrader
-                                    .grade(entry, answers[q.id] ?: "")
-                            }
+                // Explicitly off the main thread. lifecycleScope.launch uses
+                // Dispatchers.Main.immediate, so this body runs synchronously
+                // inside the click handler until something suspends - and this
+                // step reads two assets, SHA-256s one of them, parses a 214 KB
+                // JSON document and runs ~1150 substring matches. On Main that
+                // is a frozen frame at the exact moment the loading overlay is
+                // supposed to appear, plus a StrictMode disk-read violation.
+                val (answerKey, gradedResults) = withContext(Dispatchers.IO) {
+                    val key = com.example.embeddedsystemscareerguide.services
+                        .AnswerKeyRepository.load(this@AssessmentActivity)
+                    val keyed = key?.entries?.associateBy { it.id }.orEmpty()
+                    key to questions.mapNotNull { q ->
+                        keyed[q.id]?.let { entry ->
+                            com.example.embeddedsystemscareerguide.services.AnswerGrader
+                                .grade(entry, answers[q.id] ?: "")
                         }
                     }
+                }
                 val topicPercentages = com.example.embeddedsystemscareerguide.services
                     .AnswerGrader.topicPercentages(gradedResults)
+                val topicRollup = com.example.embeddedsystemscareerguide.services
+                    .AnswerGrader.topicRollup(gradedResults)
 
                 // Get user info
                 val user = auth.currentUser
@@ -328,7 +338,13 @@ class AssessmentActivity : AppCompatActivity() {
                 // Absent, stale or unreviewed, this falls through to the
                 // original full-generation path unchanged - which is also what
                 // makes this landable before the review is done.
-                val report = if (answerKey != null && answerKey.reviewed && gradedResults.isNotEmpty()) {
+                // Requires the key to cover EVERY question, not merely one.
+                // gradedResults is a mapNotNull, so a key missing 38 of 50
+                // entries would still satisfy "isNotEmpty" and then render
+                // those 38 with no reference answer, no score, and no
+                // degradation flag - a broken report served as the good path.
+                val keyCoversAll = gradedResults.size == questions.size
+                val report = if (answerKey != null && answerKey.reviewed && keyCoversAll) {
                     Log.d("Assessment", "Using answer-key report path " +
                         "(${gradedResults.count { it.verdict == com.example.embeddedsystemscareerguide.services.AnswerGrader.Verdict.NEEDS_MODEL }} " +
                         "of ${gradedResults.size} answers need the model)")

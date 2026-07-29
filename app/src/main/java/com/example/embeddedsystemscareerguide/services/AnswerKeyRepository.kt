@@ -70,9 +70,15 @@ object AnswerKeyRepository {
                 }
 
                 val actual = sha256(questionBytes)
-                if (parsed.questionSetSha256.isNotBlank() &&
-                    !parsed.questionSetSha256.equals(actual, ignoreCase = true)
-                ) {
+                if (parsed.questionSetSha256.isBlank()) {
+                    // Fail closed. The field defaults to "" precisely so a
+                    // truncated asset or a dropped line is detectable, and
+                    // skipping the check when it is absent would ignore the one
+                    // case the default exists to catch.
+                    Log.e(TAG, "Answer key declares no questionSetSha256; refusing it")
+                    return null
+                }
+                if (!parsed.questionSetSha256.equals(actual, ignoreCase = true)) {
                     // Loud on purpose. The two assets are edited independently,
                     // and this is the only thing standing between a reworded
                     // question and a confidently wrong "correct answer".

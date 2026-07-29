@@ -62,14 +62,18 @@ object AnswerGrader {
      * Keeping `+ # _` matters - dropping them would turn "C++" into "c" and
      * merge it with plain C, and would break identifiers like `xQueueSend_FromISR`.
      */
+    // Precompiled: grading one submission runs ~1150 matches, and building
+    // these per call meant thousands of Regex compilations per submit.
+    private val NON_WORD = Regex("[^a-z0-9+#_\\s]")
+    private val RUNS = Regex("\\s+")
+    private val WHITESPACE = Regex("\\s+")
+    private val shortStemCache = HashMap<String, Regex>()
+
     private fun normalise(text: String): String =
-        text.lowercase()
-            .replace(Regex("[^a-z0-9+#_\\s]"), " ")
-            .replace(Regex("\\s+"), " ")
-            .trim()
+        RUNS.replace(NON_WORD.replace(text.lowercase(), " "), " ").trim()
 
     private fun wordCount(text: String): Int =
-        text.trim().split(Regex("\\s+")).count { it.isNotEmpty() }
+        text.trim().split(WHITESPACE).count { it.isNotEmpty() }
 
     /**
      * Matches one accepted phrasing against a normalised answer.
@@ -86,8 +90,13 @@ object AnswerGrader {
         val needle = normalise(phrase)
         if (needle.isBlank()) return false
         if (needle.length >= 4) return haystack.contains(needle)
-        return Regex("(?<![a-z0-9])${Regex.escape(needle)}(?![a-z0-9])")
-            .containsMatchIn(haystack)
+        // Cached: the same handful of short stems recur across every entry.
+        val re = synchronized(shortStemCache) {
+            shortStemCache.getOrPut(needle) {
+                Regex("(?<![a-z0-9])${Regex.escape(needle)}(?![a-z0-9])")
+            }
+        }
+        return re.containsMatchIn(haystack)
     }
 
     fun grade(entry: AnswerKeyEntry, rawAnswer: String): Result {
@@ -145,7 +154,28 @@ object AnswerGrader {
      *
      * A question contributes its score to each topic it is tagged with.
      */
-    fun topicPercentages(results: List<Result>): Map<String, Int> {
+    fun topicPercentages(results: List<Result>): Map<String, Int> =
+        topicRollup(results).mapValues { it.value.percentage }
+
+    /**
+     * Per-topic average plus how many questions back it.
+     *
+     * [questionCount] is not decoration. The answer key tags 49 distinct topics
+     * across 50 questions and 35 of them are backed by exactly ONE question, so
+     * a single-question topic can only ever score 0 or 100 while a
+     * multi-question topic regresses toward the middle. Ranking on the raw
+     * average therefore fills the "weakest topics" list almost entirely with
+     * the least-evidenced ones - the opposite of what ranking was added for.
+     * Callers need the count to correct for that.
+     */
+    data class TopicRollup(
+        val percentage: Int,
+        val questionCount: Int,
+        /** Sum of per-question scores; percentage is this over questionCount. */
+        val totalScore: Int
+    )
+
+    fun topicRollup(results: List<Result>): Map<String, TopicRollup> {
         val sums = mutableMapOf<String, Int>()
         val counts = mutableMapOf<String, Int>()
         results.forEach { r ->
@@ -154,6 +184,9 @@ object AnswerGrader {
                 counts[topic] = (counts[topic] ?: 0) + 1
             }
         }
-        return sums.mapValues { (topic, total) -> total / (counts[topic] ?: 1) }
+        return sums.mapValues { (topic, total) ->
+            val n = counts[topic] ?: 1
+            TopicRollup(percentage = total / n, questionCount = n, totalScore = total)
+        }
     }
 }
