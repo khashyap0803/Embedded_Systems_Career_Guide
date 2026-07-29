@@ -266,6 +266,27 @@ class AssessmentActivity : AppCompatActivity() {
                     )
                 }
 
+                // Grade every answer against the precomputed key before anything
+                // is generated. This costs no network call and is what finally
+                // gives the learning path a real per-topic signal.
+                //
+                // Deliberately runs even while the key is unreviewed: topic
+                // scores are not shown to the student, so no model-drafted text
+                // reaches them. Serving cached answers and feedback is gated
+                // separately, on AssessmentAnswerKey.reviewed. An empty key
+                // yields an empty list here and everything downstream falls back
+                // to the previous behaviour.
+                val gradedResults = com.example.embeddedsystemscareerguide.services
+                    .AnswerKeyRepository.entriesById(this@AssessmentActivity)
+                    .let { keyed ->
+                        questions.mapNotNull { q ->
+                            keyed[q.id]?.let { entry ->
+                                com.example.embeddedsystemscareerguide.services.AnswerGrader
+                                    .grade(entry, answers[q.id] ?: "")
+                            }
+                        }
+                    }
+
                 // Get user info
                 val user = auth.currentUser
                 val userEmail = user?.email ?: ""
@@ -327,12 +348,36 @@ class AssessmentActivity : AppCompatActivity() {
                     // Generate personalized stages
                     val stageGenerator = com.example.embeddedsystemscareerguide.services.StageGeneratorService.getInstance(this@AssessmentActivity)
                     
-                    // Calculate assessment result from answers
+                    // Calculate assessment result from answers.
+                    //
+                    // totalScore stays on the word-count heuristic on purpose: the
+                    // <50 / <75 cutoffs in StageGeneratorService.categorizeTopics
+                    // were calibrated against that distribution, so feeding it a
+                    // differently-scaled number would silently reclassify people.
+                    // What changes is topicScores. When it is non-empty the service
+                    // takes its real branch (:227-235) instead of the fallback that
+                    // picks one of three hardcoded topic lists - lists whose names
+                    // are not even in the ES_TOPICS vocabulary. Until now that map
+                    // was always empty, so a learning path was in practice chosen
+                    // by how many words the student typed.
                     val score = calculateAssessmentScore()
+                    val topicScores = gradedResults
+                        .let { com.example.embeddedsystemscareerguide.services.AnswerGrader.topicPercentages(it) }
+                        .mapValues { (_, percentage) ->
+                            com.example.embeddedsystemscareerguide.services.StageGeneratorService.TopicScore(
+                                score = percentage,
+                                maxScore = 100,
+                                percentage = percentage
+                            )
+                        }
+                    if (topicScores.isNotEmpty()) {
+                        Log.d("Assessment", "Graded ${gradedResults.size} answers into " +
+                            "${topicScores.size} topic scores")
+                    }
                     val assessmentResult = com.example.embeddedsystemscareerguide.services.StageGeneratorService.AssessmentResult(
                         totalScore = score,
                         maxScore = 100,
-                        topicScores = mapOf()  // Will be categorized in the service
+                        topicScores = topicScores
                     )
                     
                     val stageCallback = object : com.example.embeddedsystemscareerguide.services.StageGeneratorService.GenerationCallback {

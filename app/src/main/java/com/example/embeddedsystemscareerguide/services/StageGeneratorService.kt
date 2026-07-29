@@ -183,6 +183,13 @@ class StageGeneratorService(private val context: Context) {
         }
     }
 
+    /** Below this percentage a topic is treated as a weak area. */
+    private val WEAK_TOPIC_THRESHOLD = 60
+
+    /** Caps on how many areas reach the prompt - see the note in categorizeTopics. */
+    private val MAX_WEAK_AREAS = 10
+    private val MAX_STRONG_AREAS = 6
+
     /**
      * Categorize topics based on assessment scores
      */
@@ -225,16 +232,27 @@ class StageGeneratorService(private val context: Context) {
                 ))
             }
         } else {
-            // Use detailed topic scores
-            assessment.topicScores.forEach { (topic, scoreData) ->
-                if (scoreData.percentage < 60) {
-                    weakAreas.add(topic)
-                } else {
-                    strongAreas.add(topic)
-                }
-            }
+            // Use detailed topic scores, weakest first and capped.
+            //
+            // The answer key tags 48 distinct topics across the 50 questions and
+            // 35 of them appear exactly once, so an unbounded split can hand the
+            // prompt 40 weak areas. That bloats it, buries the signal among
+            // topics backed by a single question, and drifts away from the short
+            // weak/strong lists this model was fine-tuned on. Ranking by
+            // percentage keeps the genuinely weakest areas rather than whichever
+            // ones the map happened to iterate first.
+            val ranked = assessment.topicScores.entries.sortedBy { it.value.percentage }
+            ranked.asSequence()
+                .filter { it.value.percentage < WEAK_TOPIC_THRESHOLD }
+                .take(MAX_WEAK_AREAS)
+                .forEach { weakAreas.add(it.key) }
+            ranked.asSequence()
+                .filter { it.value.percentage >= WEAK_TOPIC_THRESHOLD }
+                .sortedByDescending { it.value.percentage }
+                .take(MAX_STRONG_AREAS)
+                .forEach { strongAreas.add(it.key) }
         }
-        
+
         return Pair(weakAreas, strongAreas)
     }
 
