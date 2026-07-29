@@ -51,7 +51,14 @@ object AnswerGrader {
         /** Score out of 100 for topic aggregation. */
         val score: Int,
         val matchedMisconceptions: List<String>,
-        val topics: List<String>
+        val topics: List<String>,
+        /**
+         * False when the key has no criteria for this question, so [coverage]
+         * and [score] carry no information. Such a question must not contribute
+         * a 0 to any topic average - that is a measurement gap, not evidence of
+         * weakness, and it would drag a topic into the weak list on no data.
+         */
+        val gradable: Boolean = true
     )
 
     /**
@@ -138,7 +145,8 @@ object AnswerGrader {
             coverage = coverage,
             score = (coverage * 100).toInt().coerceIn(0, 100),
             matchedMisconceptions = misconceptions,
-            topics = entry.topics
+            topics = entry.topics,
+            gradable = gradable
         )
     }
 
@@ -178,7 +186,10 @@ object AnswerGrader {
     fun topicRollup(results: List<Result>): Map<String, TopicRollup> {
         val sums = mutableMapOf<String, Int>()
         val counts = mutableMapOf<String, Int>()
-        results.forEach { r ->
+        // Ungradeable questions are excluded outright: a key entry with no
+        // criteria yields coverage 0, and counting that as a zero would report
+        // a topic as weak on the strength of missing data.
+        results.filter { it.gradable }.forEach { r ->
             r.topics.forEach { topic ->
                 sums[topic] = (sums[topic] ?: 0) + r.score
                 counts[topic] = (counts[topic] ?: 0) + 1

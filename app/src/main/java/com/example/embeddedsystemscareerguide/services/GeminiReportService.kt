@@ -230,8 +230,8 @@ class GeminiReportService {
     <div class="container">
         <h1>📊 Assessment Report</h1>
         <div class="user-info">
-            <p><strong>Student:</strong> $userName</p>
-            <p><strong>Email:</strong> $userEmail</p>
+            <p><strong>Student:</strong> ${esc(userName)}</p>
+            <p><strong>Email:</strong> ${esc(userEmail)}</p>
             <p><strong>Date:</strong> $date</p>
         </div>
         <h2>Your Responses</h2>
@@ -546,8 +546,8 @@ It MUST include the following `<style>` block inside the `<head>` section optimi
         <h1>Your Personalized Embedded Systems Report</h1>
         
         <div class="user-info">
-            <p><strong>Student:</strong> $userName</p>
-            <p><strong>Email:</strong> $userEmail</p>
+            <p><strong>Student:</strong> ${esc(userName)}</p>
+            <p><strong>Email:</strong> ${esc(userEmail)}</p>
             <p><strong>Assessment Date:</strong> ${java.text.SimpleDateFormat("MMMM dd, yyyy", java.util.Locale.getDefault()).format(java.util.Date())}</p>
         </div>
 
@@ -623,6 +623,41 @@ $userInputText
      *   blow the timeout no matter how small its prompt was.
      * @param temperature lower for structured output than for prose.
      */
+    /**
+     * Retrying wrapper. This service was the only one of the three without a
+     * ladder, and the answer-key path made that worse by going from 5 sequential
+     * calls to 11: at a 5% per-call failure rate that is a 43% chance of at
+     * least one failing per report, versus 23% before. Three attempts with
+     * backoff takes it to about 0.1%.
+     *
+     * A transient 502 from the tunnel is the common case and is exactly what a
+     * retry is for. Cancellation is rethrown before the ladder sees it.
+     */
+    private suspend fun callGeminiAPIWithRetry(
+        prompt: String,
+        maxTokens: Int = 16384,
+        temperature: Double = 0.7,
+        maxRetries: Int = 3
+    ): String {
+        var last: Exception? = null
+        var delayMs = 1000L
+        repeat(maxRetries) { attempt ->
+            try {
+                return callGeminiAPI(prompt, maxTokens, temperature)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                last = e
+                Log.w(TAG, "Report API attempt ${'$'}{attempt + 1}/${'$'}maxRetries failed: ${'$'}{e.message}")
+                if (attempt < maxRetries - 1) {
+                    kotlinx.coroutines.delay(delayMs)
+                    delayMs *= 2
+                }
+            }
+        }
+        throw last ?: Exception("Max retries exceeded")
+    }
+
     private suspend fun callGeminiAPI(
         prompt: String,
         maxTokens: Int = 16384,
@@ -830,7 +865,7 @@ $userInputText
                 )
             }
             try {
-                val raw = callGeminiAPI(
+                val raw = callGeminiAPIWithRetry(
                     buildAdjudicationPrompt(chunk, verdicts, entries),
                     maxTokens = ADJUDICATION_MAX_TOKENS,
                     temperature = 0.3
@@ -858,6 +893,13 @@ $userInputText
         }
         // A chunk that returned but omitted questions is also degradation.
         if (needsModel.any { it.keyId !in adjudicated }) degraded = true
+        // So is a question the key does not cover at all: it renders with no
+        // reference answer and no score, and the omission check above cannot
+        // see it because it never entered `verdicts` in the first place.
+        if (questions.any { entries[it.keyId] == null }) {
+            Log.w(TAG, "Answer key does not cover every question in this assessment")
+            degraded = true
+        }
 
         withContext(Dispatchers.Main) {
             progressCallback?.onProgress(
@@ -866,7 +908,7 @@ $userInputText
             )
         }
         val roadmap = try {
-            callGeminiAPI(
+            callGeminiAPIWithRetry(
                 buildRoadmapPrompt(userName, topicPercentages),
                 maxTokens = ROADMAP_MAX_TOKENS,
                 temperature = 0.5
@@ -917,7 +959,7 @@ $userInputText
             """
             ID: ${q.keyId}
             QUESTION: ${q.q}
-            STUDENT ANSWER: ${q.u.take(1200)}
+            STUDENT ANSWER: ${InputSanitizer.sanitizeForApi(q.u, 1200)}
             EXPECTED POINTS: $points
             AUTOMATED COVERAGE: ${(coverage * 100).toInt()}%
             """.trimIndent()
@@ -948,7 +990,7 @@ $body
         // fine-tuned model was trained on score tables, so this is also closer
         // to its training distribution than the transcript ever was.
         return """
-Student: $userName
+Student: ${esc(userName)}
 
 Assessment results by topic (lowest first):
 $table
@@ -970,16 +1012,22 @@ markdown, no preamble.
         return try {
             val arr = gson.fromJson(raw.substring(start, end + 1), JsonArray::class.java)
             arr.mapNotNull { el ->
+                // Per element: a single malformed entry (a string score, a
+                // non-object) used to throw out to the outer catch and discard
+                // all five gradings in the chunk, which with no retry meant they
+                // were simply lost.
+                runCatching {
                 val o = el.asJsonObject
-                val id = o.get("id")?.asInt ?: return@mapNotNull null
+                val id = o.get("id")?.asInt ?: return@runCatching null
                 // Ignore ids we did not ask about rather than letting the model
                 // overwrite a question it was never shown.
-                if (id !in expectedIds) return@mapNotNull null
+                if (id !in expectedIds) return@runCatching null
                 Adjudicated(
                     id = id,
                     score = (o.get("score")?.asInt ?: 0).coerceIn(0, 100),
                     feedbackText = o.get("feedback")?.asString.orEmpty()
                 )
+                }.getOrNull()
             }
         } catch (e: Exception) {
             Log.w(TAG, "Adjudication JSON did not parse", e)

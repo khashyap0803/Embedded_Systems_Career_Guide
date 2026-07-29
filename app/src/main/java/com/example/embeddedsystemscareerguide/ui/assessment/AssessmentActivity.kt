@@ -243,7 +243,11 @@ class AssessmentActivity : AppCompatActivity() {
         binding.completionState.visibility = android.view.View.GONE
         binding.progressText.text = "Initializing AI analysis..."
         binding.progressSubstatus.text = "Preparing your answers..."
-        binding.phaseCounter.text = "Phase 0 of 6"
+        // Phase count is not fixed: the answer-key path runs one phase per
+        // adjudication chunk plus two, so it varies with how many answers
+        // actually need the model. The real counter arrives with the first
+        // progress callback.
+        binding.phaseCounter.text = "Preparing..."
         binding.phaseProgressBar.progress = 0
         binding.quoteText.text = GeminiReportService.QUOTES.random()
 
@@ -367,23 +371,29 @@ class AssessmentActivity : AppCompatActivity() {
                 binding.progressText.text = "Saving your report to cloud..."
                 binding.progressSubstatus.text = "Almost done..."
                 binding.phaseProgressBar.progress = 100
-                val saveSuccess = saveReportToFirebaseSync(report.html, userId, userName, userEmail)
+                val saveOutcome = saveReportToFirebaseSync(
+                    report.html, userId, userName, userEmail, report.isDegraded
+                )
 
-                // Say so when the model could not be reached and part of this
-                // report is filler. Silently handing a student a canned career
-                // roadmap that reads like a real one is worse than telling them
-                // to regenerate it.
-                if (report.isDegraded) {
-                    Toast.makeText(
-                        this@AssessmentActivity,
+                // One message, matched to what actually happened. Previously the
+                // degradation notice fired before the save was even checked, so
+                // a failed save produced "uses generic content" immediately
+                // followed by "Error generating report".
+                val message = when {
+                    saveOutcome == SaveOutcome.KEPT_EXISTING ->
+                        "Part of this report could not be generated, so your previous " +
+                            "report was kept. Try again when the connection is better."
+                    report.isDegraded ->
                         "Some of this report could not be generated and uses generic " +
                             "content. Retake the assessment when you're back online " +
-                            "for a full personalised report.",
-                        Toast.LENGTH_LONG
-                    ).show()
+                            "for a full personalised report."
+                    else -> null
+                }
+                message?.let {
+                    Toast.makeText(this@AssessmentActivity, it, Toast.LENGTH_LONG).show()
                 }
 
-                if (saveSuccess) {
+                if (saveOutcome != SaveOutcome.FAILED) {
                     // CLOUD-ONLY: Report saved to Firebase is the source of truth
                     // Now generate personalized learning stages based on assessment
                     binding.progressText.text = "Generating your personalized learning path..."
@@ -522,8 +532,9 @@ class AssessmentActivity : AppCompatActivity() {
         htmlContent: String,
         userId: String,
         userName: String,
-        userEmail: String
-    ): Boolean {
+        userEmail: String,
+        isDegraded: Boolean
+    ): SaveOutcome {
         return try {
             // Get username from SharedPreferences
             val userPrefs = getSharedPreferences("user_prefs", MODE_PRIVATE)
@@ -531,7 +542,32 @@ class AssessmentActivity : AppCompatActivity() {
             
             if (username == null) {
                 android.util.Log.e("AssessmentActivity", "No username found, cannot save report")
-                return false
+                return SaveOutcome.FAILED
+            }
+
+            val reportRef = firestore.collection("users")
+                .document(username)
+                .collection("data")
+                .document("report")
+
+            // Never let a degraded report destroy a good one.
+            //
+            // set() replaces unconditionally, so a retake during class-wide load
+            // - when timeouts are most likely - would overwrite a complete
+            // report with one built partly from filler, irreversibly. The
+            // student is better served keeping what they had.
+            if (isDegraded) {
+                val existing = runCatching { reportRef.get().await() }.getOrNull()
+                val hadGoodReport = existing != null && existing.exists() &&
+                    existing.getBoolean("isDegraded") != true &&
+                    !existing.getString("reportHtml").isNullOrBlank()
+                if (hadGoodReport) {
+                    android.util.Log.w(
+                        "AssessmentActivity",
+                        "Refusing to overwrite an existing complete report with a degraded one"
+                    )
+                    return SaveOutcome.KEPT_EXISTING
+                }
             }
 
             val reportData = mapOf(
@@ -540,25 +576,26 @@ class AssessmentActivity : AppCompatActivity() {
                 "userEmail" to userEmail,
                 "reportHtml" to htmlContent,
                 "timestamp" to System.currentTimeMillis(),
-                "totalQuestions" to questions.size
+                "totalQuestions" to questions.size,
+                // Persisted so a degraded report stays identifiable after the
+                // fact. Previously the only signal was a Toast at submit time,
+                // which is gone forever a few seconds later.
+                "isDegraded" to isDegraded
             )
 
             // Save to new path: users/{username}/data/report
-            // Using set() will replace any existing report
-            firestore.collection("users")
-                .document(username)
-                .collection("data")
-                .document("report")
-                .set(reportData)
-                .await()
+            reportRef.set(reportData).await()
             
             android.util.Log.d("AssessmentActivity", "Report saved for user: $username")
-            true
+            SaveOutcome.SAVED
         } catch (e: Exception) {
             e.printStackTrace()
-            false
+            SaveOutcome.FAILED
         }
     }
+
+    /** Distinguishes a real save failure from a deliberate refusal to overwrite. */
+    private enum class SaveOutcome { SAVED, FAILED, KEPT_EXISTING }
 
     /**
      * Calculate assessment score based on answer quality
