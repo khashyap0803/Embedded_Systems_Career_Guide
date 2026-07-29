@@ -262,7 +262,8 @@ class AssessmentActivity : AppCompatActivity() {
                     QuestionAnswer(
                         n = index + 1,
                         q = question.question,
-                        u = answers[question.id] ?: ""
+                        u = answers[question.id] ?: "",
+                        id = question.id
                     )
                 }
 
@@ -276,8 +277,10 @@ class AssessmentActivity : AppCompatActivity() {
                 // separately, on AssessmentAnswerKey.reviewed. An empty key
                 // yields an empty list here and everything downstream falls back
                 // to the previous behaviour.
-                val gradedResults = com.example.embeddedsystemscareerguide.services
-                    .AnswerKeyRepository.entriesById(this@AssessmentActivity)
+                val answerKey = com.example.embeddedsystemscareerguide.services
+                    .AnswerKeyRepository.load(this@AssessmentActivity)
+                val gradedResults = answerKey?.entries?.associateBy { it.id }
+                    .orEmpty()
                     .let { keyed ->
                         questions.mapNotNull { q ->
                             keyed[q.id]?.let { entry ->
@@ -286,6 +289,8 @@ class AssessmentActivity : AppCompatActivity() {
                             }
                         }
                     }
+                val topicPercentages = com.example.embeddedsystemscareerguide.services
+                    .AnswerGrader.topicPercentages(gradedResults)
 
                 // Get user info
                 val user = auth.currentUser
@@ -316,8 +321,31 @@ class AssessmentActivity : AppCompatActivity() {
                     }
                 }
 
-                // Generate report using Gemini API with progress callback
-                val report = geminiService.generateReport(userName, userEmail, qaList, progressCallback)
+                // Two paths, chosen by whether the key is trustworthy.
+                //
+                // The fast path serves authored reference answers straight to
+                // the student, so it requires a key that a human has reviewed.
+                // Absent, stale or unreviewed, this falls through to the
+                // original full-generation path unchanged - which is also what
+                // makes this landable before the review is done.
+                val report = if (answerKey != null && answerKey.reviewed && gradedResults.isNotEmpty()) {
+                    Log.d("Assessment", "Using answer-key report path " +
+                        "(${gradedResults.count { it.verdict == com.example.embeddedsystemscareerguide.services.AnswerGrader.Verdict.NEEDS_MODEL }} " +
+                        "of ${gradedResults.size} answers need the model)")
+                    geminiService.generateReportFromKey(
+                        userName = userName,
+                        userEmail = userEmail,
+                        questions = qaList,
+                        graded = gradedResults,
+                        key = answerKey,
+                        topicPercentages = topicPercentages,
+                        progressCallback = progressCallback
+                    )
+                } else {
+                    Log.d("Assessment", "Using full generation path " +
+                        "(key=${answerKey != null}, reviewed=${answerKey?.reviewed})")
+                    geminiService.generateReport(userName, userEmail, qaList, progressCallback)
+                }
 
                 // Save report to Firebase and WAIT for completion
                 binding.progressText.text = "Saving your report to cloud..."
@@ -361,8 +389,7 @@ class AssessmentActivity : AppCompatActivity() {
                     // was always empty, so a learning path was in practice chosen
                     // by how many words the student typed.
                     val score = calculateAssessmentScore()
-                    val topicScores = gradedResults
-                        .let { com.example.embeddedsystemscareerguide.services.AnswerGrader.topicPercentages(it) }
+                    val topicScores = topicPercentages
                         .mapValues { (_, percentage) ->
                             com.example.embeddedsystemscareerguide.services.StageGeneratorService.TopicScore(
                                 score = percentage,

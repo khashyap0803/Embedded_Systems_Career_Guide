@@ -3,6 +3,7 @@ package com.example.embeddedsystemscareerguide.services
 import android.util.Log
 import com.example.embeddedsystemscareerguide.models.QuestionAnswer
 import com.google.gson.Gson
+import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -700,6 +701,326 @@ $userInputText
     /**
      * Generate a fallback report if the main generation fails
      */
+    // ========================================================================
+    // Answer-key path
+    //
+    // The report is assembled here and the model is asked only for what is
+    // genuinely per-user. Today it writes the whole document: the CSS, the
+    // reference answer for all 50 questions, and an echo of the student's own
+    // answer - roughly 29k tokens per report of content that either already
+    // ships in the APK or is already on the device. None of that is
+    // per-user, and regenerating it is most of the wall-clock cost.
+    //
+    // Only questions the grader could not resolve reach the model, in small
+    // chunks, returning structured feedback and nothing else.
+    // ========================================================================
+
+    /** Questions per adjudication call. Sized so one call fits the 180s read
+     *  timeout even at a degraded ~15 tok/s, not for throughput. */
+    private val ADJUDICATION_CHUNK = 5
+
+    /** How far above its measured coverage the model may lift a score. Stops a
+     *  generous grader turning a thin answer into a good one. */
+    private val MAX_MODEL_SCORE_LIFT = 25
+
+    // internal rather than private so the escaping lanes and score
+    // reconciliation can be unit-tested; both are easy to get silently wrong.
+    internal data class Adjudicated(
+        val id: Int,
+        val score: Int,
+        val feedbackText: String
+    )
+
+    /**
+     * The id to key the answer key by. Falls back to the display ordinal for
+     * QuestionAnswer values built before [QuestionAnswer.id] existed, which
+     * matches the pre-existing behaviour for the contiguous 1..50 asset.
+     */
+    internal val QuestionAnswer.keyId: Int
+        get() = if (id != 0) id else n
+
+    /**
+     * Build the report from the precomputed key.
+     *
+     * Caller must have checked [AssessmentAnswerKey.reviewed]: this serves
+     * authored reference answers directly to the student, so it must not run
+     * against a key no human has checked.
+     */
+    suspend fun generateReportFromKey(
+        userName: String,
+        userEmail: String,
+        questions: List<QuestionAnswer>,
+        graded: List<AnswerGrader.Result>,
+        key: com.example.embeddedsystemscareerguide.models.AssessmentAnswerKey,
+        topicPercentages: Map<String, Int>,
+        progressCallback: ProgressCallback? = null
+    ): ReportResult = withContext(Dispatchers.IO) {
+
+        val entries = key.entries.associateBy { it.id }
+        val verdicts = graded.associateBy { it.questionId }
+
+        // Question ids and the 1-based n used by the report are not guaranteed
+        // to agree; index by the id the grader actually used.
+        val needsModel = questions.filter { q ->
+            verdicts[q.keyId]?.verdict == AnswerGrader.Verdict.NEEDS_MODEL
+        }
+        val chunks = needsModel.chunked(ADJUDICATION_CHUNK)
+        val totalPhases = chunks.size + 2
+        var degraded = false
+
+        val adjudicated = mutableMapOf<Int, Adjudicated>()
+        chunks.forEachIndexed { index, chunk ->
+            withContext(Dispatchers.Main) {
+                progressCallback?.onProgress(
+                    index + 1, totalPhases,
+                    "Reviewing your answers (${index + 1}/${chunks.size})...",
+                    QUOTES.random()
+                )
+            }
+            try {
+                val raw = callGeminiAPI(buildAdjudicationPrompt(chunk, verdicts, entries))
+                parseAdjudication(raw, chunk.map { it.keyId }).forEach { adjudicated[it.id] = it }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // One failed chunk must not become a whole fallback report, and
+                // must not pass silently either.
+                Log.w(TAG, "Adjudication chunk ${index + 1} failed", e)
+                degraded = true
+            }
+        }
+        // A chunk that returned but omitted questions is also degradation.
+        if (needsModel.any { it.keyId !in adjudicated }) degraded = true
+
+        withContext(Dispatchers.Main) {
+            progressCallback?.onProgress(
+                totalPhases - 1, totalPhases,
+                "Building your roadmap...", QUOTES.random()
+            )
+        }
+        val roadmap = try {
+            callGeminiAPI(buildRoadmapPrompt(userName, topicPercentages))
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.w(TAG, "Roadmap generation failed", e)
+            degraded = true
+            ""
+        }
+
+        withContext(Dispatchers.Main) {
+            progressCallback?.onProgress(
+                totalPhases, totalPhases, "Assembling your report...", QUOTES.random()
+            )
+        }
+
+        val blocks = questions.joinToString("\n") { q ->
+            renderQuestionBlock(q, verdicts[q.keyId], entries[q.keyId], adjudicated[q.keyId])
+        }
+        ReportResult(
+            html = wrapReport(userName, userEmail, blocks, roadmap, topicPercentages, degraded),
+            isDegraded = degraded
+        )
+    }
+
+    /**
+     * The student's answer and the criteria - not the reference answer, and not
+     * the stylesheet. The client already holds both.
+     */
+    private fun buildAdjudicationPrompt(
+        chunk: List<QuestionAnswer>,
+        verdicts: Map<Int, AnswerGrader.Result>,
+        entries: Map<Int, com.example.embeddedsystemscareerguide.models.AnswerKeyEntry>
+    ): String {
+        val body = chunk.joinToString("\n\n") { q ->
+            val points = entries[q.keyId]?.keyPoints
+                ?.joinToString("; ") { kp -> kp.any.firstOrNull().orEmpty() }
+                .orEmpty()
+            val coverage = verdicts[q.keyId]?.coverage ?: 0.0
+            """
+            ID: ${q.keyId}
+            QUESTION: ${q.q}
+            STUDENT ANSWER: ${q.u.take(1200)}
+            EXPECTED POINTS: $points
+            AUTOMATED COVERAGE: ${(coverage * 100).toInt()}%
+            """.trimIndent()
+        }
+        return """
+You are grading embedded systems assessment answers.
+
+For EACH item below, judge the student's answer against the expected points.
+
+Return ONLY a JSON array, no prose, no markdown fence:
+[{"id": <the ID given>, "score": <0-100>, "feedback": "<2-3 sentences>"}]
+
+Rules:
+- Use the exact ID given for each item. Include every ID, once.
+- feedback is PLAIN TEXT addressed to the student. No HTML, no markdown.
+- Say what is missing or wrong and how to fix it. Do not restate their answer.
+- The automated coverage is a hint, not a verdict - a well-explained answer
+  using different words deserves credit.
+
+$body
+""".trimIndent()
+    }
+
+    private fun buildRoadmapPrompt(userName: String, topics: Map<String, Int>): String {
+        val table = topics.entries.sortedBy { it.value }
+            .joinToString("\n") { "- ${it.key}: ${it.value}%" }
+        // Deliberately the topic table and not the 50-question transcript: the
+        // fine-tuned model was trained on score tables, so this is also closer
+        // to its training distribution than the transcript ever was.
+        return """
+Student: $userName
+
+Assessment results by topic (lowest first):
+$table
+
+Write a focused 12-week learning roadmap for this student in HTML.
+Use <h3> for each phase and <ul><li> for its goals. Weight the early weeks
+toward the lowest-scoring topics. No <html>, <head> or <body> wrapper, no
+markdown, no preamble.
+""".trimIndent()
+    }
+
+    internal fun parseAdjudication(raw: String, expectedIds: List<Int>): List<Adjudicated> {
+        val start = raw.indexOf('[')
+        val end = raw.lastIndexOf(']')
+        if (start < 0 || end <= start) {
+            Log.w(TAG, "Adjudication response contained no JSON array")
+            return emptyList()
+        }
+        return try {
+            val arr = gson.fromJson(raw.substring(start, end + 1), JsonArray::class.java)
+            arr.mapNotNull { el ->
+                val o = el.asJsonObject
+                val id = o.get("id")?.asInt ?: return@mapNotNull null
+                // Ignore ids we did not ask about rather than letting the model
+                // overwrite a question it was never shown.
+                if (id !in expectedIds) return@mapNotNull null
+                Adjudicated(
+                    id = id,
+                    score = (o.get("score")?.asInt ?: 0).coerceIn(0, 100),
+                    feedbackText = o.get("feedback")?.asString.orEmpty()
+                )
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Adjudication JSON did not parse", e)
+            emptyList()
+        }
+    }
+
+    /**
+     * One question's block.
+     *
+     * Escaping has two lanes here and reversing them is either a stored-XSS
+     * sink or double-escaped code samples. Anything derived from the student or
+     * produced by the model goes through [esc]; only the authored
+     * modelAnswerHtml, which ships in the APK and has already been sanitised,
+     * is emitted as markup.
+     */
+    internal fun renderQuestionBlock(
+        q: QuestionAnswer,
+        verdict: AnswerGrader.Result?,
+        entry: com.example.embeddedsystemscareerguide.models.AnswerKeyEntry?,
+        model: Adjudicated?
+    ): String = buildString {
+        append("<div class=\"question-feedback\">")
+        append("<h3>Question ${q.n}</h3>")
+        append("<p>").append(esc(q.q)).append("</p>")
+
+        if (verdict?.verdict == AnswerGrader.Verdict.UNANSWERED) {
+            append("<p class=\"user-answer\"><em>Not answered.</em></p>")
+        } else {
+            append("<div class=\"user-answer\"><strong>Your answer:</strong> ")
+                .append(esc(q.u)).append("</div>")
+        }
+
+        when {
+            verdict?.verdict == AnswerGrader.Verdict.UNANSWERED ->
+                append("<p>Study the reference answer below, then try this question again.</p>")
+
+            model != null ->
+                // Model prose, escaped. It has read the student's free text and
+                // could echo anything out of it.
+                append("<p>").append(esc(model.feedbackText)).append("</p>")
+
+            verdict?.verdict == AnswerGrader.Verdict.CORRECT ->
+                // Authored by us, deterministic, makes no claim about this answer.
+                append(entry?.correctFeedbackHtml.orEmpty())
+
+            else ->
+                append("<p>Compare your answer with the reference answer below.</p>")
+        }
+
+        entry?.modelAnswerHtml?.takeIf { it.isNotBlank() }?.let {
+            append("<div class=\"correct-answer\"><strong>Reference answer:</strong>")
+            append(it)
+            append("</div>")
+        }
+
+        val score = finalScore(verdict, model)
+        if (score != null) {
+            append("<div class=\"rating\">Score: ").append(score).append("/100</div>")
+        }
+        append("</div>")
+    }
+
+    /**
+     * Reconciles the measured coverage with the model's opinion.
+     *
+     * The model may raise a score - a correct answer phrased in words the key
+     * does not list should not be punished for it - but only so far, so a
+     * generous grader cannot turn a thin answer into a strong one. An
+     * unanswered question is never scored by the model at all; it did not see
+     * one.
+     */
+    internal fun finalScore(verdict: AnswerGrader.Result?, model: Adjudicated?): Int? {
+        if (verdict == null) return null
+        if (verdict.verdict == AnswerGrader.Verdict.UNANSWERED) return 0
+        val floor = verdict.score
+        val withModel = model?.let {
+            maxOf(floor, minOf(it.score, floor + MAX_MODEL_SCORE_LIFT))
+        } ?: floor
+        // A hit misconception caps the score regardless of everything above.
+        return if (verdict.matchedMisconceptions.isNotEmpty()) minOf(withModel, 50) else withModel
+    }
+
+    private fun wrapReport(
+        userName: String,
+        userEmail: String,
+        blocks: String,
+        roadmapHtml: String,
+        topics: Map<String, Int>,
+        degraded: Boolean
+    ): String {
+        val topicRows = topics.entries.sortedBy { it.value }.joinToString("") {
+            "<li>${esc(it.key)}: ${it.value}%</li>"
+        }
+        val notice = if (degraded) {
+            "<p class=\"user-answer\"><strong>Note:</strong> part of this report could " +
+                "not be generated and uses generic content. Retake the assessment when " +
+                "you are back online for a full personalised report.</p>"
+        } else ""
+        val roadmapSection = if (roadmapHtml.isBlank()) {
+            "<p>Your roadmap could not be generated this time. The feedback above still applies.</p>"
+        } else roadmapHtml
+        return generateFallbackReport(
+            buildString {
+                append("<p>Prepared for ").append(esc(userName))
+                if (userEmail.isNotBlank()) append(" (").append(esc(userEmail)).append(")")
+                append("</p>")
+                append(notice)
+                if (topicRows.isNotEmpty()) {
+                    append("<h2>Topic Breakdown</h2><ul>").append(topicRows).append("</ul>")
+                }
+                append(blocks)
+                append("<h2>Your 12-Week Roadmap</h2>")
+                append(roadmapSection)
+            }
+        )
+    }
+
     private fun generateFallbackReport(feedbackContent: String): String {
         return """
 <!DOCTYPE html>

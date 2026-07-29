@@ -47,6 +47,15 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+    testOptions {
+        unitTests {
+            // android.util.Log is a stub on the JVM and throws by default.
+            // The logic under test is pure Kotlin; returning defaults lets it
+            // run without dragging in Robolectric.
+            isReturnDefaultValues = true
+        }
+    }
+
     buildFeatures {
         viewBinding = true
         dataBinding = true

@@ -11,8 +11,20 @@ data class AssessmentReport(
 )
 
 data class QuestionAnswer(
-    val n: Int,      // Question number
+    val n: Int,      // Display position in the report, 1-based
     val q: String,   // Question text
-    val u: String    // User answer
+    val u: String,   // User answer
+    /**
+     * The question's real id from the asset, which is what the answer key is
+     * keyed by.
+     *
+     * [n] is a display ordinal and the two only coincide because the ids
+     * currently happen to run 1..50 in order - nothing enforces that. Keying
+     * the answer key off [n] would silently attach question 7's feedback and
+     * reference answer to whatever sits seventh the day someone reorders or
+     * renumbers the asset. Defaults to 0 so existing construction sites and
+     * deserialisation are unaffected.
+     */
+    val id: Int = 0
 )
 
