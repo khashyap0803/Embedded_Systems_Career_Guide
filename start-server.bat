@@ -42,6 +42,20 @@ set OLLAMA_NUM_PARALLEL=2
 :: The model itself is trained for 40960; 16384 is what fits alongside two
 :: slots. The Modelfile sets this too - this is the belt-and-braces default.
 set OLLAMA_CONTEXT_LENGTH=16384
+
+:: Bind Ollama to the WireGuard address so the Oracle A1 can reach it across the
+:: tunnel, where the authenticated llm-gateway proxies to it. OLLAMA_HOST takes a
+:: SINGLE bind address, so this REPLACES the 127.0.0.1 default rather than adding
+:: to it: tools on this PC must now use http://10.8.0.2:11434, or set OLLAMA_HOST
+:: themselves. Deliberately not 0.0.0.0 - that would republish the whole
+:: unauthenticated Ollama API, including /api/create and /api/pull, to every
+:: network this machine is on, which is the hole the ngrok tunnel opened.
+:: Requires the WireGuard tunnel to be up first, or the bind fails.
+:: NOTE: this only takes effect when THIS script starts Ollama. If the Ollama
+:: tray app has already launched ollama.exe, the check below finds it running and
+:: leaves it on 127.0.0.1 - quit the tray app first, or set OLLAMA_HOST as a user
+:: environment variable so the tray app picks it up too.
+set OLLAMA_HOST=10.8.0.2:11434
 tasklist /FI "IMAGENAME eq ollama.exe" | find /I "ollama.exe" >nul 2>&1
 if %ERRORLEVEL% NEQ 0 (
     echo     Starting Ollama...
@@ -52,29 +66,35 @@ if %ERRORLEVEL% NEQ 0 (
     echo     Ollama is already running.
 )
 
+:: ---- disabled 2026-07-30 because the tunnel published Ollama's full API
+:: unauthenticated, including /api/create and /api/pull; replacement is an
+:: authenticated gateway on the Oracle A1 reached by an outbound tunnel from
+:: this PC; do not re-enable. ----
+
 :: ---- Step 2: Kill any existing Ngrok instance ----
-echo [2/2] Starting Ngrok tunnel...
-tasklist /FI "IMAGENAME eq ngrok.exe" | find /I "ngrok.exe" >nul 2>&1
-if %ERRORLEVEL% EQU 0 (
-    echo     Stopping existing Ngrok instance...
-    taskkill /F /IM ngrok.exe >nul 2>&1
-    timeout /t 2 /nobreak >nul
-)
+:: echo [2/2] Starting Ngrok tunnel...
+:: tasklist /FI "IMAGENAME eq ngrok.exe" | find /I "ngrok.exe" >nul 2>&1
+:: if %ERRORLEVEL% EQU 0 (
+::     echo     Stopping existing Ngrok instance...
+::     taskkill /F /IM ngrok.exe >nul 2>&1
+::     timeout /t 2 /nobreak >nul
+:: )
 
 :: ---- Step 3: Start Ngrok with the correct flags ----
 :: Free dev domain reserved for the "khashyap" ngrok account - persists
 :: across restarts, unlike a plain `ngrok http 11434` which auto-assigns a
 :: new ephemeral *.ngrok-free.app URL every time.
-echo     Launching Ngrok tunnel (landfall-quilt-passover.ngrok-free.dev)...
-start "" "C:\Users\nani0\AppData\Local\Microsoft\WinGet\Packages\Ngrok.Ngrok_Microsoft.Winget.Source_8wekyb3d8bbwe\ngrok.exe" http --domain=landfall-quilt-passover.ngrok-free.dev --host-header=rewrite 11434
-timeout /t 4 /nobreak >nul
+:: echo     Launching Ngrok tunnel (landfall-quilt-passover.ngrok-free.dev)...
+:: start "" "C:\Users\nani0\AppData\Local\Microsoft\WinGet\Packages\Ngrok.Ngrok_Microsoft.Winget.Source_8wekyb3d8bbwe\ngrok.exe" http --domain=landfall-quilt-passover.ngrok-free.dev --host-header=rewrite 11434
+:: timeout /t 4 /nobreak >nul
 
 echo.
 echo =============================================
-echo   Server is LIVE!
-echo   Domain: landfall-quilt-passover.ngrok-free.dev
+echo   Ollama is bound to 10.8.0.2:11434  (WireGuard address only)
+echo   127.0.0.1 does NOT answer - set OLLAMA_HOST to use the CLI
 echo   Model:  es-career-guide-14b  (falls back: es-guide-gemma4)
-echo   Status: Ready for app connections
+echo   Reached by: https://katarapuhome.duckdns.org/llm  (Firebase auth)
+echo   Status: No public tunnel is active
 echo =============================================
 echo.
 echo [This window can be minimized. DO NOT close it.]
