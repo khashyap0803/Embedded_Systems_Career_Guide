@@ -106,6 +106,55 @@
 
 
 # ---------------------------------------------------------------------------
+# Firestore DTOs -- Firestore binds by GETTER, not by field
+# ---------------------------------------------------------------------------
+# The services.** rule above keeps <fields> and <init>(), which is exactly what
+# Gson needs, because Gson binds by field. Firestore does not. Its
+# CustomClassMapper.BeanMapper builds the property list from public getters
+# (getX/isX) and PUBLIC fields only -- and a Kotlin data class compiles its
+# properties to PRIVATE fields plus public getters. Keeping <fields> therefore
+# protected nothing here: R8 renamed the getters, BeanMapper found zero
+# properties, and every affected read and write died at runtime with
+#
+#     RuntimeException: No properties to serialize found on class <obfuscated>
+#
+# in release only, silently, with no user-visible error. Confirmed on a device
+# for PersonalizedStage (both toObject and set) and DailyTip (set).
+#
+# Listed class by class rather than widening the services.** rule to <methods>:
+# that rule spans FirestoreManager, OllamaService and every Gemini* service, so
+# <methods> there would pin the entire method surface of the largest classes in
+# the app to fix fourteen small DTOs. Class names stay obfuscated -- only the
+# accessor names are pinned, which is all Firestore reads.
+#
+# Nested types count: StageContent carries CodeExample/Mistake/Challenge,
+# UserProgress carries StageProgress, and Flashcard/Project are serialised as
+# the values of a Map, all of which go through BeanMapper too.
+#
+# ANY new class passed to .set(), .add(), toObject() or toObjects() must be
+# added here. Gson-only models must not: <fields> already covers them.
+-keepclassmembers class
+    com.example.embeddedsystemscareerguide.services.UserProfile,
+    com.example.embeddedsystemscareerguide.services.PersonalizedStage,
+    com.example.embeddedsystemscareerguide.services.StageContent,
+    com.example.embeddedsystemscareerguide.services.CodeExample,
+    com.example.embeddedsystemscareerguide.services.Mistake,
+    com.example.embeddedsystemscareerguide.services.Challenge,
+    com.example.embeddedsystemscareerguide.services.Flashcard,
+    com.example.embeddedsystemscareerguide.services.QuizResult,
+    com.example.embeddedsystemscareerguide.services.UserProgress,
+    com.example.embeddedsystemscareerguide.services.StageProgress,
+    com.example.embeddedsystemscareerguide.services.ChatMessage,
+    com.example.embeddedsystemscareerguide.services.AnalyticsReport,
+    com.example.embeddedsystemscareerguide.services.Project,
+    com.example.embeddedsystemscareerguide.services.DailyTip {
+    public *** get*();
+    public *** is*();
+    public void set*(***);
+}
+
+
+# ---------------------------------------------------------------------------
 # OkHttp / Okio
 # ---------------------------------------------------------------------------
 -dontwarn okhttp3.**
