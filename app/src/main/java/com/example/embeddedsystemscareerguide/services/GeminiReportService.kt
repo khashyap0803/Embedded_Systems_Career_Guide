@@ -52,8 +52,30 @@ class GeminiReportService {
 
     companion object {
         private const val TAG = "GeminiReportService"
-        // Process 15 questions per chunk for detailed feedback
-        private const val CHUNK_SIZE = 15
+
+        // Questions per feedback call. Was 15, which put the call length right on
+        // top of longTimeoutClient's 180s read timeout, so whether a student got a
+        // real report was decided by how verbose the model happened to be that run.
+        //
+        // Measured against the real prompt on the serving GPU (es-career-guide-14b,
+        // NUM_PARALLEL=2), two generations in flight, worst call of each set:
+        //
+        //   15 questions -> 6,693 completion tokens, 185s  -- OVER the timeout
+        //    8 questions -> 3,769 completion tokens, 100s  -- 44% headroom
+        //    5 questions -> 1,934 completion tokens,  50s  -- 72% headroom
+        //
+        // Contention is not what breaks it: per-sequence throughput barely moves
+        // between one and two in flight (37-39 tok/s either way, because batching a
+        // second sequence reuses the same weight reads). What breaks it is how much
+        // completion each call asks for. Output length is proportional to questions
+        // per call and varies about 40% run to run, so at 15 the upper tail crossed
+        // 180s while the median sat under it. Eight is the largest size measured
+        // whose WORST call still clears the timeout by 40%.
+        //
+        // Total tokens across the whole report barely change - the same 50 questions
+        // get written up either way - and prompt processing is cheap, so paying for
+        // more, smaller calls costs little and removes the cliff.
+        private const val CHUNK_SIZE = 8
         
         // Motivational quotes for loading screen
         val QUOTES = listOf(
