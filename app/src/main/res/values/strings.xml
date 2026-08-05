@@ -188,5 +188,36 @@
     <string name="choose_avatar_title">Choose Your Avatar</string>
     <string name="cd_profile_avatar">Profile avatar, tap to change</string>
     <string name="cd_change_avatar">Change avatar</string>
+
+    <!--
+      Assessment completion screen.
+
+      Three outcomes, three screens. The screen used to say "Report Generated
+      Successfully!" no matter what happened, including when the report had not
+      been saved at all - so a student whose run did not finish was told it had.
+      Wording stays plain: the student did nothing wrong, and none of these
+      strings should leak internal vocabulary.
+    -->
+    <string name="report_state_ok_icon">✅</string>
+    <string name="report_state_attention_icon">⚠️</string>
+
+    <!-- Saved, complete. Unchanged from the original success screen. -->
+    <string name="report_saved_title">Report Generated Successfully!</string>
+    <string name="report_saved_body">Your personalized career report is ready.\nYou can preview it now or continue to home.</string>
+
+    <!-- Saved, but built from general content because generation did not finish.
+         This is what a first-time student gets when the run does not complete. -->
+    <string name="report_generic_title">Your Report Is Incomplete</string>
+    <string name="report_generic_body">We couldn\'t finish building your report, so it contains general guidance instead of feedback on your answers.\nRetake the assessment when you can to get your full personalized report.</string>
+
+    <!-- Not saved: an earlier complete report was kept rather than replaced. -->
+    <string name="report_kept_title">This Attempt Didn\'t Finish</string>
+    <string name="report_kept_body">We couldn\'t finish building your new report, so your earlier report has been kept and is the one shown.\nYour answers from this attempt weren\'t used. You can take the assessment again.</string>
+    <string name="report_preview_button">📄 Preview Report</string>
+    <string name="report_kept_preview_button">📄 View Earlier Report</string>
+
+    <!-- Replaces "This may take 2-3 minutes...". The work regularly runs far
+         longer than any fixed estimate, so this promises no duration at all. -->
+    <string name="report_generating_hint">⏱️ Please keep this screen open while your report is prepared</string>
 </resources>
 

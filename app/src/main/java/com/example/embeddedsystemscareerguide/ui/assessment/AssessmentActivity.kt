@@ -11,6 +11,7 @@ import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import com.example.embeddedsystemscareerguide.MainActivity
@@ -393,6 +394,17 @@ class AssessmentActivity : AppCompatActivity() {
                     Toast.makeText(this@AssessmentActivity, it, Toast.LENGTH_LONG).show()
                 }
 
+                // Same facts the toast above is built from, carried through to the
+                // terminal screen so the two cannot disagree. KEPT_EXISTING is only
+                // ever produced for a degraded run, and a SAVED-but-degraded report
+                // is the first-time case: nothing existed to protect, so general
+                // content was written and the student must be told that is what it is.
+                val completionKind = when {
+                    saveOutcome == SaveOutcome.KEPT_EXISTING -> CompletionKind.PREVIOUS_KEPT
+                    report.isDegraded -> CompletionKind.GENERIC_SAVED
+                    else -> CompletionKind.SAVED
+                }
+
                 if (saveOutcome != SaveOutcome.FAILED) {
                     // CLOUD-ONLY: Report saved to Firebase is the source of truth
                     // Now generate personalized learning stages based on assessment
@@ -453,7 +465,7 @@ class AssessmentActivity : AppCompatActivity() {
                         override fun onSuccess(stages: List<com.example.embeddedsystemscareerguide.services.PersonalizedStage>) {
                             runOnUiThread {
                                 Log.d("Assessment", "Generated ${stages.size} personalized stages")
-                                showCompletionState()
+                                showCompletionState(completionKind)
                             }
                         }
                         
@@ -463,7 +475,7 @@ class AssessmentActivity : AppCompatActivity() {
                                 Log.e("Assessment", "Stage generation failed: $error")
                                 Toast.makeText(this@AssessmentActivity, 
                                     "Learning path will be generated later", Toast.LENGTH_SHORT).show()
-                                showCompletionState()
+                                showCompletionState(completionKind)
                             }
                         }
                     }
@@ -506,10 +518,64 @@ class AssessmentActivity : AppCompatActivity() {
     /**
      * Show completion state with Preview and Continue buttons
      */
-    private fun showCompletionState() {
+    /**
+     * What the student is actually left with, derived from the save outcome.
+     *
+     * Deliberately separate from [SaveOutcome]: that enum answers "did the write
+     * happen", which is not the same question as "what does the student now have".
+     * SAVED covers two different situations - a complete report, and a report built
+     * from general content that was saved only because there was no good earlier one
+     * to protect - and those must not look alike on screen.
+     */
+    private enum class CompletionKind { SAVED, GENERIC_SAVED, PREVIOUS_KEPT }
+
+    /**
+     * Renders the terminal screen to match what was actually saved.
+     *
+     * This screen used to be unconditional: it showed "Report Generated
+     * Successfully!" even when nothing had been written, so a student whose run did
+     * not finish was told it had, five minutes after the only honest signal - a
+     * short-lived toast - had disappeared.
+     */
+    private fun showCompletionState(kind: CompletionKind) {
         // Switch from loading to completion state
         binding.loadingState.visibility = android.view.View.GONE
         binding.completionState.visibility = android.view.View.VISIBLE
+
+        val iconRes: Int
+        val titleRes: Int
+        val bodyRes: Int
+        val titleColor: Int
+        val previewLabelRes: Int
+        when (kind) {
+            CompletionKind.SAVED -> {
+                iconRes = R.string.report_state_ok_icon
+                titleRes = R.string.report_saved_title
+                bodyRes = R.string.report_saved_body
+                titleColor = R.color.emerald_400
+                previewLabelRes = R.string.report_preview_button
+            }
+            CompletionKind.GENERIC_SAVED -> {
+                iconRes = R.string.report_state_attention_icon
+                titleRes = R.string.report_generic_title
+                bodyRes = R.string.report_generic_body
+                titleColor = R.color.amber_400
+                previewLabelRes = R.string.report_preview_button
+            }
+            CompletionKind.PREVIOUS_KEPT -> {
+                iconRes = R.string.report_state_attention_icon
+                titleRes = R.string.report_kept_title
+                bodyRes = R.string.report_kept_body
+                titleColor = R.color.amber_400
+                // The report behind this button is the earlier one, not this run's.
+                previewLabelRes = R.string.report_kept_preview_button
+            }
+        }
+        binding.completionIcon.setText(iconRes)
+        binding.completionTitle.setText(titleRes)
+        binding.completionBody.setText(bodyRes)
+        binding.completionTitle.setTextColor(ContextCompat.getColor(this, titleColor))
+        binding.btnPreviewReport.setText(previewLabelRes)
 
         // Setup Preview Report button
         binding.btnPreviewReport.setOnClickListener {

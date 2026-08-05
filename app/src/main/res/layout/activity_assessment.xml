@@ -382,12 +382,14 @@
 
             </androidx.cardview.widget.CardView>
 
-            <!-- Estimated Time -->
+            <!-- Progress hint. Deliberately states no duration: the work routinely
+                 runs many times longer than the "2-3 minutes" this used to promise. -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
-                android:text="⏱️ This may take 2-3 minutes..."
+                android:gravity="center"
+                android:text="@string/report_generating_hint"
                 android:textColor="?attr/appTextTertiary"
                 android:textSize="12sp" />
 
@@ -404,28 +406,34 @@
             android:visibility="gone"
             android:background="?attr/appBackground">
 
-            <!-- Success Icon -->
+            <!-- Outcome icon/title/body. Defaults below are the success case; all
+                 three are set from AssessmentActivity.showCompletionState() to match
+                 what was actually saved, so this screen can no longer claim success
+                 for a run that did not finish. -->
             <TextView
+                android:id="@+id/completion_icon"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="✅"
+                android:text="@string/report_state_ok_icon"
                 android:textSize="80sp"
                 android:layout_marginBottom="24dp" />
 
             <TextView
+                android:id="@+id/completion_title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Report Generated Successfully!"
+                android:text="@string/report_saved_title"
                 android:textColor="@color/emerald_400"
                 android:textSize="24sp"
                 android:textStyle="bold"
                 android:gravity="center" />
 
             <TextView
+                android:id="@+id/completion_body"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
-                android:text="Your personalized career report is ready.\nYou can preview it now or continue to home."
+                android:text="@string/report_saved_body"
                 android:textColor="?attr/appTextSecondary"
                 android:textSize="16sp"
                 android:gravity="center" />
@@ -443,7 +451,7 @@
                     android:id="@+id/btn_preview_report"
                     android:layout_width="280dp"
                     android:layout_height="56dp"
-                    android:text="📄 Preview Report"
+                    android:text="@string/report_preview_button"
                     android:textColor="@color/white"
                     android:textSize="16sp"
                     android:textStyle="bold"
