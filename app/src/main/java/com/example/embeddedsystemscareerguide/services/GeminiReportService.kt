@@ -621,6 +621,23 @@ $userInputText
         var last: Exception? = null
         var delayMs = 1000L
         repeat(maxRetries) { attempt ->
+            // Checked BEFORE the attempt, not only after one has failed.
+            //
+            // The budget used to be consulted in the failure handlers alone,
+            // which gated retries but did not bound the clock: every remaining
+            // call still got one unguarded attempt, and an unguarded attempt is
+            // a full 180s read timeout. With ten calls left in the report that
+            // is thirty minutes spent entirely past a deadline that had already
+            // expired. Refusing to dial at all is what turns
+            // REPORT_BUDGET_MINUTES into a ceiling rather than a suggestion.
+            if (budgetSpent(System.nanoTime(), deadlineNanos)) {
+                Log.w(TAG, "Report budget spent before attempt ${attempt + 1}; not calling")
+                // Prefer the real cause when there is one, so a report that ran
+                // out of time mid-ladder still logs what was actually failing.
+                throw last ?: ReportBudgetExpiredException(
+                    "Report wall-clock budget spent before this call could start"
+                )
+            }
             try {
                 return call(prompt, maxTokens, temperature)
             } catch (e: CancellationException) {
@@ -650,7 +667,9 @@ $userInputText
             } catch (e: Exception) {
                 last = e
                 Log.w(TAG, "Report API attempt ${attempt + 1}/$maxRetries failed: ${e.message}")
-                val outOfTime = deadlineNanos != null && System.nanoTime() > deadlineNanos
+                // Same predicate the loop head uses. Kept here as well so a
+                // spent budget does not first sleep out its backoff for nothing.
+                val outOfTime = budgetSpent(System.nanoTime(), deadlineNanos)
                 if (outOfTime) {
                     Log.w(TAG, "Retry budget exhausted; giving up on this call")
                     throw e
@@ -994,11 +1013,68 @@ $bodyHtml
      *  timeout even at a degraded ~15 tok/s, not for throughput. */
     private val ADJUDICATION_CHUNK = 5
 
-    /** Wall-clock ceiling for one report, across every call and retry. */
-    private val REPORT_BUDGET_MINUTES = 10L
+    /**
+     * Wall-clock ceiling for one report, across every call and retry.
+     *
+     * Was 10, which was shorter than a healthy run. A full report is ten calls
+     * and measured 13m11s end to end on device (23:00:24 -> 23:13:35) with
+     * nothing failing, so from minute 10 onward the ladder was switched off for
+     * the rest of every run - including the roadmap, which is last. Under cohort
+     * load calls slow, the run stretches, and the share of it with retries
+     * disabled grows. Retries were unavailable exactly when they were needed.
+     *
+     * Raising it was previously unsafe for a reason that had nothing to do with
+     * the number: the generation overlay disabled the system back gesture and
+     * offered no way out, so the budget was the only thing standing between a
+     * student and being held for the better part of an hour. It was protecting
+     * them from the screen, not the server from the load. The overlay now
+     * carries a cancel control (AssessmentActivity.cancelReportGeneration), so
+     * the ceiling can be sized for the work instead of for the trap.
+     *
+     * 20 minutes is ~50% headroom over the measured clean run. The worst case is
+     * NOT 20 minutes though - see [budgetSpent]. The deadline stops new attempts
+     * from starting; it cannot abort one already in flight, and an attempt that
+     * starts a microsecond inside the deadline still owns the 180s read timeout.
+     * So the bound is:
+     *
+     *   20 min budget + 180 s in-flight read timeout = 23 minutes, worst case.
+     *
+     * That is the ceiling for a run in which every single call burns its full
+     * timeout. It is a number a student can be held to only because they can
+     * leave at any point; the typical run remains the measured ~13 minutes.
+     */
+    internal val REPORT_BUDGET_MINUTES = 20L
+
+    /**
+     * The instant this report must stop dialling out.
+     *
+     * Split out of [generateReportFromKey] so the ceiling is asserted in a test
+     * rather than recomputed by hand there and in the tests separately.
+     */
+    internal fun reportDeadlineNanos(startNanos: Long): Long =
+        startNanos + REPORT_BUDGET_MINUTES * 60L * 1_000_000_000L
+
+    /**
+     * Whether the report's wall-clock budget is gone.
+     *
+     * A null deadline means no budget was ever set. That is the legacy
+     * [generateReport] path, which threads no deadline into any of its ten
+     * calls; there, cancellation is the only bound and this must not invent one.
+     */
+    internal fun budgetSpent(nowNanos: Long, deadlineNanos: Long?): Boolean =
+        deadlineNanos != null && nowNanos > deadlineNanos
 
     /** Retrying this changes nothing: the same prompt hits the same ceiling. */
     private class TruncatedResponseException(message: String) : Exception(message)
+
+    /**
+     * The report's wall-clock budget was spent before this call could start, so
+     * no request was made. Distinct from a failed call: nothing was attempted,
+     * and the 180s that attempting would have cost is the whole point of the
+     * type. It is an ordinary Exception, so every caller's existing handler
+     * marks the report degraded, which is what a report missing a section is.
+     */
+    internal class ReportBudgetExpiredException(message: String) : Exception(message)
 
     /**
      * A 4xx is a request the server will keep rejecting - with one exception.
@@ -1181,8 +1257,10 @@ $bodyHtml
 
         // One budget for the whole report. Without it, three attempts on each
         // of ten chunks plus backoff can reach ~99 minutes behind a full-screen
-        // overlay with back disabled - far past anything a student will wait for.
-        val deadline = System.nanoTime() + REPORT_BUDGET_MINUTES * 60L * 1_000_000_000L
+        // overlay - far past anything a student will wait for. The overlay is
+        // now cancellable too, so the budget is a ceiling rather than the only
+        // way out; both bounds are wanted, for different reasons.
+        val deadline = reportDeadlineNanos(System.nanoTime())
 
         val entries = key.entries.associateBy { it.id }
         val verdicts = graded.associateBy { it.questionId }

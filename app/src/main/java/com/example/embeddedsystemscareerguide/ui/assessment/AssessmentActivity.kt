@@ -50,6 +50,14 @@ class AssessmentActivity : AppCompatActivity() {
      */
     private lateinit var backCallback: OnBackPressedCallback
 
+    /**
+     * The running report generation, held so the cancel control can stop it.
+     *
+     * Null whenever no run is in flight. Cleared by [cancelReportGeneration] so a
+     * second tap cannot cancel a job that has already moved on to saving.
+     */
+    private var reportJob: kotlinx.coroutines.Job? = null
+
     companion object {
         // Keys for surviving configuration changes and process death. The manifest
         // only declares configChanges="uiMode", so a rotation DOES recreate this
@@ -169,6 +177,43 @@ class AssessmentActivity : AppCompatActivity() {
         binding.buttonMic.setOnClickListener {
             startVoiceInput()
         }
+
+        binding.buttonCancelGeneration.setOnClickListener {
+            cancelReportGeneration()
+        }
+    }
+
+    /**
+     * Stop a report generation the student no longer wants to wait for.
+     *
+     * Everything visible happens here, synchronously, on the main thread - not in
+     * the coroutine. The coroutine's CancellationException handler deliberately
+     * touches no views (it also fires when the Activity is finishing, where the
+     * views are gone), so the restore cannot live there.
+     *
+     * Cancelling the job unwinds the in-flight OkHttp call through
+     * GeminiReportService's `catch (e: CancellationException) { throw e }`, which
+     * is the FIRST catch in the retry ladder. Nothing downstream of that point
+     * runs: no fallback report is assembled, saveReportToFirebaseSync is never
+     * reached, and nothing is written to Firestore.
+     */
+    private fun cancelReportGeneration() {
+        val job = reportJob ?: return
+        reportJob = null
+
+        // Hide it first so a double tap cannot race the teardown.
+        binding.buttonCancelGeneration.isVisible = false
+        job.cancel(kotlinx.coroutines.CancellationException("Student stopped report generation"))
+
+        // Back to the question they submitted from, answers intact. Mirrors the
+        // failure path below rather than showing a completion screen: nothing was
+        // produced, so there is nothing to preview.
+        binding.loadingOverlay.isVisible = false
+        backCallback.isEnabled = true
+        binding.buttonNext.isEnabled = true
+        binding.buttonBack.isEnabled = true
+        Log.d("Assessment", "Report generation cancelled by student; nothing saved")
+        Toast.makeText(this, R.string.report_cancelled_toast, Toast.LENGTH_LONG).show()
     }
 
     private fun displayCurrentQuestion() {
@@ -261,8 +306,14 @@ class AssessmentActivity : AppCompatActivity() {
         // cancelled the coroutine and discarded the report with no error shown.
         backCallback.isEnabled = false
 
+        // With back disabled and the overlay covering everything, this button is
+        // the student's only way out of a run. It is withdrawn once the report
+        // exists and saving begins, below, because at that point stopping would
+        // throw away a finished report and could not un-write an in-flight save.
+        binding.buttonCancelGeneration.isVisible = true
+
         // Process assessment and generate report
-        lifecycleScope.launch {
+        reportJob = lifecycleScope.launch {
             try {
                 // Prepare question-answer pairs
                 val qaList = questions.mapIndexed { index, question ->
@@ -367,6 +418,14 @@ class AssessmentActivity : AppCompatActivity() {
                         "(key=${answerKey != null}, reviewed=${answerKey?.reviewed})")
                     geminiService.generateReport(userName, userEmail, qaList, progressCallback)
                 }
+
+                // The report exists. Withdraw the cancel control before the save
+                // starts: past this line stopping would discard a finished report,
+                // and once reportRef.set() is in flight cancelling the coroutine
+                // would not un-write it anyway. Offering a button that cannot
+                // deliver what it says is worse than not offering one.
+                reportJob = null
+                binding.buttonCancelGeneration.isVisible = false
 
                 // Save report to Firebase and WAIT for completion
                 binding.progressText.text = "Saving your report to cloud..."
@@ -499,7 +558,9 @@ class AssessmentActivity : AppCompatActivity() {
                 // pointless and a leak. Let cancellation propagate.
                 throw e
             } catch (e: Exception) {
+                reportJob = null
                 binding.loadingOverlay.isVisible = false
+                binding.buttonCancelGeneration.isVisible = false
                 // Restore the back gesture alongside the buttons. Without this, a
                 // failed submission would leave the user unable to leave the screen.
                 backCallback.isEnabled = true

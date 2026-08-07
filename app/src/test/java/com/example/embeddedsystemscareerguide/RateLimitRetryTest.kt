@@ -182,8 +182,17 @@ class RateLimitRetryTest {
     fun `a 429 whose wait outlasts the budget gives up without sleeping`() = runBlocking {
         var attempts = 0
         val startedAt = System.nanoTime()
-        // Deadline already in the past: no wait can fit.
-        val deadline = System.nanoTime() - 1_000_000_000L
+        // Inside the budget, but with only 5s of it left - so the call is allowed
+        // to go out and the 60s Retry-After is what cannot fit.
+        //
+        // This used to use a deadline already in the past. That stopped
+        // exercising this rule once the ladder learned to check the budget
+        // BEFORE dialling rather than only after a failure: an expired deadline
+        // now short-circuits at the loop head and never reaches a 429 at all
+        // (see ReportBudgetTest). The rule under test here is ecg-009's, that a
+        // wait outlasting the budget is refused rather than slept, and it needs
+        // a call that actually happens.
+        val deadline = System.nanoTime() + 5_000_000_000L
         try {
             svc.callGeminiAPIWithRetry(
                 prompt = "p",

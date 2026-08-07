@@ -272,15 +272,35 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <!-- Loading State -->
+        <!-- Loading State
+
+             Two parts on purpose: the status scrolls, the cancel control does
+             not. Stacked flat this content runs to roughly 640dp, and a centred
+             LinearLayout that overflows clips from BOTH ends - so on a short
+             screen the last child is the first thing lost. The last child is the
+             only way out of this overlay, which would put the student back in
+             exactly the trap this button exists to remove. -->
         <LinearLayout
             android:id="@+id/loading_state"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:gravity="center"
+            android:gravity="center_horizontal"
             android:orientation="vertical"
             android:padding="32dp"
             android:background="?attr/appBackground">
+
+          <ScrollView
+              android:layout_width="match_parent"
+              android:layout_height="0dp"
+              android:layout_weight="1"
+              android:fillViewport="true"
+              android:scrollbars="none">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="vertical">
 
             <!-- AI Icon with Animation -->
             <TextView
@@ -392,6 +412,32 @@
                 android:text="@string/report_generating_hint"
                 android:textColor="?attr/appTextTertiary"
                 android:textSize="12sp" />
+
+            </LinearLayout>
+
+          </ScrollView>
+
+            <!-- The way out.
+
+                 This overlay is match_parent, clickable, elevated above
+                 everything, and the Activity disables the system back gesture
+                 for as long as it is up - so until this button existed a
+                 student had no way to leave a run except killing the app. That
+                 trap, not server load, is why the report budget was pinned at
+                 ten minutes. Outlined rather than filled: stopping is available,
+                 not encouraged. -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/button_cancel_generation"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="24dp"
+                android:text="@string/report_cancel_button"
+                android:textColor="?attr/appTextSecondary"
+                android:textSize="14sp"
+                app:strokeColor="?attr/appOutline"
+                app:strokeWidth="1dp" />
 
         </LinearLayout>
 

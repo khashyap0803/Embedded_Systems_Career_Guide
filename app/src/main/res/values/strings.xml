@@ -216,6 +216,24 @@
     <string name="report_preview_button">📄 Preview Report</string>
     <string name="report_kept_preview_button">📄 View Earlier Report</string>
 
+    <!--
+      Stopping the run.
+
+      A fourth outcome, and deliberately not one of the three above. The student
+      did not fail to get a report - they decided not to wait for one, and the
+      three completion screens all describe something that was produced. In
+      particular this must never reuse report_generic_title ("Your Report Is
+      Incomplete"), which tells a student their answers produced a weak report
+      when the truth is they stopped it themselves.
+
+      So a cancelled run has no completion screen at all: it puts the student
+      back on the question they submitted from, with every answer still in place,
+      and says plainly that nothing was saved. Preview and Continue would both be
+      wrong here - there is nothing to preview.
+    -->
+    <string name="report_cancel_button">Stop and go back</string>
+    <string name="report_cancelled_toast">Report generation stopped. Nothing was saved and your answers are still here — submit again whenever you\'re ready.</string>
+
     <!-- Replaces "This may take 2-3 minutes...". The work regularly runs far
          longer than any fixed estimate, so this promises no duration at all. -->
     <string name="report_generating_hint">⏱️ Please keep this screen open while your report is prepared</string>
