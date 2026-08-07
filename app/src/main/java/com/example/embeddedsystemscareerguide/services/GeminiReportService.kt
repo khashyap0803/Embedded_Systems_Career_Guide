@@ -342,10 +342,137 @@ class GeminiReportService {
         questions: List<QuestionAnswer>
     ): String = withContext(Dispatchers.IO) {
 
-        val prompt = buildReportPrompt(userName, userEmail, questions)
-        val response = callGeminiAPIWithRetry(prompt)
+        // Two calls, not one. Together these produce exactly what the single
+        // call produced; apart, neither is long enough to run at the read
+        // timeout. The roadmap is far and away the biggest section - twelve
+        // weeks of daily tasks - so leaving it in with everything else was what
+        // kept this call at 160-260s while every feedback chunk finished inside
+        // 100s. Splitting it also lets it carry ROADMAP_MAX_TOKENS, the same cap
+        // the answer-key path already applies to the same content.
+        val body = callGeminiAPIWithRetry(buildReportPrompt(userName, userEmail, questions))
 
-        return@withContext response
+        // Six weeks at a time. Measured, the whole twelve ran to exactly 4,096
+        // completion tokens - the cap - which means it was being truncated, and
+        // a truncated roadmap is thrown away rather than shown. Half of it fits
+        // with room to spare, and the student still gets all twelve weeks.
+        val roadmap = try {
+            val firstHalf = callGeminiAPIWithRetry(
+                buildLegacyRoadmapPrompt(questions, 1, 6),
+                maxTokens = ROADMAP_MAX_TOKENS
+            )
+            val secondHalf = callGeminiAPIWithRetry(
+                buildLegacyRoadmapPrompt(questions, 7, 12),
+                maxTokens = ROADMAP_MAX_TOKENS
+            )
+            stripDocumentScaffolding(firstHalf) + "\n" + stripDocumentScaffolding(secondHalf)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            // A missing roadmap is a worse report, not a broken one. Returning
+            // the body alone lets assembleReport keep the summary, the topic
+            // analysis and all fifty questions of feedback; the placeholder is
+            // replaced with a plain note below.
+            Log.w(TAG, "Roadmap generation failed; report will note it is missing", e)
+            ""
+        }
+
+        val roadmapSection = if (roadmap.isBlank()) {
+            "<p>Your roadmap could not be generated this time. The feedback above still applies.</p>"
+        } else {
+            stripDocumentScaffolding(roadmap)
+        }
+
+        val strippedBody = stripDocumentScaffolding(body)
+        return@withContext if (strippedBody.contains(ROADMAP_PLACEHOLDER)) {
+            strippedBody.replace(ROADMAP_PLACEHOLDER, roadmapSection)
+        } else {
+            // The model dropped the placeholder. Append with its own heading
+            // rather than silently discard twelve weeks of roadmap.
+            Log.w(TAG, "Roadmap placeholder missing from report body; appending roadmap")
+            strippedBody +
+                "\n<h2>🗺️ Your Personalized 12-Week Embedded Systems Roadmap</h2>\n" +
+                roadmapSection
+        }
+    }
+
+    /**
+     * The roadmap, on its own.
+     *
+     * Same instructions the combined prompt used to carry, unchanged, so the
+     * student gets the same roadmap. It is split out only because it is the
+     * long pole: asked for alongside the summary and topic analysis it pushed
+     * one completion past 5,000 tokens, and at ~33 tok/s under load that is a
+     * call sitting on top of the 180s read timeout.
+     */
+    private fun buildLegacyRoadmapPrompt(
+        questions: List<QuestionAnswer>,
+        weekFrom: Int,
+        weekTo: Int
+    ): String {
+        val userInputText = questions.joinToString("\n") { qa ->
+            "Q${qa.n}: ${qa.q}\nA: ${qa.u.ifBlank { "[No answer]" }}\n"
+        }
+        val opening = if (weekFrom == 1) {
+            "Start directly with the hardware recommendations, then Week $weekFrom."
+        } else {
+            "Weeks 1 to ${weekFrom - 1} have already been written and the hardware " +
+                "recommendations are already in place - do NOT repeat either. " +
+                "Start directly with <h3>Week $weekFrom</h3>."
+        }
+
+        return """
+You are a world-class career mentor and principal embedded systems architect.
+Based on the student's assessment below, write WEEKS $weekFrom TO $weekTo of their
+personalized 12-week learning roadmap, as an HTML fragment.
+
+Write ONLY weeks $weekFrom to $weekTo. Do not write any other week, and do not
+write a summary, conclusion or closing paragraph - the rest of the roadmap and
+the report around it are produced separately.
+
+Output ONLY the roadmap markup. Do NOT output `<!DOCTYPE>`, `<html>`, `<head>`,
+`<style>`, `<body>`, any CSS, or a heading for the roadmap - the heading is
+already in place. $opening
+
+**CRITICAL INSTRUCTIONS FOR THE 12-WEEK ROADMAP:**
+This is the most important part of the report. It must be HYPER-DETAILED, SPECIFIC, PRECISE, and PRACTICAL. Do not give vague advice.
+
+**MOBILE-OPTIMIZED FORMATTING:** You MUST NOT use tables. Instead, use the structure with `<h3>` tags for weeks and nested `<ul>` lists for daily tasks.
+
+- **Resources:** You MUST provide specific resources:
+  - **Books:** Include names of the best books and specify exact chapters (e.g., "The Definitive Guide to ARM Cortex-M3 and Cortex-M4 Processors by Joseph Yiu, Chapters 3-5").
+  - **YouTube:** DO NOT include clickable YouTube links (they may be invalid). Instead, mention the exact YouTube channel name and video/playlist title like this: "YouTube: Embedded Systems Academy channel - 'ARM Cortex-M for Beginners' playlist" or "YouTube: ControllersTech channel - 'STM32 GPIO Tutorial' video".
+  - **Online Courses:** Mention course names and platforms (e.g., "Udemy: 'Mastering Microcontroller with Embedded Driver Development' by FastBit").
+- **Projects:** Break down into concrete daily steps with specific instructions.
+- **Concepts:** Be precise with technical details and practical examples.
+
+The roadmap should follow this structure for each week:
+
+<h3>Week 1: [Topic Name]</h3>
+<p><strong>Goal:</strong> [Clear learning objective]</p>
+<ul>
+    <li><strong>Day 1-2: [Subtopic]</strong>
+        <ul>
+            <li>[Specific book with chapter]</li>
+            <li>YouTube: [Channel Name] - "[Video/Playlist Title]" (search on YouTube)</li>
+            <li>[Key concept to master]</li>
+            <li><strong>Mini-Project:</strong> [Concrete task]</li>
+        </ul>
+    </li>
+    <li><strong>Day 3-4: [Next Subtopic]</strong>
+        <ul>
+            <li>[Details...]</li>
+        </ul>
+    </li>
+</ul>
+
+Use this format for every week in your assigned range, ensuring mobile readability with proper spacing and concise but detailed content.
+
+**Hardware Recommendations:** At the beginning of the roadmap, recommend specific, affordable microcontroller boards (e.g., STM32 Nucleo, Arduino, ESP32) with approximate prices in Indian Rupees (₹) and mention where to purchase them in India (like Amazon.in, Robu.in, or electronics stores).
+
+USER'S FULL Q&A TRANSCRIPT:
+---
+$userInputText
+        """.trimIndent()
     }
 
     /**
@@ -421,10 +548,203 @@ User Answer: ${item.u.ifBlank { "[No answer provided]" }}
 You are a world-class career mentor and principal embedded systems architect.
 Based on the student's full Q&A transcript, generate a personalized HTML feedback report.
 
-**CRITICAL: HTML STRUCTURE & STYLING FOR MOBILE**
-Your output MUST be a single, complete HTML document starting with `<!DOCTYPE html>`.
-It MUST include the following `<style>` block inside the `<head>` section optimized for mobile viewing.
+**CRITICAL: OUTPUT AN HTML FRAGMENT, NOT A DOCUMENT**
+Do NOT output `<!DOCTYPE>`, `<html>`, `<head>`, `<style>`, `<body>`, or any CSS.
+The page around your text, including every style, is added afterwards. Output
+ONLY the inner HTML described below; anything outside it is discarded.
 
+Begin with exactly this block:
+
+<div class="user-info">
+    <p><strong>Student:</strong> ${esc(userName)}</p>
+    <p><strong>Email:</strong> ${esc(userEmail)}</p>
+    <p><strong>Assessment Date:</strong> ${java.text.SimpleDateFormat("MMMM dd, yyyy", java.util.Locale.getDefault()).format(java.util.Date())}</p>
+</div>
+
+The stylesheet already defines these classes - use them and do not invent
+others: `.user-info`, `.question-feedback`, `.user-answer`, `.correct-answer`,
+`.rating`, `.section`, plus ordinary `h2`/`h3`/`h4`/`p`/`ul`/`li`/`pre`/`code`/
+`blockquote`.
+
+**CRITICAL: REPORT STRUCTURE ORDER**
+After the user info block, output these sections in this exact order:
+1. Overall Summary
+2. Topic-by-Topic Analysis (your strengths and weaknesses by topic)
+3. Detailed Question Feedback Section (IMPORTANT: For this section, you MUST output ONLY this exact HTML comment with a heading: `<h2>📝 Detailed Question-by-Question Analysis</h2><!-- QUESTION_FEEDBACK_INSERT_POINT -->` - DO NOT generate any actual question feedback here, the detailed feedback will be inserted automatically at this placeholder)
+4. The 12-week roadmap section (IMPORTANT: like the question feedback, output ONLY this exact heading and comment: `<h2>🗺️ Your Personalized 12-Week Embedded Systems Roadmap</h2><!-- ROADMAP_INSERT_POINT -->` - DO NOT write the roadmap itself, it is generated separately and inserted at this placeholder)
+5. Final Recommendations & Conclusion
+
+**CRITICAL: DO NOT GENERATE DUPLICATE QUESTION FEEDBACK**
+The question-by-question feedback is generated separately and will be injected at the placeholder. You MUST NOT create your own question feedback section. Only place the heading and the exact comment `<!-- QUESTION_FEEDBACK_INSERT_POINT -->`.
+
+**CRITICAL INSTRUCTIONS FOR TOPIC-BY-TOPIC ANALYSIS:**
+This section must be comprehensive and directly reflect the assessment results. Based on the user's answers, provide a detailed breakdown of their knowledge gaps across all major embedded systems categories. For each category (e.g., "Embedded Systems Fundamentals & Architecture", "C Programming for Embedded Systems", "Microcontroller Peripherals & Drivers", "Real-Time Operating Systems (RTOS)", etc.), list the specific concepts where the user showed weakness AND strength in bullet points. The goal is to give the student a clear overview of their performance before they see the detailed question feedback.
+
+USER'S FULL Q&A TRANSCRIPT:
+---
+$userInputText
+        """.trimIndent()
+    }
+
+    /**
+     * Make API call to Ollama
+     */
+    /**
+     * @param maxTokens completion cap. The default 16384 is what the legacy
+     *   whole-document path needs; the answer-key path passes something far
+     *   smaller, because ADJUDICATION_CHUNK bounds the PROMPT and nothing was
+     *   bounding the completion. At a degraded 15 tok/s the 180s read timeout
+     *   is reached around 2,700 tokens, so a 16384 budget lets a single call
+     *   blow the timeout no matter how small its prompt was.
+     * @param temperature lower for structured output than for prose.
+     */
+    /**
+     * Retrying wrapper. This service was the only one of the three without a
+     * ladder, and the answer-key path made that worse by going from 5 sequential
+     * calls to 11: at a 5% per-call failure rate that is a 43% chance of at
+     * least one failing per report, versus 23% before. Three attempts with
+     * backoff takes it to about 0.1%.
+     *
+     * A transient 502 from the tunnel is the common case and is exactly what a
+     * retry is for. Cancellation is rethrown before the ladder sees it.
+     */
+    internal suspend fun callGeminiAPIWithRetry(
+        prompt: String,
+        maxTokens: Int = 16384,
+        temperature: Double = 0.7,
+        maxRetries: Int = 3,
+        deadlineNanos: Long? = null,
+        // Seam for tests only. The default is the real call, so production
+        // behaviour is exactly what it was before this parameter existed.
+        call: suspend (String, Int, Double) -> String = { p, m, t -> callGeminiAPI(p, m, t) }
+    ): String {
+        var last: Exception? = null
+        var delayMs = 1000L
+        repeat(maxRetries) { attempt ->
+            try {
+                return call(prompt, maxTokens, temperature)
+            } catch (e: CancellationException) {
+                // MUST stay the first catch. CancellationException is an
+                // Exception, so any catch placed above this one turns "the
+                // student backed out" into a fallback report presented as real.
+                throw e
+            } catch (e: TruncatedResponseException) {
+                // Retrying is pointless: the same prompt and the same ceiling
+                // produce the same truncation, three times, slowly.
+                throw e
+            } catch (e: ClientErrorException) {
+                throw e
+            } catch (e: RateLimitedException) {
+                // The one 4xx worth repeating. Wait the interval the server
+                // asked for, or the ladder's own backoff if it did not say.
+                last = e
+                val wait = rateLimitWaitMs(e.retryAfterMs, delayMs)
+                Log.w(TAG, "Rate limited on attempt ${attempt + 1}/$maxRetries; waiting ${wait}ms")
+                if (attempt >= maxRetries - 1) throw e
+                if (!rateLimitFitsBudget(wait, System.nanoTime(), deadlineNanos)) {
+                    Log.w(TAG, "Retry-After outlasts the report budget; giving up on this call")
+                    throw e
+                }
+                kotlinx.coroutines.delay(wait)
+                delayMs *= 2
+            } catch (e: Exception) {
+                last = e
+                Log.w(TAG, "Report API attempt ${attempt + 1}/$maxRetries failed: ${e.message}")
+                val outOfTime = deadlineNanos != null && System.nanoTime() > deadlineNanos
+                if (outOfTime) {
+                    Log.w(TAG, "Retry budget exhausted; giving up on this call")
+                    throw e
+                }
+                if (attempt < maxRetries - 1) {
+                    kotlinx.coroutines.delay(delayMs)
+                    delayMs *= 2
+                }
+            }
+        }
+        throw last ?: Exception("Max retries exceeded")
+    }
+
+    private suspend fun callGeminiAPI(
+        prompt: String,
+        maxTokens: Int = 16384,
+        temperature: Double = 0.7
+    ): String = withContext(Dispatchers.IO) {
+        try {
+            val requestBody = JsonObject().apply {
+                addProperty("model", NetworkModule.DEFAULT_MODEL)
+                addProperty("prompt", prompt)
+                addProperty("stream", false)
+                add("options", JsonObject().apply {
+                    addProperty("temperature", temperature)
+                    addProperty("num_predict", maxTokens)
+                    addProperty("top_p", 0.95)
+                })
+            }
+
+            val request = Request.Builder()
+                .url(NetworkModule.getOllamaGenerateUrl())
+                .post(requestBody.toString().toRequestBody("application/json".toMediaType()))
+                .addHeader("ngrok-skip-browser-warning", "true")
+                .build()
+
+            val cleaned = client.newCall(request).awaitResponse().use { response ->
+                val responseBody = response.body?.string() ?: throw Exception("Empty response")
+
+                if (!response.isSuccessful) {
+                    Log.e(TAG, "API Error: ${response.code} - $responseBody")
+                    throw httpFailureFor(response.code, response.header("Retry-After"))
+                }
+
+                val jsonResponse = gson.fromJson(responseBody, JsonObject::class.java)
+
+                // Ollama reports why generation stopped. "length" means the
+                // completion hit num_predict, so what came back is a fragment -
+                // a 12-week roadmap cut off at week 6, or JSON missing its
+                // closing bracket. Crucially the fragment is NON-BLANK, so every
+                // isBlank() degradation guard downstream sees success. Treat it
+                // as the failure it is, at the only point that can still tell.
+                if (jsonResponse.get("done_reason")?.asString == "length") {
+                    throw TruncatedResponseException(
+                        "Generation hit the ${'$'}maxTokens token limit and was cut off"
+                    )
+                }
+
+                val content = jsonResponse.get("response")?.asString
+                    ?: throw Exception("No response text from Ollama")
+
+                // Strip Qwen3 <think>...</think> reasoning blocks before returning HTML content
+                content.replace(Regex("<think>[\\s\\S]*?</think>", RegexOption.IGNORE_CASE), "").trim()
+            }
+
+            Log.d(TAG, "API response length: ${cleaned.length} chars")
+
+            return@withContext cleaned
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Error calling Ollama API", e)
+            throw e
+        }
+    }
+    /**
+     * Wraps the model's report body in the page around it.
+     *
+     * This markup used to live in the prompt: the model was handed the whole
+     * document - doctype, head and 130 lines of CSS - and told to reproduce it
+     * verbatim before it wrote a word of prose. That is the same 4,332
+     * characters on every report, regenerated at roughly 38 tokens a second,
+     * and it was what pushed this one call up against the 180s read timeout
+     * while the feedback chunks around it finished comfortably.
+     *
+     * The bytes are identical either way, so they are emitted here for nothing
+     * and the model is asked only for what actually differs per student.
+     *
+     * [bodyHtml] is model HTML and is emitted as markup, exactly as it was when
+     * the model produced the whole document, so the trust level is unchanged.
+     * If anything the model now has less reach: it no longer produces the
+     * document, so it cannot emit <head>, <style> or <script> at all.
+     */
+    private fun wrapGeneratedReport(bodyHtml: String): String {
+        return """
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -566,196 +886,14 @@ It MUST include the following `<style>` block inside the `<head>` section optimi
 <body>
     <div class="container">
         <h1>Your Personalized Embedded Systems Report</h1>
-        
-        <div class="user-info">
-            <p><strong>Student:</strong> ${esc(userName)}</p>
-            <p><strong>Email:</strong> ${esc(userEmail)}</p>
-            <p><strong>Assessment Date:</strong> ${java.text.SimpleDateFormat("MMMM dd, yyyy", java.util.Locale.getDefault()).format(java.util.Date())}</p>
-        </div>
-
+$bodyHtml
     </div>
 </body>
 </html>
-
-**CRITICAL: REPORT STRUCTURE ORDER**
-Inside the `<div class="container">`, after the user info, the final HTML report must follow this exact order of sections:
-1. Overall Summary
-2. Topic-by-Topic Analysis (your strengths and weaknesses by topic)
-3. Detailed Question Feedback Section (IMPORTANT: For this section, you MUST output ONLY this exact HTML comment with a heading: `<h2>📝 Detailed Question-by-Question Analysis</h2><!-- QUESTION_FEEDBACK_INSERT_POINT -->` - DO NOT generate any actual question feedback here, the detailed feedback will be inserted automatically at this placeholder)
-4. Your Personalized 12-Week Embedded Systems Roadmap
-5. Final Recommendations & Conclusion
-
-**CRITICAL: DO NOT GENERATE DUPLICATE QUESTION FEEDBACK**
-The question-by-question feedback is generated separately and will be injected at the placeholder. You MUST NOT create your own question feedback section. Only place the heading and the exact comment `<!-- QUESTION_FEEDBACK_INSERT_POINT -->`.
-
-**CRITICAL INSTRUCTIONS FOR TOPIC-BY-TOPIC ANALYSIS:**
-This section must be comprehensive and directly reflect the assessment results. Based on the user's answers, provide a detailed breakdown of their knowledge gaps across all major embedded systems categories. For each category (e.g., "Embedded Systems Fundamentals & Architecture", "C Programming for Embedded Systems", "Microcontroller Peripherals & Drivers", "Real-Time Operating Systems (RTOS)", etc.), list the specific concepts where the user showed weakness AND strength in bullet points. The goal is to give the student a clear overview of their performance before they see the detailed question feedback.
-
-**CRITICAL INSTRUCTIONS FOR THE 12-WEEK ROADMAP:**
-This is the most important part of the report. It must be HYPER-DETAILED, SPECIFIC, PRECISE, and PRACTICAL. Do not give vague advice.
-
-**MOBILE-OPTIMIZED FORMATTING:** You MUST NOT use tables. Instead, use the structure with `<h3>` tags for weeks and nested `<ul>` lists for daily tasks.
-
-- **Resources:** You MUST provide specific resources:
-  - **Books:** Include names of the best books and specify exact chapters (e.g., "The Definitive Guide to ARM Cortex-M3 and Cortex-M4 Processors by Joseph Yiu, Chapters 3-5").
-  - **YouTube:** DO NOT include clickable YouTube links (they may be invalid). Instead, mention the exact YouTube channel name and video/playlist title like this: "YouTube: Embedded Systems Academy channel - 'ARM Cortex-M for Beginners' playlist" or "YouTube: ControllersTech channel - 'STM32 GPIO Tutorial' video".
-  - **Online Courses:** Mention course names and platforms (e.g., "Udemy: 'Mastering Microcontroller with Embedded Driver Development' by FastBit").
-- **Projects:** Break down into concrete daily steps with specific instructions.
-- **Concepts:** Be precise with technical details and practical examples.
-
-The roadmap should follow this structure for each week:
-
-<h3>Week 1: [Topic Name]</h3>
-<p><strong>Goal:</strong> [Clear learning objective]</p>
-<ul>
-    <li><strong>Day 1-2: [Subtopic]</strong>
-        <ul>
-            <li>[Specific book with chapter]</li>
-            <li>YouTube: [Channel Name] - "[Video/Playlist Title]" (search on YouTube)</li>
-            <li>[Key concept to master]</li>
-            <li><strong>Mini-Project:</strong> [Concrete task]</li>
-        </ul>
-    </li>
-    <li><strong>Day 3-4: [Next Subtopic]</strong>
-        <ul>
-            <li>[Details...]</li>
-        </ul>
-    </li>
-</ul>
-
-Continue this format for all 12 weeks, ensuring mobile readability with proper spacing and concise but detailed content.
-
-**Hardware Recommendations:** At the beginning of the roadmap, recommend specific, affordable microcontroller boards (e.g., STM32 Nucleo, Arduino, ESP32) with approximate prices in Indian Rupees (₹) and mention where to purchase them in India (like Amazon.in, Robu.in, or electronics stores).
-
-USER'S FULL Q&A TRANSCRIPT:
----
-$userInputText
         """.trimIndent()
     }
 
-    /**
-     * Make API call to Ollama
-     */
-    /**
-     * @param maxTokens completion cap. The default 16384 is what the legacy
-     *   whole-document path needs; the answer-key path passes something far
-     *   smaller, because ADJUDICATION_CHUNK bounds the PROMPT and nothing was
-     *   bounding the completion. At a degraded 15 tok/s the 180s read timeout
-     *   is reached around 2,700 tokens, so a 16384 budget lets a single call
-     *   blow the timeout no matter how small its prompt was.
-     * @param temperature lower for structured output than for prose.
-     */
-    /**
-     * Retrying wrapper. This service was the only one of the three without a
-     * ladder, and the answer-key path made that worse by going from 5 sequential
-     * calls to 11: at a 5% per-call failure rate that is a 43% chance of at
-     * least one failing per report, versus 23% before. Three attempts with
-     * backoff takes it to about 0.1%.
-     *
-     * A transient 502 from the tunnel is the common case and is exactly what a
-     * retry is for. Cancellation is rethrown before the ladder sees it.
-     */
-    private suspend fun callGeminiAPIWithRetry(
-        prompt: String,
-        maxTokens: Int = 16384,
-        temperature: Double = 0.7,
-        maxRetries: Int = 3,
-        deadlineNanos: Long? = null
-    ): String {
-        var last: Exception? = null
-        var delayMs = 1000L
-        repeat(maxRetries) { attempt ->
-            try {
-                return callGeminiAPI(prompt, maxTokens, temperature)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: TruncatedResponseException) {
-                // Retrying is pointless: the same prompt and the same ceiling
-                // produce the same truncation, three times, slowly.
-                throw e
-            } catch (e: ClientErrorException) {
-                throw e
-            } catch (e: Exception) {
-                last = e
-                Log.w(TAG, "Report API attempt ${attempt + 1}/$maxRetries failed: ${e.message}")
-                val outOfTime = deadlineNanos != null && System.nanoTime() > deadlineNanos
-                if (outOfTime) {
-                    Log.w(TAG, "Retry budget exhausted; giving up on this call")
-                    throw e
-                }
-                if (attempt < maxRetries - 1) {
-                    kotlinx.coroutines.delay(delayMs)
-                    delayMs *= 2
-                }
-            }
-        }
-        throw last ?: Exception("Max retries exceeded")
-    }
 
-    private suspend fun callGeminiAPI(
-        prompt: String,
-        maxTokens: Int = 16384,
-        temperature: Double = 0.7
-    ): String = withContext(Dispatchers.IO) {
-        try {
-            val requestBody = JsonObject().apply {
-                addProperty("model", NetworkModule.DEFAULT_MODEL)
-                addProperty("prompt", prompt)
-                addProperty("stream", false)
-                add("options", JsonObject().apply {
-                    addProperty("temperature", temperature)
-                    addProperty("num_predict", maxTokens)
-                    addProperty("top_p", 0.95)
-                })
-            }
-
-            val request = Request.Builder()
-                .url(NetworkModule.getOllamaGenerateUrl())
-                .post(requestBody.toString().toRequestBody("application/json".toMediaType()))
-                .addHeader("ngrok-skip-browser-warning", "true")
-                .build()
-
-            val cleaned = client.newCall(request).awaitResponse().use { response ->
-                val responseBody = response.body?.string() ?: throw Exception("Empty response")
-
-                if (!response.isSuccessful) {
-                    Log.e(TAG, "API Error: ${response.code} - $responseBody")
-                    if (response.code in 400..499) {
-                        throw ClientErrorException("API call failed: ${response.code}")
-                    }
-                    throw Exception("API call failed: ${response.code}")
-                }
-
-                val jsonResponse = gson.fromJson(responseBody, JsonObject::class.java)
-
-                // Ollama reports why generation stopped. "length" means the
-                // completion hit num_predict, so what came back is a fragment -
-                // a 12-week roadmap cut off at week 6, or JSON missing its
-                // closing bracket. Crucially the fragment is NON-BLANK, so every
-                // isBlank() degradation guard downstream sees success. Treat it
-                // as the failure it is, at the only point that can still tell.
-                if (jsonResponse.get("done_reason")?.asString == "length") {
-                    throw TruncatedResponseException(
-                        "Generation hit the ${'$'}maxTokens token limit and was cut off"
-                    )
-                }
-
-                val content = jsonResponse.get("response")?.asString
-                    ?: throw Exception("No response text from Ollama")
-
-                // Strip Qwen3 <think>...</think> reasoning blocks before returning HTML content
-                content.replace(Regex("<think>[\\s\\S]*?</think>", RegexOption.IGNORE_CASE), "").trim()
-            }
-
-            Log.d(TAG, "API response length: ${cleaned.length} chars")
-
-            return@withContext cleaned
-
-        } catch (e: Exception) {
-            Log.e(TAG, "Error calling Ollama API", e)
-            throw e
-        }
-    }
 
     /**
      * Assemble final report by injecting feedback chunks into report shell
@@ -764,36 +902,75 @@ $userInputText
     private fun assembleReport(reportShell: String, feedbackChunks: List<String>): ReportResult {
         val combinedFeedback = feedbackChunks.joinToString("\n\n")
 
-        // Check if the report shell is truncated (has DOCTYPE but no closing html tag)
-        val isTruncated = reportShell.contains("<!DOCTYPE html>") && !reportShell.contains("</html>")
+        // The model now returns the report body; the document around it is built
+        // here by [wrapGeneratedReport]. Strip any scaffolding it emitted anyway -
+        // the instruction is explicit but a model asked for HTML will sometimes
+        // still reach for a doctype, and that must not end up nested inside ours.
+        val body = stripDocumentScaffolding(reportShell)
 
-        if (isTruncated) {
-            Log.w(TAG, "Report shell is truncated (has opening but no closing HTML tags)")
-            // Don't try to use truncated content - use the fallback with actual feedback
+        // Sections the prompt asks for: summary, topic analysis, the feedback
+        // heading, roadmap, conclusion. Well under that is not a report worth
+        // presenting as complete. Hard truncation is caught earlier and more
+        // precisely by TruncatedResponseException, which reads Ollama's own
+        // done_reason; this is the coarse net behind it.
+        val sectionCount = Regex("<h2", RegexOption.IGNORE_CASE).findAll(body).count()
+        if (body.isBlank() || sectionCount < 3) {
+            Log.w(TAG, "Report body was blank or too short ($sectionCount sections), using fallback")
             return ReportResult(generateFallbackReport(combinedFeedback), isDegraded = true)
         }
 
-        // Validate the report shell is not blank or malformed
-        var degraded = false
-        val validatedShell = if (reportShell.isBlank() || !reportShell.contains("<!DOCTYPE html>")) {
-            Log.w(TAG, "Report shell was blank or malformed, using fallback template")
-            degraded = true
-            generateFallbackReport(combinedFeedback)
+        val withFeedback = if (body.contains(FEEDBACK_PLACEHOLDER)) {
+            body.replace(FEEDBACK_PLACEHOLDER, combinedFeedback)
         } else {
-            reportShell.replace(
-                "<!-- QUESTION_FEEDBACK_INSERT_POINT -->",
-                combinedFeedback
-            )
+            // Losing the placeholder must not lose fifty questions of feedback.
+            Log.w(TAG, "Feedback placeholder missing from report body; appending feedback")
+            body + "\n" + combinedFeedback
         }
 
-        // Final validation - ensure we have valid complete HTML
-        return if (validatedShell.contains("<html") && validatedShell.contains("</html>") && validatedShell.contains("</body>")) {
-            ReportResult(validatedShell, isDegraded = degraded)
-        } else {
-            Log.w(TAG, "Final report validation failed, using emergency fallback")
-            // Use fallback with feedback content instead of trying to wrap partial content
-            ReportResult(generateFallbackReport(combinedFeedback), isDegraded = true)
+        return ReportResult(wrapGeneratedReport(withFeedback), isDegraded = false)
+    }
+
+    /**
+     * Reduces whatever the model returned to the body content we asked for.
+     *
+     * The prompt says to emit a fragment, but this is defensive: a full document
+     * nested inside our own container renders as a mess, and a fenced code block
+     * renders as literal angle brackets. Both are cheap to undo here and neither
+     * is worth degrading a report over.
+     */
+    internal fun stripDocumentScaffolding(html: String): String {
+        var s = html.trim()
+
+        // ```html ... ``` fences
+        if (s.startsWith("```")) {
+            s = s.removePrefix("```html").removePrefix("```").removeSuffix("```").trim()
         }
+
+        // A whole document: keep what is inside <body>.
+        val bodyOpen = s.indexOf("<body", ignoreCase = true)
+        if (bodyOpen >= 0) {
+            val contentStart = s.indexOf('>', bodyOpen)
+            val bodyClose = s.lastIndexOf("</body>", ignoreCase = true)
+            if (contentStart >= 0 && bodyClose > contentStart) {
+                s = s.substring(contentStart + 1, bodyClose).trim()
+            }
+        } else {
+            // No <body>, but a stray head/style would still be emitted verbatim.
+            s = s.replace(Regex("<!DOCTYPE[^>]*>", RegexOption.IGNORE_CASE), "")
+                .replace(Regex("<head[\\s\\S]*?</head>", RegexOption.IGNORE_CASE), "")
+                .replace(Regex("<style[\\s\\S]*?</style>", RegexOption.IGNORE_CASE), "")
+                .replace(Regex("</?html[^>]*>", RegexOption.IGNORE_CASE), "")
+                .trim()
+        }
+
+        // Our own container and title are added by the wrapper; drop duplicates.
+        val container = Regex("^<div\\s+class=\"container\"\\s*>", RegexOption.IGNORE_CASE)
+        if (container.containsMatchIn(s)) {
+            s = container.replace(s, "").trim().removeSuffix("</div>").trim()
+        }
+        s = s.replace(Regex("^<h1[\\s\\S]*?</h1>", RegexOption.IGNORE_CASE), "").trim()
+
+        return s
     }
     
     /**
@@ -823,8 +1000,108 @@ $userInputText
     /** Retrying this changes nothing: the same prompt hits the same ceiling. */
     private class TruncatedResponseException(message: String) : Exception(message)
 
-    /** A 4xx is a request the server will keep rejecting. */
-    private class ClientErrorException(message: String) : Exception(message)
+    /**
+     * A 4xx is a request the server will keep rejecting - with one exception.
+     * 429 means "you asked too often", not "you asked wrongly", and is the one
+     * 4xx worth repeating. It is typed separately as [RateLimitedException] and
+     * must not be folded back in here.
+     */
+    internal class ClientErrorException(message: String) : Exception(message)
+
+    /**
+     * HTTP 429 from the gateway: refused because this student is over the per-uid
+     * cap, not because the request was malformed. The cap was restored on
+     * 2026-08-05 after a crash had been silently clearing its counter, so this is
+     * newly reachable in production.
+     *
+     * [retryAfterMs] is the server's own Retry-After, already parsed and clamped,
+     * or null when the header was absent or unusable - in which case the ladder
+     * falls back to its own exponential delay.
+     */
+    internal class RateLimitedException(
+        message: String,
+        val retryAfterMs: Long?
+    ) : Exception(message)
+
+    /**
+     * Bounds on how long a Retry-After may park a student.
+     *
+     * The floor stops a `Retry-After: 0` turning the ladder into a busy loop
+     * against a server that is already asking for room. The ceiling stops a
+     * hostile or miscomputed header holding the screen: three retries at the
+     * ceiling is three minutes, which still fits inside REPORT_BUDGET_MINUTES
+     * alongside the generation itself.
+     */
+    private val RETRY_AFTER_MIN_MS = 1_000L
+    private val RETRY_AFTER_MAX_MS = 60_000L
+
+    /**
+     * Parses an HTTP Retry-After into milliseconds, clamped to the bounds above.
+     *
+     * RFC 9110 defines the value as delay-SECONDS. Note that
+     * GeminiChallengeService reads the same header as milliseconds, which makes
+     * its delay a thousand times too short; that is its bug to fix, not this
+     * file's, and it is reported rather than copied.
+     *
+     * The HTTP-date form is legal but this gateway does not emit it, so it is
+     * treated as unusable rather than guessed at. Returns null whenever there is
+     * nothing dependable to use, which tells the caller to fall back to its own
+     * exponential delay.
+     */
+    internal fun parseRetryAfterMs(header: String?): Long? {
+        val seconds = header?.trim()?.toLongOrNull() ?: return null
+        if (seconds <= 0L) return null
+        // Bound before multiplying: a header of Long.MAX_VALUE would otherwise
+        // overflow into a negative delay.
+        val capSeconds = RETRY_AFTER_MAX_MS / 1_000L
+        val bounded = if (seconds > capSeconds) capSeconds else seconds
+        return (bounded * 1_000L).coerceAtLeast(RETRY_AFTER_MIN_MS)
+    }
+
+    /**
+     * How long to wait before retrying a 429: the server's figure when it gave a
+     * usable one, otherwise the ladder's own exponential delay.
+     */
+    internal fun rateLimitWaitMs(retryAfterMs: Long?, exponentialMs: Long): Long =
+        retryAfterMs ?: exponentialMs
+
+    /**
+     * Whether sleeping [waitMs] and trying again still lands inside the report's
+     * wall-clock budget. Waiting past the deadline only to be refused by the next
+     * budget check wastes the student's time for nothing.
+     */
+    internal fun rateLimitFitsBudget(
+        waitMs: Long,
+        nowNanos: Long,
+        deadlineNanos: Long?
+    ): Boolean {
+        if (deadlineNanos == null) return true
+        return nowNanos + waitMs * 1_000_000L <= deadlineNanos
+    }
+
+    /**
+     * Maps a failed HTTP status onto the exception that says what to do about it:
+     * wait and repeat (429), stop asking (other 4xx), or retry generically
+     * (everything else, which is what a 502 from the tunnel needs).
+     */
+    internal fun httpFailureFor(code: Int, retryAfterHeader: String?): Exception = when {
+        code == 429 -> RateLimitedException(
+            "Rate limited by the gateway (429)",
+            parseRetryAfterMs(retryAfterHeader)
+        )
+        code in 400..499 -> ClientErrorException("API call failed: $code")
+        else -> Exception("API call failed: $code")
+    }
+
+    /**
+     * Where the separately-generated question feedback is spliced into the
+     * model's report body. The model is told to emit this exact comment and
+     * nothing else for that section.
+     */
+    private val FEEDBACK_PLACEHOLDER = "<!-- QUESTION_FEEDBACK_INSERT_POINT -->"
+
+    /** Where the separately-generated 12-week roadmap is spliced in. */
+    private val ROADMAP_PLACEHOLDER = "<!-- ROADMAP_INSERT_POINT -->"
 
     /** Completion caps, so one call cannot outrun the 180s read timeout. */
     private val ADJUDICATION_MAX_TOKENS = 2048
