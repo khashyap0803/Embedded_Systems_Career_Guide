@@ -1043,7 +1043,7 @@ Return ONLY this JSON (no markdown, no explanation):
         }
         
         val errorMessage = when (lastException) {
-            is RateLimitException -> "API rate limit exceeded. Please wait a moment and try again."
+            is RateLimitException -> NetworkModule.RATE_LIMITED_MESSAGE
             is ServerException -> NetworkModule.SERVER_DOWN_MESSAGE
             is java.net.UnknownHostException -> NetworkModule.SERVER_DOWN_MESSAGE
             is java.net.SocketTimeoutException -> NetworkModule.SERVER_DOWN_MESSAGE

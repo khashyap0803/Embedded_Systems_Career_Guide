@@ -61,6 +61,12 @@ When providing code examples, format them properly for readability.
     )
 
     /**
+     * HTTP 429: this student is over the gateway's per-uid cap. Typed so the
+     * error branch can say so instead of reporting the server as down.
+     */
+    private class RateLimitedException(message: String) : Exception(message)
+
+    /**
      * Send a message and get AI response
      */
     suspend fun sendMessage(userMessage: String): String = withContext(Dispatchers.IO) {
@@ -84,6 +90,12 @@ When providing code examples, format them properly for readability.
 
             return@withContext response
 
+        } catch (e: RateLimitedException) {
+            // Nothing is down - this student is briefly over the per-uid cap.
+            // Saying "server down" here sends them chasing a fault that does not
+            // exist, and hands them a phone number for a queue that clears itself.
+            Log.w(TAG, "Rate limited by the gateway")
+            return@withContext NetworkModule.RATE_LIMITED_MESSAGE
         } catch (e: SocketTimeoutException) {
             Log.e(TAG, "Server timeout", e)
             return@withContext NetworkModule.SERVER_DOWN_MESSAGE
@@ -144,6 +156,12 @@ When providing code examples, format them properly for readability.
 
                 if (!response.isSuccessful) {
                     Log.e(TAG, "API Error: ${response.code} - $responseBody")
+                    if (response.code == 429) {
+                        // Typed so the caller can tell "too many requests" apart
+                        // from "the server is broken"; the status code is
+                        // otherwise only recoverable by parsing the message.
+                        throw RateLimitedException("Rate limited by the gateway (429)")
+                    }
                     throw Exception("API call failed: ${response.code}")
                 }
 
