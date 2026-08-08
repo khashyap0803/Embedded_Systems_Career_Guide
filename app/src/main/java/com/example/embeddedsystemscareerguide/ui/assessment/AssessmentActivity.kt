@@ -59,13 +59,26 @@ class AssessmentActivity : AppCompatActivity() {
     private var reportJob: kotlinx.coroutines.Job? = null
 
     companion object {
-        // Keys for surviving configuration changes and process death. The manifest
-        // only declares configChanges="uiMode", so a rotation DOES recreate this
-        // Activity. Without these, every one of the 50 free-text answers was lost
-        // and the user was dropped back on question 1.
+        // Keys for surviving configuration changes and process death. Rotation no
+        // longer recreates this Activity - the manifest now absorbs it - but
+        // process death and the rarer config changes still do, and without these
+        // every one of the 50 free-text answers was lost and the user was dropped
+        // back on question 1.
         private const val STATE_ANSWERS = "state_answers"
         private const val STATE_QUESTION_INDEX = "state_question_index"
         private const val STATE_IS_RETAKE = "state_is_retake"
+
+        /**
+         * Whether a report generation was running when this Activity was torn down.
+         *
+         * Answers survived recreation already; the fact that a run had been in
+         * flight did not. So a student whose phone rotated at minute sixteen was
+         * put back on the question screen with their answers intact and no
+         * indication that seventeen minutes of generation had just been thrown
+         * away - the overlay simply vanished. Carrying this one flag is what makes
+         * the difference between that and being told.
+         */
+        private const val STATE_GENERATION_IN_FLIGHT = "state_generation_in_flight"
     }
 
     private val speechRecognizerLauncher = registerForActivityResult(
@@ -99,6 +112,22 @@ class AssessmentActivity : AppCompatActivity() {
             currentQuestionIndex = savedInstanceState.getInt(STATE_QUESTION_INDEX, 0)
             isRetake = savedInstanceState.getBoolean(STATE_IS_RETAKE, isRetake)
             Log.d("Assessment", "Restored ${answers.size} answers at question $currentQuestionIndex")
+
+            // A run was in flight when the previous instance died, and it died
+            // with it - lifecycleScope is tied to that instance, so the coroutine
+            // is already gone by the time this one exists. It is not resumable
+            // from here, and pretending otherwise would be worse than saying so.
+            //
+            // Deliberately NOT the cancel wording: this student did not press
+            // anything. Told here rather than left to infer it from an overlay
+            // that silently disappeared.
+            if (savedInstanceState.getBoolean(STATE_GENERATION_IN_FLIGHT, false)) {
+                Log.w(
+                    "Assessment",
+                    "Recreated mid-generation; the run was lost and the student is being told"
+                )
+                Toast.makeText(this, R.string.report_interrupted_toast, Toast.LENGTH_LONG).show()
+            }
         }
 
         Log.d("Assessment", "Assessment started, isRetake=$isRetake")
@@ -109,6 +138,23 @@ class AssessmentActivity : AppCompatActivity() {
         // the report away while the UI still showed progress.
         backCallback = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
+                // Swallow back while a report is being generated.
+                //
+                // This callback must stay ENABLED to do that. Setting
+                // isEnabled = false - which is what this screen used to do on
+                // submit - does not block the gesture: it tells the dispatcher
+                // this callback declines to handle it, and the dispatcher then
+                // falls through to the default behaviour, which finishes the
+                // Activity. So the line intended to protect a run was the line
+                // that ended it, and a single back press threw away a
+                // seventeen-minute generation with nothing shown to the student.
+                //
+                // Nothing is said here on purpose: the overlay already carries
+                // an explicit "Stop and go back" control, and a student who
+                // wants out should leave by the door that tells them what it
+                // does rather than by one that silently discards their run.
+                if (reportJob?.isActive == true) return
+
                 saveCurrentAnswer()
                 finish()
             }
@@ -130,6 +176,11 @@ class AssessmentActivity : AppCompatActivity() {
         outState.putSerializable(STATE_ANSWERS, HashMap(answers))
         outState.putInt(STATE_QUESTION_INDEX, currentQuestionIndex)
         outState.putBoolean(STATE_IS_RETAKE, isRetake)
+        // Read from the job rather than from the overlay's visibility: the job is
+        // what actually dies with this instance. It is cleared the moment the
+        // report exists and saving begins, and on cancel, so neither a finished
+        // run nor a deliberate stop can raise the interrupted message.
+        outState.putBoolean(STATE_GENERATION_IN_FLIGHT, reportJob?.isActive == true)
         super.onSaveInstanceState(outState)
     }
 
@@ -301,10 +352,13 @@ class AssessmentActivity : AppCompatActivity() {
         binding.buttonNext.isEnabled = false
         binding.buttonBack.isEnabled = false
 
-        // Also disable the system back gesture. Report generation runs on a client
-        // with a 600 s read timeout; letting back finish() the Activity here silently
-        // cancelled the coroutine and discarded the report with no error shown.
-        backCallback.isEnabled = false
+        // The back gesture is held off by the callback itself, which checks
+        // reportJob and swallows the press while a run is in flight. It is
+        // deliberately NOT disabled here: a disabled OnBackPressedCallback is
+        // skipped rather than obeyed, and the dispatcher's default is to finish
+        // the Activity - which is exactly the silent discard this is guarding
+        // against. See the callback in onCreate.
+        backCallback.isEnabled = true
 
         // With back disabled and the overlay covering everything, this button is
         // the student's only way out of a run. It is withdrawn once the report

@@ -234,6 +234,24 @@
     <string name="report_cancel_button">Stop and go back</string>
     <string name="report_cancelled_toast">Report generation stopped. Nothing was saved and your answers are still here — submit again whenever you\'re ready.</string>
 
+    <!--
+      Interrupted, not stopped.
+
+      Deliberately worded apart from report_cancelled_toast above. That one is
+      for a student who pressed the button; this one is for a student who did
+      not. Telling someone whose phone was killed mid-run that they "stopped"
+      generation and may "submit again whenever you\'re ready" reads as though
+      the loss was their doing, and invites them to wonder what they pressed.
+
+      Reachable when the Activity is recreated mid-generation for a reason
+      configChanges does not absorb: low memory, "Don\'t keep activities", a
+      locale change, a font-size or display-size change. Rotation no longer
+      lands here. The run itself cannot be resumed - the coroutine died with the
+      old instance - so this says what was lost and what was not, and nothing it
+      cannot deliver.
+    -->
+    <string name="report_interrupted_toast">Report generation was interrupted before it could finish, so nothing was saved. Your answers are all still here — tap Submit to start it again.</string>
+
     <!-- Replaces "This may take 2-3 minutes...". The work regularly runs far
          longer than any fixed estimate, so this promises no duration at all. -->
     <string name="report_generating_hint">⏱️ Please keep this screen open while your report is prepared</string>
