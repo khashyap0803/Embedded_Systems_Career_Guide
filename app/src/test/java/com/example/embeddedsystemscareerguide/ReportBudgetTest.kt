@@ -39,30 +39,57 @@ class ReportBudgetTest {
     /** The 180s readTimeout on NetworkModule.longTimeoutClient. */
     private val readTimeoutSeconds = 180L
 
-    /** Measured end-to-end on device with nothing failing: 23:00:24 -> 23:13:35. */
-    private val measuredRunSeconds = 13L * 60L + 11L
+    /**
+     * A clean run with zero retries, measured on a release build on device:
+     * 11:27:01 -> 11:43:34. Ten calls, ~99s each. This is the number the budget
+     * is sized against, and it supersedes the earlier 13m11s figure.
+     */
+    private val measuredRunSeconds = 16L * 60L + 33L
+
+    /** Calls a 50-question report makes on the live path: 7 chunks + 1 body + 2 roadmap halves. */
+    private val livePathCalls = 7 + 1 + 2
 
     // ---- The arithmetic ------------------------------------------------------
 
     @Test
-    fun `the budget is twenty minutes of nanoseconds`() {
-        assertEquals(20L, svc.REPORT_BUDGET_MINUTES)
-        assertEquals(20L * minute, svc.reportDeadlineNanos(0L))
+    fun `the budget is forty-five minutes of nanoseconds`() {
+        assertEquals(45L, svc.REPORT_BUDGET_MINUTES)
+        assertEquals(45L * minute, svc.reportDeadlineNanos(0L))
         // Offset from the start instant, not from zero.
-        assertEquals(5L * minute + 20L * minute, svc.reportDeadlineNanos(5L * minute))
+        assertEquals(5L * minute + 45L * minute, svc.reportDeadlineNanos(5L * minute))
     }
 
     @Test
     fun `the budget covers the measured clean run with headroom`() {
         val runNanos = measuredRunSeconds * second
         assertTrue(
-            "a 20 minute budget must not expire during a ${measuredRunSeconds}s run",
+            "the budget must not expire during a ${measuredRunSeconds}s run",
             svc.reportDeadlineNanos(0L) > runNanos
         )
-        // ~50% headroom over measured, which is what leaves the ladder usable
-        // when cohort load stretches the run.
+        // 2.72x the clean run. The margin is not generosity: with
+        // OLLAMA_NUM_PARALLEL=2 a third concurrent student makes every call
+        // queue, so a clean run stretches roughly with ceil(concurrency / 2).
+        // At 1.21x - which is what 20 minutes gave - three students at once is
+        // already past the ceiling, and the budget would kill runs that succeed
+        // today rather than only the pathological ones.
         val headroomPercent = (svc.reportDeadlineNanos(0L) - runNanos) * 100 / runNanos
-        assertTrue("headroom was only $headroomPercent%", headroomPercent >= 45)
+        assertTrue("headroom was only $headroomPercent%", headroomPercent >= 150)
+    }
+
+    @Test
+    fun `the budget would not have cut off a clean run under cohort load`() {
+        // Three students sharing a two-slot server: every call queues, the run
+        // stretches by about ceil(3 / 2) = 1.5x. This is the case the previous
+        // 20-minute value could not absorb.
+        val underLoad = measuredRunSeconds * 3 / 2
+        assertTrue(
+            "a ${underLoad}s loaded run must still fit",
+            underLoad * second < svc.reportDeadlineNanos(0L)
+        )
+        assertTrue(
+            "and 20 minutes demonstrably could not absorb it",
+            underLoad * second > 20L * minute
+        )
     }
 
     @Test
@@ -72,8 +99,24 @@ class ReportBudgetTest {
         // still owns its full 180s. That is the whole bound - there is no second
         // term, because no further attempt can start behind it.
         val worstCaseSeconds = svc.REPORT_BUDGET_MINUTES * 60L + readTimeoutSeconds
-        assertEquals(1_380L, worstCaseSeconds)
-        assertEquals(23L, worstCaseSeconds / 60L)
+        assertEquals(2_880L, worstCaseSeconds)
+        assertEquals(48L, worstCaseSeconds / 60L)
+        // Less than half of what this path allows today: ~90.5 min of generic
+        // failures, ~110 once a 429 can park a call on the server's Retry-After.
+        assertTrue("must beat the unbounded worst case", worstCaseSeconds < 90L * 60L)
+    }
+
+    @Test
+    fun `no retry-free run can reach the budget before the read timeout stops it`() {
+        // For ten calls to fill 45 minutes the average call would have to run
+        // 270s, and a call is abandoned at 180s. So the ceiling cannot cut off a
+        // run that would otherwise have succeeded without retrying.
+        val requiredPerCallSeconds = svc.REPORT_BUDGET_MINUTES * 60L / livePathCalls
+        assertEquals(270L, requiredPerCallSeconds)
+        assertTrue(
+            "a call that long is already dead at the read timeout",
+            requiredPerCallSeconds > readTimeoutSeconds
+        )
     }
 
     @Test

@@ -109,12 +109,18 @@ class GeminiReportService {
      * Generate complete assessment report using two-phase approach
      * With robust error handling to prevent blank reports
      * @param progressCallback Optional callback to report progress updates
+     * @param deadlineNanos when this report must stop dialling out, defaulting
+     *   to one [REPORT_BUDGET_MINUTES] budget from entry. Evaluated once per
+     *   call, before the body: a per-call budget would bound nothing, since ten
+     *   calls each granted the full ceiling is ten times the ceiling. Tests
+     *   inject an instant here; production never passes it.
      */
     suspend fun generateReport(
         userName: String,
         userEmail: String,
         questions: List<QuestionAnswer>,
-        progressCallback: ProgressCallback? = null
+        progressCallback: ProgressCallback? = null,
+        deadlineNanos: Long = reportDeadlineNanos(System.nanoTime())
     ): ReportResult = withContext(Dispatchers.IO) {
 
         try {
@@ -129,7 +135,7 @@ class GeminiReportService {
 
             // Phase 1 to N: Generate feedback for chunks
             val feedbackChunks = try {
-                generateDetailedFeedbackWithProgress(questions, totalPhases, progressCallback)
+                generateDetailedFeedbackWithProgress(questions, totalPhases, progressCallback, deadlineNanos)
             } catch (e: CancellationException) {
                 // A cancelled generation must not fall through to a fallback:
                 // CancellationException is an Exception, so the handler below
@@ -153,7 +159,7 @@ class GeminiReportService {
             }
             
             val reportShell = try {
-                generateOverallReport(userName, userEmail, questions)
+                generateOverallReport(userName, userEmail, questions, deadlineNanos)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -270,7 +276,10 @@ class GeminiReportService {
     /**
      * Phase 1: Generate detailed feedback for question chunks in parallel
      */
-    private suspend fun generateDetailedFeedback(questions: List<QuestionAnswer>): List<String> =
+    private suspend fun generateDetailedFeedback(
+        questions: List<QuestionAnswer>,
+        deadlineNanos: Long
+    ): List<String> =
         withContext(Dispatchers.IO) {
 
         val chunks = questions.chunked(CHUNK_SIZE)
@@ -279,7 +288,7 @@ class GeminiReportService {
         // Process all chunks concurrently
         val deferredResults = chunks.map { chunk ->
             async {
-                generateFeedbackForChunk(chunk)
+                generateFeedbackForChunk(chunk, deadlineNanos)
             }
         }
 
@@ -294,7 +303,8 @@ class GeminiReportService {
     private suspend fun generateDetailedFeedbackWithProgress(
         questions: List<QuestionAnswer>,
         totalPhases: Int,
-        progressCallback: ProgressCallback?
+        progressCallback: ProgressCallback?,
+        deadlineNanos: Long
     ): List<String> = withContext(Dispatchers.IO) {
         
         val chunks = questions.chunked(CHUNK_SIZE)
@@ -314,7 +324,7 @@ class GeminiReportService {
             }
             
             // Generate feedback for this chunk
-            val feedback = generateFeedbackForChunk(chunk)
+            val feedback = generateFeedbackForChunk(chunk, deadlineNanos)
             results.add(feedback)
         }
         
@@ -324,11 +334,14 @@ class GeminiReportService {
     /**
      * Generate feedback for a single chunk of questions
      */
-    private suspend fun generateFeedbackForChunk(questionChunk: List<QuestionAnswer>): String =
+    private suspend fun generateFeedbackForChunk(
+        questionChunk: List<QuestionAnswer>,
+        deadlineNanos: Long
+    ): String =
         withContext(Dispatchers.IO) {
 
         val prompt = buildFeedbackPrompt(questionChunk)
-        val response = callGeminiAPIWithRetry(prompt)
+        val response = callGeminiAPIWithRetry(prompt, deadlineNanos = deadlineNanos)
 
         return@withContext response
     }
@@ -339,7 +352,8 @@ class GeminiReportService {
     private suspend fun generateOverallReport(
         userName: String,
         userEmail: String,
-        questions: List<QuestionAnswer>
+        questions: List<QuestionAnswer>,
+        deadlineNanos: Long
     ): String = withContext(Dispatchers.IO) {
 
         // Two calls, not one. Together these produce exactly what the single
@@ -349,7 +363,10 @@ class GeminiReportService {
         // kept this call at 160-260s while every feedback chunk finished inside
         // 100s. Splitting it also lets it carry ROADMAP_MAX_TOKENS, the same cap
         // the answer-key path already applies to the same content.
-        val body = callGeminiAPIWithRetry(buildReportPrompt(userName, userEmail, questions))
+        val body = callGeminiAPIWithRetry(
+            buildReportPrompt(userName, userEmail, questions),
+            deadlineNanos = deadlineNanos
+        )
 
         // Six weeks at a time. Measured, the whole twelve ran to exactly 4,096
         // completion tokens - the cap - which means it was being truncated, and
@@ -358,11 +375,13 @@ class GeminiReportService {
         val roadmap = try {
             val firstHalf = callGeminiAPIWithRetry(
                 buildLegacyRoadmapPrompt(questions, 1, 6),
-                maxTokens = ROADMAP_MAX_TOKENS
+                maxTokens = ROADMAP_MAX_TOKENS,
+                deadlineNanos = deadlineNanos
             )
             val secondHalf = callGeminiAPIWithRetry(
                 buildLegacyRoadmapPrompt(questions, 7, 12),
-                maxTokens = ROADMAP_MAX_TOKENS
+                maxTokens = ROADMAP_MAX_TOKENS,
+                deadlineNanos = deadlineNanos
             )
             stripDocumentScaffolding(firstHalf) + "\n" + stripDocumentScaffolding(secondHalf)
         } catch (e: CancellationException) {
@@ -1016,34 +1035,42 @@ $bodyHtml
     /**
      * Wall-clock ceiling for one report, across every call and retry.
      *
-     * Was 10, which was shorter than a healthy run. A full report is ten calls
-     * and measured 13m11s end to end on device (23:00:24 -> 23:13:35) with
-     * nothing failing, so from minute 10 onward the ladder was switched off for
-     * the rest of every run - including the roadmap, which is last. Under cohort
-     * load calls slow, the run stretches, and the share of it with retries
-     * disabled grows. Retries were unavailable exactly when they were needed.
+     * This constant now governs the path every student actually takes, so it is
+     * sized against that path rather than against the answer-key path, which is
+     * inert while the shipped key is unreviewed and is in any case faster.
      *
-     * Raising it was previously unsafe for a reason that had nothing to do with
-     * the number: the generation overlay disabled the system back gesture and
-     * offered no way out, so the budget was the only thing standing between a
-     * student and being held for the better part of an hour. It was protecting
-     * them from the screen, not the server from the load. The overlay now
-     * carries a cancel control (AssessmentActivity.cancelReportGeneration), so
-     * the ceiling can be sized for the work instead of for the trap.
+     * Sizing, against measurement rather than preference. A clean run with zero
+     * retries measured 16m33s end to end on a release build on device
+     * (11:27:01 -> 11:43:34, ten calls, ~99s each). That is the number to beat,
+     * and it is why the previous value of 20 could not simply be threaded into
+     * the live path: 20 minutes is 1.21x a clean run. With OLLAMA_NUM_PARALLEL=2
+     * a third concurrent student queues, and queue time lands on every call, so
+     * the run scales roughly with ceil(concurrency / 2). Three students at once
+     * puts a clean run near 25 minutes. Threading 20 would therefore have killed
+     * runs that succeed today, on the cohort - a regression caused by a fix.
      *
-     * 20 minutes is ~50% headroom over the measured clean run. The worst case is
-     * NOT 20 minutes though - see [budgetSpent]. The deadline stops new attempts
-     * from starting; it cannot abort one already in flight, and an attempt that
-     * starts a microsecond inside the deadline still owns the 180s read timeout.
-     * So the bound is:
+     * 45 minutes is 2.72x the clean run, 28m27s of headroom. It cannot cut off a
+     * run that would otherwise have succeeded: for a retry-free run to reach it
+     * the average call would have to take 270s, and a call is abandoned at the
+     * 180s read timeout long before that. Even a rough run - three calls in ten
+     * failing once and succeeding on the retry - lands near 26 minutes.
      *
-     *   20 min budget + 180 s in-flight read timeout = 23 minutes, worst case.
+     * The worst case is NOT 45 minutes - see [budgetSpent]. The deadline stops
+     * new attempts from starting; it cannot abort one already in flight, and an
+     * attempt beginning a microsecond inside the deadline still owns its full
+     * read timeout. So the bound is:
      *
-     * That is the ceiling for a run in which every single call burns its full
-     * timeout. It is a number a student can be held to only because they can
-     * leave at any point; the typical run remains the measured ~13 minutes.
+     *   45 min budget + 180 s in-flight read timeout = 48 minutes, worst case.
+     *
+     * Which is less than half of what this path allows today: ~90.5 minutes of
+     * generic failures, ~110 once a 429 can park a call on the server's
+     * Retry-After, against the ~99 minutes a6ca2df introduced the budget to
+     * prevent. A student is not held to 48 minutes either - the overlay carries
+     * a cancel control (AssessmentActivity.cancelReportGeneration), device-proven
+     * in portrait and landscape, so leaving is always available. The ceiling
+     * exists to guarantee the run terminates, not to be the way out of it.
      */
-    internal val REPORT_BUDGET_MINUTES = 20L
+    internal val REPORT_BUDGET_MINUTES = 45L
 
     /**
      * The instant this report must stop dialling out.
