@@ -27,7 +27,31 @@ class GeminiChallengeService(private val context: Context) {
 
     companion object {
         private const val TAG = "GeminiChallengeService"
-        
+
+        // Same bounds as GeminiReportService: a tiny Retry-After must not become
+        // a hammering loop, and an absurd one must not park the student.
+        private const val RETRY_AFTER_MIN_MS = 1_000L
+        private const val RETRY_AFTER_MAX_MS = 60_000L
+
+        /**
+         * Retry-After as milliseconds. RFC 9110 defines it in SECONDS; this was
+         * read as milliseconds, so "30" meant a 30ms wait. Returns null when the
+         * header is absent, not positive, or the HTTP-date form (which the
+         * gateway does not send), so the caller falls back to its own backoff.
+         */
+        internal fun parseRetryAfterMs(header: String?): Long? {
+            val seconds = header?.trim()?.toLongOrNull() ?: return null
+            if (seconds <= 0L) return null
+            // Bound before multiplying so a huge header cannot overflow negative.
+            val capSeconds = RETRY_AFTER_MAX_MS / 1_000L
+            val bounded = if (seconds > capSeconds) capSeconds else seconds
+            return (bounded * 1_000L).coerceAtLeast(RETRY_AFTER_MIN_MS)
+        }
+
+        /** The server's wait when it gave a usable one, else the ladder's backoff. */
+        internal fun retryWaitMs(retryAfterMs: Long?, backoffMs: Long): Long =
+            retryAfterMs ?: backoffMs
+
         // Available components for Challenge 1
         val AVAILABLE_MCUS = listOf("Arduino UNO", "ESP32")
         val AVAILABLE_SENSORS = listOf(
@@ -986,9 +1010,9 @@ Return ONLY this JSON (no markdown, no explanation):
                     val responseCode = response.code
                     
                     if (responseCode == 429) {
-                        val retryAfter = response.header("Retry-After")?.toLongOrNull() ?: (baseDelayMs * (1 shl attempt))
-                        Log.w(TAG, "Rate limited (429). Retry after: ${retryAfter}ms")
-                        throw RateLimitException("Rate limited by API. Retry after ${retryAfter}ms")
+                        val retryAfterMs = parseRetryAfterMs(response.header("Retry-After"))
+                        Log.w(TAG, "Rate limited (429). Retry-After: ${retryAfterMs?.let { "${it}ms" } ?: "none, backing off"}")
+                        throw RateLimitException("Rate limited by API (429)", retryAfterMs)
                     }
                     
                     if (responseCode in 500..599) {
@@ -1035,7 +1059,10 @@ Return ONLY this JSON (no markdown, no explanation):
                 Log.w(TAG, "Attempt ${attempt + 1} failed: ${e.message}")
                 
                 if (attempt < maxRetries - 1) {
-                    val delayMs = baseDelayMs * (1L shl attempt) + (Math.random() * 500).toLong()
+                    val backoffMs = baseDelayMs * (1L shl attempt) + (Math.random() * 500).toLong()
+                    // A 429 used to parse Retry-After only for the log line and
+                    // then retry on this backoff anyway, re-hitting the cap ~1s later.
+                    val delayMs = retryWaitMs((e as? RateLimitException)?.retryAfterMs, backoffMs)
                     Log.d(TAG, "Waiting ${delayMs}ms before retry...")
                     kotlinx.coroutines.delay(delayMs)
                 }
@@ -1054,7 +1081,7 @@ Return ONLY this JSON (no markdown, no explanation):
     }
     
     // Custom exceptions for better error handling
-    private class RateLimitException(message: String) : Exception(message)
+    private class RateLimitException(message: String, val retryAfterMs: Long?) : Exception(message)
     private class ServerException(message: String) : Exception(message)
     private class ClientException(message: String) : Exception(message)
 
