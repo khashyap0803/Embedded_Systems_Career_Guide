@@ -3,7 +3,6 @@
 package com.example.embeddedsystemscareerguide.ui.auth
 
 import android.animation.ObjectAnimator
-import android.app.Activity
 import android.app.AlertDialog
 import android.content.Intent
 import android.os.Bundle
@@ -32,6 +31,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.auth.api.signin.GoogleSignInStatusCodes
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
 import com.google.android.gms.common.api.ApiException
@@ -57,31 +57,40 @@ class LoginActivity : AppCompatActivity() {
     private val googleSignInLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
-            try {
-                val account = task.getResult(ApiException::class.java)!!
-                firebaseAuthWithGoogle(account)
-            } catch (e: ApiException) {
-                hideLoading()
-                // Handle specific error codes
-                val errorMessage = when (e.statusCode) {
-                    12500 -> "Google Sign-In failed. Please check your internet connection."
-                    12501 -> "Sign-in was cancelled"
-                    12502 -> "Sign-in is currently in progress"
-                    10 -> "Developer error. Please contact support." // DEVELOPER_ERROR
-                    7 -> "Network error. Please check your connection."
-                    else -> "Google sign in failed (${e.statusCode}): ${e.message}"
-                }
-                Log.e("LoginActivity", "Google Sign-In failed with code: ${e.statusCode}", e)
-                showError(errorMessage)
-            }
-        } else {
+        // Read the result whatever the resultCode. A FAILED sign-in - including
+        // DEVELOPER_ERROR from an unregistered signing certificate - comes back
+        // as RESULT_CANCELED with the real status inside the intent. Gating on
+        // RESULT_OK sent every failure down the "user cancelled" branch, which
+        // shows nothing, so the picker just flashed and closed with no message
+        // and no log line.
+        val data = result.data
+        if (data == null) {
             hideLoading()
-            // Don't show error for user cancellation (resultCode == 0)
-            if (result.resultCode != Activity.RESULT_CANCELED) {
-                showError("Google sign in cancelled")
+            Log.w("LoginActivity", "Google Sign-In returned no data (resultCode=${result.resultCode})")
+            return@registerForActivityResult
+        }
+        val task = GoogleSignIn.getSignedInAccountFromIntent(data)
+        try {
+            val account = task.getResult(ApiException::class.java)!!
+            firebaseAuthWithGoogle(account)
+        } catch (e: ApiException) {
+            hideLoading()
+            // The student backing out of the picker is not an error.
+            if (e.statusCode == GoogleSignInStatusCodes.SIGN_IN_CANCELLED) {
+                return@registerForActivityResult
             }
+            val errorMessage = when (e.statusCode) {
+                12500 -> "Google Sign-In failed. Please check your internet connection."
+                12502 -> "Sign-in is currently in progress"
+                // This build's signing certificate is not registered with Firebase.
+                // Nothing the student can fix; email login still works.
+                10 -> "Google Sign-In isn't available in this version of the app (code 10). " +
+                    "Please sign in with your email and password."
+                7 -> "Network error. Please check your connection."
+                else -> "Google sign in failed (${e.statusCode}): ${e.message}"
+            }
+            Log.e("LoginActivity", "Google Sign-In failed with code: ${e.statusCode}", e)
+            showError(errorMessage)
         }
     }
 
