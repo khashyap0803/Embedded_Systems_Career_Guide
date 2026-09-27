@@ -15,6 +15,18 @@ if (localPropertiesFile.exists()) {
 }
 val geminiApiKey: String = localProperties.getProperty("GEMINI_API_KEY") ?: ""
 
+// Release signing credentials live in keystore.properties (gitignored) next to
+// the jks, never in this file. Without a fixed release key every build fell back
+// to the machine's debug keystore, which Android silently regenerates - and a new
+// fingerprint breaks Google Sign-In with DEVELOPER_ERROR.
+val keystoreProperties = Properties()
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+if (keystorePropertiesFile.exists()) {
+    keystorePropertiesFile.inputStream().use { stream ->
+        keystoreProperties.load(stream)
+    }
+}
+
 android {
     namespace = "com.example.embeddedsystemscareerguide"
     compileSdk = 36
@@ -32,8 +44,22 @@ android {
         buildConfigField("String", "GEMINI_API_KEY", "\"$geminiApiKey\"")
     }
 
+    signingConfigs {
+        if (keystorePropertiesFile.exists()) {
+            create("release") {
+                storeFile = file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
+            // Absent keystore.properties (e.g. a fresh clone) leaves release
+            // unsigned rather than failing the build or signing with a debug key.
+            signingConfigs.findByName("release")?.let { signingConfig = it }
             // C3 fix: Enable code shrinking and obfuscation for release builds
             isMinifyEnabled = true
             isShrinkResources = true

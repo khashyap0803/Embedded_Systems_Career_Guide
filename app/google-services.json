@@ -15,11 +15,27 @@
       },
       "oauth_client": [
         {
+          "client_id": "484952243047-dgt6tm8qhvfe5a25gmt3981fjllhq8qt.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.embeddedsystemscareerguide",
+            "certificate_hash": "04f2c1e9092b3e2d6cb199a611670999664fa48d"
+          }
+        },
+        {
           "client_id": "484952243047-e639iqq0tgrmocisn8ogpsgi649h2c07.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.example.embeddedsystemscareerguide",
             "certificate_hash": "fab672f13c2e90ce9551754511f0c9bfedeeafe3"
+          }
+        },
+        {
+          "client_id": "484952243047-u5rs6sfehke6660o9qoi6habl05crqeu.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.embeddedsystemscareerguide",
+            "certificate_hash": "5718f43b484faf3ff0aa5cf7f843056bea734e15"
           }
         },
         {

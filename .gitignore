@@ -45,3 +45,8 @@ checkpoints/
 
 # Firebase CLI local cache
 .firebase/
+
+# Release signing - never commit
+keystore.properties
+*.jks
+*.keystore
