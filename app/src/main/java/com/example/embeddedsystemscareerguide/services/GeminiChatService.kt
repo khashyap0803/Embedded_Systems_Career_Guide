@@ -3,6 +3,7 @@ package com.example.embeddedsystemscareerguide.services
 import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.JsonObject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
@@ -90,6 +91,11 @@ When providing code examples, format them properly for readability.
 
             return@withContext response
 
+        } catch (e: CancellationException) {
+            // The student left the chat screen. CancellationException is an
+            // Exception, so without this the catch-all below reported a healthy
+            // server as down and logged the cancellation as an error.
+            throw e
         } catch (e: RateLimitedException) {
             // Nothing is down - this student is briefly over the per-uid cap.
             // Saying "server down" here sends them chasing a fault that does not
@@ -178,6 +184,8 @@ When providing code examples, format them properly for readability.
 
             return@withContext cleaned
 
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error calling Ollama API", e)
             throw e
