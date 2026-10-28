@@ -39,6 +39,31 @@ class ReportViewerActivity : AppCompatActivity() {
 
     companion object {
         private const val PERMISSION_REQUEST_CODE = 100
+
+        /**
+         * What the viewer shows, from the read of the report's HTML at
+         * users/{username}/data/report and, once it has run, at the legacy
+         * assessment_reports/{uid}. A null HTML is a successful read that found
+         * no report.
+         *
+         * Any failed read used to end on "No Report Found - please ensure you
+         * have completed the assessment", telling a student who has a report, on
+         * a bad connection, to go and take the assessment again.
+         */
+        internal fun reportPage(primary: Result<String?>, legacy: Result<String?>? = null): ReportPage {
+            primary.getOrNull()?.let { return ReportPage.Show(it) }
+            val legacyRead = legacy ?: return ReportPage.CheckLegacy
+            legacyRead.getOrNull()?.let { return ReportPage.Show(it) }
+            return if (primary.isFailure || legacyRead.isFailure) ReportPage.Unavailable else ReportPage.NotFound
+        }
+    }
+
+    /** What [reportPage] decided. */
+    internal sealed class ReportPage {
+        data class Show(val html: String) : ReportPage()
+        object CheckLegacy : ReportPage()
+        object NotFound : ReportPage()
+        object Unavailable : ReportPage()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -150,64 +175,57 @@ class ReportViewerActivity : AppCompatActivity() {
                     .document("report")
                     .get()
                     .addOnSuccessListener { document ->
-                        if (document.exists()) {
-                            val htmlContent = document.getString("reportHtml")
-                            if (htmlContent != null) {
-                                currentReportHtml = htmlContent
-                                binding.webView.loadDataWithBaseURL(
-                                    null,
-                                    htmlContent,
-                                    "text/html",
-                                    "UTF-8",
-                                    null
-                                )
-                            } else {
-                                loadLegacyReport(user.uid)
-                            }
-                        } else {
-                            loadLegacyReport(user.uid)
-                        }
+                        val primary = Result.success(document.getString("reportHtml"))
+                        showReportPage(reportPage(primary), user.uid, primary)
                     }
-                    .addOnFailureListener {
-                        loadLegacyReport(user.uid)
+                    .addOnFailureListener { e ->
+                        Log.w("ReportViewer", "Could not read the report", e)
+                        val primary = Result.failure<String?>(e)
+                        showReportPage(reportPage(primary), user.uid, primary)
                     }
             } else {
                 // Fallback to legacy path
-                loadLegacyReport(user.uid)
+                loadLegacyReport(user.uid, Result.success(null))
             }
         } else {
             showErrorMessage()
         }
     }
 
+    private fun showReportPage(page: ReportPage, userId: String, primary: Result<String?>) {
+        when (page) {
+            is ReportPage.Show -> {
+                currentReportHtml = page.html
+                binding.webView.loadDataWithBaseURL(
+                    null,
+                    page.html,
+                    "text/html",
+                    "UTF-8",
+                    null
+                )
+            }
+            ReportPage.CheckLegacy -> loadLegacyReport(userId, primary)
+            ReportPage.NotFound -> showErrorMessage()
+            ReportPage.Unavailable -> showErrorMessage(
+                title = "📶 Couldn't Load Your Report",
+                body = "Your report could not be loaded right now. Please check your internet connection and open it again."
+            )
+        }
+    }
+
     /**
      * Load report from legacy assessment_reports collection for backwards compatibility
      */
-    private fun loadLegacyReport(userId: String) {
+    private fun loadLegacyReport(userId: String, primary: Result<String?>) {
         firestore.collection("assessment_reports")
             .document(userId)
             .get()
             .addOnSuccessListener { document ->
-                if (document.exists()) {
-                    val htmlContent = document.getString("reportHtml")
-                    if (htmlContent != null) {
-                        currentReportHtml = htmlContent
-                        binding.webView.loadDataWithBaseURL(
-                            null,
-                            htmlContent,
-                            "text/html",
-                            "UTF-8",
-                            null
-                        )
-                    } else {
-                        showErrorMessage()
-                    }
-                } else {
-                    showErrorMessage()
-                }
+                showReportPage(reportPage(primary, Result.success(document.getString("reportHtml"))), userId, primary)
             }
-            .addOnFailureListener {
-                showErrorMessage()
+            .addOnFailureListener { e ->
+                Log.w("ReportViewer", "Could not read the legacy report", e)
+                showReportPage(reportPage(primary, Result.failure(e)), userId, primary)
             }
     }
 
@@ -348,7 +366,10 @@ class ReportViewerActivity : AppCompatActivity() {
         )
     }
 
-    private fun showErrorMessage() {
+    private fun showErrorMessage(
+        title: String = "📄 No Report Found",
+        body: String = "Unable to load your assessment report. Please ensure you have completed the assessment and have an active internet connection."
+    ) {
         val errorHtml = """
             <!DOCTYPE html>
             <html>
@@ -381,8 +402,8 @@ class ReportViewerActivity : AppCompatActivity() {
             </head>
             <body>
                 <div class="error-container">
-                    <h1>📄 No Report Found</h1>
-                    <p>Unable to load your assessment report. Please ensure you have completed the assessment and have an active internet connection.</p>
+                    <h1>$title</h1>
+                    <p>$body</p>
                 </div>
             </body>
             </html>
