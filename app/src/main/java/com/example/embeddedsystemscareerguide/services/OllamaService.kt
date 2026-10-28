@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.JsonObject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.currentCoroutineContext
@@ -39,7 +40,57 @@ class OllamaService(private val context: Context) {
         // Retry Configuration
         private const val MAX_RETRIES = 3
         private const val INITIAL_DELAY_MS = 1000L
-        
+
+        /**
+         * The retry ladder behind generateContent, lifted out so it can be
+         * tested without a Context or a network.
+         *
+         * Every failure waits before the next attempt. The timeout and
+         * connect-failure branches used to skip the wait, so a refused
+         * connection - which fails in milliseconds, e.g. while the gateway
+         * restarts - burned all three attempts before the server was back.
+         */
+        internal suspend fun retryWithBackoff(
+            maxRetries: Int = MAX_RETRIES,
+            initialDelayMs: Long = INITIAL_DELAY_MS,
+            sleep: suspend (Long) -> Unit = { delay(it) },
+            call: suspend () -> String
+        ): Result<String> {
+            var lastException: Exception? = null
+            var delayMs = initialDelayMs
+
+            for (attempt in 0 until maxRetries) {
+                // Without this, cancelling the caller (leaving the screen) did not
+                // stop the retry ladder: each attempt just ran to its own timeout,
+                // and callers chain several of these, so a dead tunnel could keep
+                // the chain alive for hours after the user had gone.
+                currentCoroutineContext().ensureActive()
+                try {
+                    return Result.success(call())
+                } catch (e: CancellationException) {
+                    // An Exception too; without this it was logged as a failed
+                    // attempt and slept on before the cancellation surfaced.
+                    throw e
+                } catch (e: SocketTimeoutException) {
+                    Log.w(TAG, "Timeout on attempt ${attempt + 1}: ${e.message}")
+                    lastException = Exception(NetworkModule.SERVER_DOWN_MESSAGE)
+                } catch (e: ConnectException) {
+                    Log.w(TAG, "Connection failed on attempt ${attempt + 1}: ${e.message}")
+                    lastException = Exception(NetworkModule.SERVER_DOWN_MESSAGE)
+                } catch (e: Exception) {
+                    Log.w(TAG, "Attempt ${attempt + 1} failed: ${e.message}")
+                    lastException = e
+                }
+
+                if (attempt < maxRetries - 1) {
+                    sleep(delayMs)
+                    delayMs *= 2
+                }
+            }
+
+            return Result.failure(lastException ?: Exception("Unknown error"))
+        }
+
         // Singleton instance
         @Volatile
         private var instance: OllamaService? = null
@@ -534,36 +585,7 @@ RESPOND WITH ONLY THIS JSON:
      * Make API call to Ollama with retry logic
      */
     suspend fun generateContent(prompt: String, maxOutputTokens: Int = 4096): Result<String> = withContext(Dispatchers.IO) {
-        var lastException: Exception? = null
-        var delayMs = INITIAL_DELAY_MS
-
-        repeat(MAX_RETRIES) { attempt ->
-            // Without this, cancelling the caller (leaving the screen) did not
-            // stop the retry ladder: each attempt just ran to its own timeout,
-            // and callers chain several of these, so a dead tunnel could keep
-            // the chain alive for hours after the user had gone.
-            currentCoroutineContext().ensureActive()
-            try {
-                val response = callOllamaAPI(prompt, maxOutputTokens)
-                return@withContext Result.success(response)
-            } catch (e: SocketTimeoutException) {
-                Log.w(TAG, "Timeout on attempt ${attempt + 1}: ${e.message}")
-                lastException = Exception(NetworkModule.SERVER_DOWN_MESSAGE)
-            } catch (e: ConnectException) {
-                Log.w(TAG, "Connection failed on attempt ${attempt + 1}: ${e.message}")
-                lastException = Exception(NetworkModule.SERVER_DOWN_MESSAGE)
-            } catch (e: Exception) {
-                Log.w(TAG, "Attempt ${attempt + 1} failed: ${e.message}")
-                lastException = e
-                
-                if (attempt < MAX_RETRIES - 1) {
-                    delay(delayMs)
-                    delayMs *= 2
-                }
-            }
-        }
-
-        return@withContext Result.failure(lastException ?: Exception("Unknown error"))
+        retryWithBackoff { callOllamaAPI(prompt, maxOutputTokens) }
     }
 
     /**
