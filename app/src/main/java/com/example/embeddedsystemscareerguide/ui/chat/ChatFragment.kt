@@ -1,6 +1,7 @@
 package com.example.embeddedsystemscareerguide.ui.chat
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -12,6 +13,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.embeddedsystemscareerguide.databinding.FragmentChatBinding
 import com.example.embeddedsystemscareerguide.services.GeminiChatService
 import com.example.embeddedsystemscareerguide.services.InputSanitizer
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
 class ChatFragment : Fragment() {
@@ -19,6 +21,26 @@ class ChatFragment : Fragment() {
     companion object {
         // H2 fix: Limit messages to prevent memory leak
         private const val MAX_MESSAGES = 100
+
+        internal const val APOLOGY = "Sorry, I couldn't process that. Please try again! 🔄"
+
+        /**
+         * The tutor's reply to one message, or the apology bubble if the request failed.
+         *
+         * A cancellation is not a failed request: it is the student leaving the chat
+         * tab while the model is still answering. GeminiChatService already turns
+         * every real failure into a reply string, so the catch-all here was reached
+         * almost only by that cancellation - and turned it into an apology queued
+         * for a screen that no longer existed.
+         */
+        internal suspend fun replyFor(send: suspend () -> String): ChatMessage = try {
+            ChatMessage(send(), false)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.w("ChatFragment", "Chat request failed", e)
+            ChatMessage(APOLOGY, false)
+        }
     }
 
     private var _binding: FragmentChatBinding? = null
@@ -137,19 +159,17 @@ class ChatFragment : Fragment() {
         // Get AI response using sanitized message
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                val response = chatService.sendMessage(sanitizedMessage)
-
                 // H2 fix: Add AI response with limit
-                addMessageWithLimit(ChatMessage(response, false))
+                addMessageWithLimit(replyFor { chatService.sendMessage(sanitizedMessage) })
                 binding.recyclerMessages.scrollToPosition(messages.size - 1)
-
-            } catch (e: Exception) {
-                // Add error message with limit
-                addMessageWithLimit(ChatMessage("Sorry, I couldn't process that. Please try again! 🔄", false))
             } finally {
                 isSending = false
-                binding.progressLoading.visibility = View.GONE
-                binding.btnSend.isEnabled = true
+                // A cancelled send lands here after onDestroyView has cleared the
+                // binding, and the non-null getter crashed the app.
+                _binding?.let {
+                    it.progressLoading.visibility = View.GONE
+                    it.btnSend.isEnabled = true
+                }
             }
         }
     }
