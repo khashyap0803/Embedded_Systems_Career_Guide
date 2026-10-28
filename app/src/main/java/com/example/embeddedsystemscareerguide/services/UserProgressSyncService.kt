@@ -43,6 +43,23 @@ class UserProgressSyncService(private val context: Context) {
         private const val COLLECTION_USERS = "users"
         private const val COLLECTION_DATA = "data"
         private const val DOCUMENT_PROGRESS = "progress"
+
+        /**
+         * The progress a read-modify-write starts from, or null when it must not
+         * write at all.
+         *
+         * resetStageProgressInCloud and updateStreakInCloud built their write from
+         * `loadProgressFromCloud() ?: UserProgress()`, and that helper returns null
+         * for a FAILED read as well as an absent one. A failed read - offline, a
+         * rejected request, or the caller being cancelled - became a brand-new
+         * user's zeros, merged over the real XP, streak and completed stages. Every
+         * retake runs the reset.
+         */
+        internal fun writeBaseFor(load: ProgressLoad): UserProgress? = when (load) {
+            is ProgressLoad.Loaded -> load.progress
+            ProgressLoad.Absent -> UserProgress()
+            is ProgressLoad.Failed -> null
+        }
     }
 
     private val auth = FirebaseAuth.getInstance()
@@ -613,8 +630,11 @@ class UserProgressSyncService(private val context: Context) {
         }
 
         return try {
-            val currentProgress = loadProgressFromCloud() ?: UserProgress()
-            
+            val currentProgress = writeBaseFor(loadProgressResult()) ?: run {
+                Log.w(TAG, "Not updating streak: current progress could not be read")
+                return false
+            }
+
             val updatedProgress = currentProgress.copy(
                 streak = newStreak,
                 bestStreak = maxOf(bestStreak, currentProgress.bestStreak),
@@ -654,8 +674,11 @@ class UserProgressSyncService(private val context: Context) {
         }
 
         return try {
-            val currentProgress = loadProgressFromCloud() ?: UserProgress()
-            
+            val currentProgress = writeBaseFor(loadProgressResult()) ?: run {
+                Log.w(TAG, "Not resetting stage progress: current progress could not be read")
+                return false
+            }
+
             // Reset only stage-related progress, preserve XP and streak
             val resetProgress = currentProgress.copy(
                 currentStage = 1,
