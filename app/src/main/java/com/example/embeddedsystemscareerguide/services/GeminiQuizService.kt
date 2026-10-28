@@ -4,8 +4,8 @@ import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.google.gson.reflect.TypeToken
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Request
@@ -45,6 +45,21 @@ class GeminiQuizService {
                 q.options != null && q.options.size == OPTION_COUNT &&
                 q.options.none { it == null || it.isBlank() } &&
                 q.correctAnswerIndex in q.options.indices
+
+        /**
+         * The quiz's retry ladder: OllamaService's, which waits out a 429's
+         * Retry-After (seconds, via GeminiChallengeService.parseRetryAfterMs),
+         * fails any other 4xx at once, and backs off 1s/2s on everything else.
+         *
+         * The quiz used to keep its own copy, which spotted 401/403 by searching
+         * the message text, retried every other 4xx, and retried a 429 on its own
+         * 1s/2s - all three attempts inside the window the gateway had just asked
+         * for, after which the student got the generic fallback quiz.
+         */
+        internal suspend fun retryQuizCall(
+            sleep: suspend (Long) -> Unit = { delay(it) },
+            call: suspend () -> String
+        ): String = OllamaService.retryWithBackoff(sleep = sleep, call = call).getOrThrow()
     }
 
     data class QuizQuestion(
@@ -155,35 +170,8 @@ Generate 5 SHORT questions now:
     /**
      * N4 fix: Added exponential backoff retry for transient API failures
      */
-    private suspend fun callGeminiAPI(prompt: String, maxRetries: Int = 3): String = withContext(Dispatchers.IO) {
-        var lastException: Exception? = null
-        var currentDelay = 1000L // Start with 1 second
-        
-        repeat(maxRetries) { attempt ->
-            try {
-                return@withContext executeApiCall(prompt)
-            } catch (e: CancellationException) {
-                // Without this the retry ladder below would treat a cancelled
-                // coroutine as a failed attempt and keep backing off and
-                // retrying, since CancellationException is an Exception.
-                throw e
-            } catch (e: Exception) {
-                lastException = e
-                Log.w(TAG, "API attempt ${attempt + 1}/$maxRetries failed: ${e.message}")
-                
-                // Don't retry on certain errors
-                if (e.message?.contains("401") == true || e.message?.contains("403") == true) {
-                    throw e // Auth errors shouldn't retry
-                }
-                
-                if (attempt < maxRetries - 1) {
-                    kotlinx.coroutines.delay(currentDelay)
-                    currentDelay *= 2 // Exponential backoff
-                }
-            }
-        }
-        
-        throw lastException ?: Exception("Max retries exceeded")
+    private suspend fun callGeminiAPI(prompt: String): String = withContext(Dispatchers.IO) {
+        retryQuizCall { executeApiCall(prompt) }
     }
     
     private suspend fun executeApiCall(prompt: String): String {
@@ -208,7 +196,7 @@ Generate 5 SHORT questions now:
 
             if (!response.isSuccessful) {
                 Log.e(TAG, "API Error: ${response.code}")
-                throw Exception("API call failed: ${response.code}")
+                throw OllamaService.httpFailureFor(response.code, response.message, response.header("Retry-After"))
             }
 
             val jsonResponse = gson.fromJson(responseBody, JsonObject::class.java)
