@@ -246,9 +246,13 @@ class FirestoreManager private constructor(private val context: Context) {
     }
 
     /**
-     * Check if user has assessment report
+     * Check if user has assessment report.
+     *
+     * A Result, not a Boolean: false used to mean both "no report" and "could not
+     * read", and LearningPathFragment answered either by sending the student to
+     * retake the assessment.
      */
-    suspend fun hasAssessmentReport(): Boolean = withContext(Dispatchers.IO) {
+    suspend fun hasAssessmentReport(): Result<Boolean> = withContext(Dispatchers.IO) {
         try {
             val username = getCurrentUsername()
             val doc = firestore.collection(COLLECTION_USERS)
@@ -257,10 +261,10 @@ class FirestoreManager private constructor(private val context: Context) {
                 .document("report")
                 .get()
                 .await()
-            doc.exists()
+            Result.success(doc.exists())
         } catch (e: Exception) {
             Log.e(TAG, "Error checking assessment report", e)
-            false
+            Result.failure(e)
         }
     }
 

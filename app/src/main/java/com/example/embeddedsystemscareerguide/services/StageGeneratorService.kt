@@ -5,6 +5,7 @@ import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.google.gson.reflect.TypeToken
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -177,6 +178,12 @@ class StageGeneratorService(private val context: Context) {
             Log.d(TAG, "Successfully generated and saved ${unlockedStages.size} stages")
             callback.onSuccess(unlockedStages)
 
+        } catch (e: CancellationException) {
+            // The screen that started this run was left. That is not a failure:
+            // LearningPathFragment answers onError by sending the student to
+            // retake the assessment, and AssessmentActivity by drawing its
+            // completion screen on an Activity that no longer exists.
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error generating stages", e)
             callback.onError("An error occurred: ${e.message}")
@@ -604,6 +611,9 @@ class StageGeneratorService(private val context: Context) {
             Log.d(TAG, "Successfully regenerated and saved ${unlockedStages.size} stages")
             callback.onSuccess(unlockedStages)
 
+        } catch (e: CancellationException) {
+            // See generatePersonalizedStages.
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error regenerating stages", e)
             callback.onError("An error occurred: ${e.message}")
