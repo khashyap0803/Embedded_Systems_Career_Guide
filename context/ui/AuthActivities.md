@@ -81,8 +81,8 @@ onCreate()
 
 #### `performLogin()` (lines 266–296)
 - **Special credentials routing:**
-  - `exam1234` / `exam1234` → `navigateToChallengeFlow()`.
-  - `admin1234` / `admin1234` → `navigateToAdminDashboard()`.
+  - The event username and its password (redacted) → `navigateToChallengeFlow()`.
+  - The admin username and its password (redacted) → `navigateToAdminDashboard()`.
 - If input looks like email (`@`): calls `signInWithEmail(email, password)`.
 - Otherwise: calls `loginWithUsername(username, password)`.
 
@@ -197,7 +197,7 @@ onCreate()
 ### Design Decisions
 - **Username-first architecture:** Users are identified by username, not UID — allows human-readable Firestore paths (`users/{username}/data/`).
 - **Three-layer profile lookup:** Handles edge cases where the `usernames` collection might be out of sync with `users` (e.g., partial profile creation).
-- **Special credential routing:** `exam1234` and `admin1234` bypass normal authentication for challenge/admin flows, with automatic user creation if the Firebase user doesn't exist yet.
+- **Special credential routing:** the event and admin magic usernames (redacted) bypass normal authentication for challenge/admin flows, with automatic user creation if the Firebase user doesn't exist yet.
 - **Auto-login in `onStart()`:** Skips the login screen entirely for returning users who have both a Firebase session and a saved username.
 - **Report migration:** Old reports stored under `assessment_reports/{uid}` are automatically migrated to the new `users/{username}/data/report` path.
 
@@ -282,8 +282,8 @@ graph TD
     A[LoginActivity] --> B{Input Type?}
     B -->|Email| C[signInWithEmail]
     B -->|Username| D[loginWithUsername → signInWithEmail]
-    B -->|exam1234| E[navigateToChallengeFlow]
-    B -->|admin1234| F[navigateToAdminDashboard]
+    B -->|event username| E[navigateToChallengeFlow]
+    B -->|admin username| F[navigateToAdminDashboard]
     B -->|Google| G[signInWithGoogle]
     C --> H[checkUserProfileAndNavigate]
     D --> H
