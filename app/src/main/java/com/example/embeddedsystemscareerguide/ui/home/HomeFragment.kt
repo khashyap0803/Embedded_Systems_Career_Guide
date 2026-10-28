@@ -27,6 +27,7 @@ import com.example.embeddedsystemscareerguide.ui.assessment.ReportViewerActivity
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
@@ -123,20 +124,14 @@ class HomeFragment : Fragment() {
         val learningPrefs = requireContext()
             .getSharedPreferences(PrefsKeys.PREFS_LEARNING, Context.MODE_PRIVATE)
         val cached = learningPrefs.getInt(KEY_TOTAL_STAGES, 0)
-        return try {
-            val stages = FirestoreManager.getInstance(requireContext())
-                .getPersonalizedStages()
-                .getOrNull()
-            if (stages != null && stages.isNotEmpty()) {
-                learningPrefs.edit().putInt(KEY_TOTAL_STAGES, stages.size).apply()
-                stages.size
-            } else {
-                cached
-            }
-        } catch (e: Exception) {
-            Log.w("HomeFragment", "Could not resolve stage count, using cached $cached", e)
-            cached
+        val firestoreManager = FirestoreManager.getInstance(requireContext())
+        val count = stageCountOrCached(cached) {
+            firestoreManager.getPersonalizedStages().getOrNull()
         }
+        if (count != cached) {
+            learningPrefs.edit().putInt(KEY_TOTAL_STAGES, count).apply()
+        }
+        return count
     }
 
     private fun loadProgressFromCloud() {
@@ -160,11 +155,16 @@ class HomeFragment : Fragment() {
                     Log.d("HomeFragment", "No cloud progress, using defaults")
                 }
                 
+            } catch (e: CancellationException) {
+                // Leaving Home cancels this load; it is not a connection problem.
+                throw e
             } catch (e: Exception) {
                 Log.e("HomeFragment", "Error loading from cloud", e)
                 Toast.makeText(context, "Could not load data. Check connection.", Toast.LENGTH_SHORT).show()
             } finally {
-                binding.swipeRefreshLayout.isRefreshing = false
+                // A cancelled load reaches this after onDestroyView has cleared
+                // the binding, and the non-null getter crashed the app.
+                _binding?.swipeRefreshLayout?.isRefreshing = false
             }
         }
     }
@@ -572,8 +572,24 @@ class HomeFragment : Fragment() {
         _binding = null
     }
 
-    private companion object {
+    companion object {
         /** Shared with LearningPathFragment, which writes the same key. */
-        const val KEY_TOTAL_STAGES = "home_total_stages"
+        private const val KEY_TOTAL_STAGES = "home_total_stages"
+
+        /**
+         * The length of the stored path, or [cached] when it cannot be read.
+         *
+         * Leaving Home cancels this read. The cancellation used to be caught here
+         * as a failed read, so the load carried on and drew the dashboard into a
+         * view onDestroyView had already released - a crash. It must end the load.
+         */
+        internal suspend fun stageCountOrCached(cached: Int, load: suspend () -> List<*>?): Int = try {
+            load()?.takeIf { it.isNotEmpty() }?.size ?: cached
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.w("HomeFragment", "Could not resolve stage count, using cached $cached", e)
+            cached
+        }
     }
 }
