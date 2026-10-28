@@ -77,7 +77,7 @@ class DailyTipService(private val context: Context) {
     /**
      * Generate tips based on user's current progress
      */
-    private suspend fun generateTips(): List<DailyTip> {
+    internal suspend fun generateTips(): List<DailyTip> {
         try {
             // Get user context for personalization
             val stages = firestoreManager.getPersonalizedStages().getOrNull() ?: emptyList()
@@ -152,11 +152,15 @@ class DailyTipService(private val context: Context) {
     }
 
     /**
-     * Create fallback tips if AI generation fails
+     * Today's fallback tip, for when AI generation fails.
+     *
+     * Only today's: getTodaysTip stores whatever generateTips returns and does
+     * not ask the model again while a tip is stored for the day. All seven used
+     * to be returned, dated today through six days out, so an outage of any
+     * length left the student on generic tips for a week after the server came
+     * back. Rotating by date keeps a longer outage from repeating one tip.
      */
     private fun createFallbackTips(): List<DailyTip> {
-        val tips = mutableListOf<DailyTip>()
-        
         val fallbackContent = listOf(
             Triple(
                 "Use volatile Wisely",
@@ -195,16 +199,14 @@ class DailyTipService(private val context: Context) {
             )
         )
         
-        fallbackContent.forEachIndexed { index, (title, content, code) ->
-            tips.add(DailyTip(
-                date = formatDateString(index),
-                tip = "**$title**\n\n$content\n\n```c\n$code\n```",
-                category = "programming",
-                actionItem = "Try implementing this in your next project"
-            ))
-        }
-        
-        return tips
+        val (title, content, code) =
+            fallbackContent[(java.time.LocalDate.now().toEpochDay() % fallbackContent.size).toInt()]
+        return listOf(DailyTip(
+            date = formatDateString(0),
+            tip = "**$title**\n\n$content\n\n```c\n$code\n```",
+            category = "programming",
+            actionItem = "Try implementing this in your next project"
+        ))
     }
 
     /**
