@@ -16,6 +16,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.example.embeddedsystemscareerguide.services.UserProgressSyncService
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -52,7 +53,33 @@ class LoginActivity : AppCompatActivity() {
 
     companion object {
         private val USERNAME_PATTERN = Regex("^[a-z0-9_]{3,20}$")
+
+        /**
+         * Where a signed-in student goes, from the lookup of their report at
+         * users/{username}/data/report and - only when that found nothing - of the
+         * pre-migration copy at assessment_reports/{uid}. Pass [legacy] once that
+         * second lookup has run.
+         *
+         * Only lookups that succeeded and found nothing mean a first-time student.
+         * A failed lookup used to fall through to the legacy check and then to the
+         * assessment, so a returning student signing in on a bad connection was
+         * dropped - back stack cleared - into a fresh assessment whose result would
+         * overwrite their report. The legacy check itself only ran on that failure,
+         * so a pre-migration student whose new-path report was simply absent was
+         * never migrated. A failed lookup now goes home, where every screen reads
+         * the report again.
+         */
+        internal fun reportRoute(primary: Result<Boolean>, legacy: Result<Boolean>? = null): ReportRoute {
+            val hasReport = primary.getOrElse { return ReportRoute.HOME }
+            if (hasReport) return ReportRoute.HOME
+            val hasLegacyReport = (legacy ?: return ReportRoute.CHECK_LEGACY)
+                .getOrElse { return ReportRoute.HOME }
+            return if (hasLegacyReport) ReportRoute.MIGRATE_LEGACY else ReportRoute.ASSESSMENT
+        }
     }
+
+    /** What [reportRoute] decided. */
+    internal enum class ReportRoute { HOME, CHECK_LEGACY, MIGRATE_LEGACY, ASSESSMENT }
 
     private val googleSignInLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -616,27 +643,34 @@ class LoginActivity : AppCompatActivity() {
                 .get()
                 .addOnSuccessListener { document ->
                     hideLoading()
-
-                    if (document.exists()) {
-                        // Report exists - returning user
-                        syncProgressAndNavigate(username)
-                    } else {
-                        // No report - first time user, go to Assessment
-                        val intent = Intent(this, com.example.embeddedsystemscareerguide.ui.assessment.AssessmentActivity::class.java)
-                        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                        startActivity(intent)
-                        overridePendingTransition(R.anim.fade_in, R.anim.fade_out)
-                        finish()
-                    }
+                    followReportRoute(reportRoute(Result.success(document.exists())), user.uid, username)
                 }
                 .addOnFailureListener { e ->
                     hideLoading()
-                    // On failure, check with old path for backwards compatibility
-                    checkLegacyReportAndNavigate(user.uid, username)
+                    Log.w("LoginActivity", "Report lookup failed; not treating this as a first-time student", e)
+                    followReportRoute(reportRoute(Result.failure(e)), user.uid, username)
                 }
         } else {
             hideLoading()
             showError("Sign-in session expired. Please try again.")
+        }
+    }
+
+    private fun followReportRoute(route: ReportRoute, uid: String, username: String) {
+        when (route) {
+            // Report exists (or could not be checked) - returning user
+            ReportRoute.HOME -> syncProgressAndNavigate(username)
+            ReportRoute.CHECK_LEGACY -> checkLegacyReportAndNavigate(uid, username)
+            // Only checkLegacyReportAndNavigate produces this, and it migrates first
+            ReportRoute.MIGRATE_LEGACY -> syncProgressAndNavigate(username)
+            ReportRoute.ASSESSMENT -> {
+                // No report anywhere - first time user, go to Assessment
+                val intent = Intent(this, com.example.embeddedsystemscareerguide.ui.assessment.AssessmentActivity::class.java)
+                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                startActivity(intent)
+                overridePendingTransition(R.anim.fade_in, R.anim.fade_out)
+                finish()
+            }
         }
     }
 
@@ -646,28 +680,29 @@ class LoginActivity : AppCompatActivity() {
             .document(uid)
             .get()
             .addOnSuccessListener { document ->
-                if (document.exists()) {
+                val route = reportRoute(Result.success(false), Result.success(document.exists()))
+                if (route == ReportRoute.MIGRATE_LEGACY) {
                     // Migrate old report to new location
                     lifecycleScope.launch {
-                        migrateReport(document.data, username)
+                        try {
+                            migrateReport(document.data, username)
+                        } catch (e: CancellationException) {
+                            throw e
+                        } catch (e: Exception) {
+                            // The legacy copy is still readable where it was, and
+                            // ReportViewerActivity falls back to it. An uncaught
+                            // failure here used to crash sign-in.
+                            Log.w("LoginActivity", "Could not migrate the legacy report", e)
+                        }
                         syncProgressAndNavigate(username)
                     }
                 } else {
-                    // No report anywhere - go to Assessment
-                    val intent = Intent(this, com.example.embeddedsystemscareerguide.ui.assessment.AssessmentActivity::class.java)
-                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                    startActivity(intent)
-                    overridePendingTransition(R.anim.fade_in, R.anim.fade_out)
-                    finish()
+                    followReportRoute(route, uid, username)
                 }
             }
-            .addOnFailureListener {
-                // Go to Assessment on error
-                val intent = Intent(this, com.example.embeddedsystemscareerguide.ui.assessment.AssessmentActivity::class.java)
-                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                startActivity(intent)
-                overridePendingTransition(R.anim.fade_in, R.anim.fade_out)
-                finish()
+            .addOnFailureListener { e ->
+                Log.w("LoginActivity", "Legacy report lookup failed", e)
+                followReportRoute(reportRoute(Result.success(false), Result.failure(e)), uid, username)
             }
     }
 
