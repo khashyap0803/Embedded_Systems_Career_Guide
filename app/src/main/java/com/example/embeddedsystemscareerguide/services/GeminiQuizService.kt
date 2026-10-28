@@ -24,6 +24,27 @@ class GeminiQuizService {
 
     companion object {
         private const val TAG = "GeminiQuizService"
+
+        /** QuizActivity always shows exactly four answer cards. */
+        private const val OPTION_COUNT = 4
+
+        /**
+         * Whether QuizActivity can show [q] and mark it correctly.
+         *
+         * Gson fills these non-null Kotlin fields straight from the model's JSON,
+         * so nothing upstream guarantees any of them. A trailing comma in the array
+         * (lenient parsing reads it as a null element) or a missing "options" key
+         * crashed QuizActivity mid-quiz; fewer than four options left the spare
+         * cards showing the previous question's answers; and an index outside the
+         * options made the question impossible to get right.
+         */
+        @Suppress("SENSELESS_COMPARISON")
+        internal fun isPlayable(q: QuizQuestion?): Boolean =
+            q != null &&
+                q.question != null && q.question.isNotBlank() &&
+                q.options != null && q.options.size == OPTION_COUNT &&
+                q.options.none { it == null || it.isBlank() } &&
+                q.correctAnswerIndex in q.options.indices
     }
 
     data class QuizQuestion(
@@ -196,7 +217,7 @@ Generate 5 SHORT questions now:
         }
     }
 
-    private fun parseQuizResponse(response: String): List<QuizQuestion> {
+    internal fun parseQuizResponse(response: String): List<QuizQuestion> {
         val targetQuestions = 5  // Each API call requests 5 questions
         var parsedQuestions = listOf<QuizQuestion>()
         
@@ -237,6 +258,12 @@ Generate 5 SHORT questions now:
             }
         }
         
+        val playable = parsedQuestions.filter { isPlayable(it) }
+        if (playable.size < parsedQuestions.size) {
+            Log.w(TAG, "Dropped ${parsedQuestions.size - playable.size} malformed quiz question(s)")
+        }
+        parsedQuestions = playable
+
         // If we parsed some questions but not enough, fill with fallbacks
         if (parsedQuestions.isNotEmpty()) {
             Log.d(TAG, "Parsed ${parsedQuestions.size} questions from API response")
