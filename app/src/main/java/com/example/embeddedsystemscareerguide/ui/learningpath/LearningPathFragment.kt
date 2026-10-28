@@ -20,6 +20,7 @@ import androidx.lifecycle.lifecycleScope
 import com.example.embeddedsystemscareerguide.services.UserProgressSyncService
 import com.example.embeddedsystemscareerguide.services.PersonalizedStage
 import com.example.embeddedsystemscareerguide.ui.content.ContentReadingActivity
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import com.example.embeddedsystemscareerguide.PrefsKeys
 import com.example.embeddedsystemscareerguide.R
@@ -67,6 +68,40 @@ class LearningPathFragment : Fragment() {
         private val KEY_LAST_VISIT_DATE = PrefsKeys.LAST_ACTIVE_DATE
         private val KEY_STAGE_STARS = PrefsKeys.STAGE_STARS_PREFIX
         private const val KEY_FIRST_LAUNCH = "is_first_launch"
+
+        /**
+         * Decides what this screen shows, from the stored path and, if there is
+         * none, whether a report exists to rebuild it from.
+         *
+         * Only a read that succeeded and came back empty means "no path yet", and
+         * only a successful "no report" means "take the assessment". Both reads used
+         * to turn a failure into false, so an unreadable path sent the student -
+         * clearing the back stack - to retake the 50-question assessment. Leaving the
+         * screen mid-load did the same: the cancellation was caught as one more error.
+         */
+        internal suspend fun resolvePathSource(
+            loadStages: suspend () -> Result<List<PersonalizedStage>>,
+            reportExists: suspend () -> Result<Boolean>
+        ): PathSource {
+            val stages = loadStages().getOrElse { return unavailable(it) }
+            if (stages.isNotEmpty()) return PathSource.Stages(stages)
+            val hasReport = reportExists().getOrElse { return unavailable(it) }
+            return if (hasReport) PathSource.RegenerateFromReport else PathSource.TakeAssessment
+        }
+
+        /** FirestoreManager hands a cancellation back as a failed Result; it is not one. */
+        private fun unavailable(cause: Throwable): PathSource {
+            if (cause is CancellationException) throw cause
+            return PathSource.Unavailable(cause)
+        }
+    }
+
+    /** What [resolvePathSource] decided. */
+    internal sealed class PathSource {
+        data class Stages(val stages: List<PersonalizedStage>) : PathSource()
+        object RegenerateFromReport : PathSource()
+        object TakeAssessment : PathSource()
+        data class Unavailable(val cause: Throwable) : PathSource()
     }
 
 
@@ -143,77 +178,77 @@ class LearningPathFragment : Fragment() {
                 
                 val firestoreManager = com.example.embeddedsystemscareerguide.services.FirestoreManager.getInstance(requireContext())
                 
-                // Check if user has personalized stages  
-                if (firestoreManager.hasPersonalizedStages()) {
-                    val result = firestoreManager.getPersonalizedStages()
-                    
-                    if (result.isSuccess) {
-                        val personalizedStages = result.getOrNull() ?: emptyList()
+                val source = resolvePathSource(
+                    loadStages = { firestoreManager.getPersonalizedStages() },
+                    reportExists = { firestoreManager.hasAssessmentReport() }
+                )
+                when (source) {
+                    is PathSource.Stages -> {
+                        val personalizedStages = source.stages
+                        Log.d("LearningPath", "Loaded ${personalizedStages.size} personalized stages from Firestore")
                         
-                        if (personalizedStages.isNotEmpty()) {
-                            Log.d("LearningPath", "Loaded ${personalizedStages.size} personalized stages from Firestore")
-                            
-                            // Convert PersonalizedStage to LearningStage for UI compatibility
-                            stages.clear()
-                            personalizedStages.forEach { pStage ->
-                                val stageId = pStage.id
-                                stages.add(LearningStage(
-                                    id = stageId.toString(),
-                                    title = pStage.title,
-                                    subtitle = pStage.subtitle,
-                                    description = pStage.description,
-                                    iconRes = getIconResourceForStage(stageId),
-                                    color = getColorForDifficulty(pStage.difficulty),
-                                    xpReward = pStage.xpReward,
-                                    topics = pStage.topics,
-                                    estimatedDuration = "${pStage.estimatedMinutes} mins",
-                                    order = stageId,
-                                    type = pStage.type,
-                                    isUnlocked = pStage.isUnlocked,
-                                    isCompleted = pStage.isCompleted,
-                                    starsEarned = pStage.starsEarned,
-                                    progress = 0
-                                ))
-                            }
-                            
-                            // Now load progress and render
-                            loadProgressFromCloud()
-                            isLoadingStages = false
-                            return@launch
+                        // Convert PersonalizedStage to LearningStage for UI compatibility
+                        stages.clear()
+                        personalizedStages.forEach { pStage ->
+                            val stageId = pStage.id
+                            stages.add(LearningStage(
+                                id = stageId.toString(),
+                                title = pStage.title,
+                                subtitle = pStage.subtitle,
+                                description = pStage.description,
+                                iconRes = getIconResourceForStage(stageId),
+                                color = getColorForDifficulty(pStage.difficulty),
+                                xpReward = pStage.xpReward,
+                                topics = pStage.topics,
+                                estimatedDuration = "${pStage.estimatedMinutes} mins",
+                                order = stageId,
+                                type = pStage.type,
+                                isUnlocked = pStage.isUnlocked,
+                                isCompleted = pStage.isCompleted,
+                                starsEarned = pStage.starsEarned,
+                                progress = 0
+                            ))
                         }
+                        
+                        // Now load progress and render
+                        loadProgressFromCloud()
+                        isLoadingStages = false
+                    }
+                    PathSource.RegenerateFromReport -> {
+                        // Report exists - regenerate stages from it
+                        Log.d("LearningPath", "Assessment report found, regenerating stages...")
+                        regenerateStagesFromReport(firestoreManager)
+                    }
+                    PathSource.TakeAssessment -> {
+                        // No report - redirect to assessment
+                        Log.d("LearningPath", "No assessment report found, redirecting to assessment...")
+                        redirectToAssessment()
+                    }
+                    is PathSource.Unavailable -> {
+                        Log.w("LearningPath", "Could not read the learning path; not treating it as missing", source.cause)
+                        isLoadingStages = false
+                        showPathUnavailable()
                     }
                 }
                 
-                // NO PERSONALIZED STAGES - Check if report exists to regenerate
-                Log.d("LearningPath", "No personalized stages found, checking for assessment report...")
-                
-                if (firestoreManager.hasAssessmentReport()) {
-                    // Report exists - regenerate stages from it
-                    Log.d("LearningPath", "Assessment report found, regenerating stages...")
-                    regenerateStagesFromReport(firestoreManager)
-                } else {
-                    // No report - redirect to assessment
-                    Log.d("LearningPath", "No assessment report found, redirecting to assessment...")
-                    redirectToAssessment()
-                }
-                
+            } catch (e: CancellationException) {
+                // Leaving this screen mid-load is not a missing learning path.
+                isLoadingStages = false
+                throw e
             } catch (e: Exception) {
                 Log.e("LearningPath", "Error loading from Firestore", e)
                 isLoadingStages = false
-                // On error, check for report
-                try {
-                    val firestoreManager = com.example.embeddedsystemscareerguide.services.FirestoreManager.getInstance(requireContext())
-                    if (firestoreManager.hasAssessmentReport()) {
-                        regenerateStagesFromReport(firestoreManager)
-                    } else {
-                        redirectToAssessment()
-                    }
-                } catch (e2: Exception) {
-                    Log.e("LearningPath", "Critical error, redirecting to assessment", e2)
-                    redirectToAssessment()
-                }
+                showPathUnavailable()
             }
         }
+    }
+
+    private fun showPathUnavailable() {
+        Toast.makeText(
+            context,
+            "Could not load your learning path. Check your connection - your progress is safe.",
+            Toast.LENGTH_LONG
+        ).show()
     }
 
     /**
@@ -277,6 +312,11 @@ class LearningPathFragment : Fragment() {
                     isLoadingStages = false
                     redirectToAssessment()
                 }
+            } catch (e: CancellationException) {
+                // Regeneration takes minutes; leaving the screen meanwhile is not a
+                // reason to send the student back to the assessment.
+                isLoadingStages = false
+                throw e
             } catch (e: Exception) {
                 Log.e("LearningPath", "Error regenerating stages", e)
                 isLoadingStages = false

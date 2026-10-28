@@ -34,12 +34,35 @@ import kotlin.coroutines.resumeWithException
  */
 class OllamaService(private val context: Context) {
 
+    /**
+     * HTTP 429 from the gateway: this student is over the per-uid cap.
+     * [retryAfterMs] is the server's Retry-After, parsed and clamped, or null
+     * when it sent none the ladder can use.
+     */
+    internal class RateLimitedException(val retryAfterMs: Long?) :
+        Exception("Rate limited by the gateway (429)")
+
+    /** Any other 4xx: the gateway will refuse the same request however long we wait. */
+    internal class ClientErrorException(message: String) : Exception(message)
+
     companion object {
         private const val TAG = "OllamaService"
         
         // Retry Configuration
         private const val MAX_RETRIES = 3
         private const val INITIAL_DELAY_MS = 1000L
+
+        /**
+         * The exception a failed status should raise, so the ladder knows whether
+         * to wait the server out (429), stop (other 4xx), or retry as before.
+         */
+        internal fun httpFailureFor(code: Int, reason: String, retryAfterHeader: String?): Exception =
+            when {
+                // Same RFC 9110 seconds-to-ms parsing and clamp as the challenge ladder.
+                code == 429 -> RateLimitedException(GeminiChallengeService.parseRetryAfterMs(retryAfterHeader))
+                code in 400..499 -> ClientErrorException("API error: $code - $reason")
+                else -> Exception("API error: $code - $reason")
+            }
 
         /**
          * The retry ladder behind generateContent, lifted out so it can be
@@ -49,6 +72,10 @@ class OllamaService(private val context: Context) {
          * connect-failure branches used to skip the wait, so a refused
          * connection - which fails in milliseconds, e.g. while the gateway
          * restarts - burned all three attempts before the server was back.
+         *
+         * A 429 waits for the server's Retry-After rather than the ladder's own
+         * 1s/2s, which used to spend every attempt inside the window the gateway
+         * had just asked for. Any other 4xx is not retried at all.
          */
         internal suspend fun retryWithBackoff(
             maxRetries: Int = MAX_RETRIES,
@@ -65,12 +92,20 @@ class OllamaService(private val context: Context) {
                 // and callers chain several of these, so a dead tunnel could keep
                 // the chain alive for hours after the user had gone.
                 currentCoroutineContext().ensureActive()
+                var retryAfterMs: Long? = null
                 try {
                     return Result.success(call())
                 } catch (e: CancellationException) {
                     // An Exception too; without this it was logged as a failed
                     // attempt and slept on before the cancellation surfaced.
                     throw e
+                } catch (e: RateLimitedException) {
+                    Log.w(TAG, "Rate limited on attempt ${attempt + 1}; Retry-After=${e.retryAfterMs}ms")
+                    lastException = Exception(NetworkModule.RATE_LIMITED_MESSAGE)
+                    retryAfterMs = e.retryAfterMs
+                } catch (e: ClientErrorException) {
+                    Log.w(TAG, "Not retrying a client error: ${e.message}")
+                    return Result.failure(e)
                 } catch (e: SocketTimeoutException) {
                     Log.w(TAG, "Timeout on attempt ${attempt + 1}: ${e.message}")
                     lastException = Exception(NetworkModule.SERVER_DOWN_MESSAGE)
@@ -83,7 +118,7 @@ class OllamaService(private val context: Context) {
                 }
 
                 if (attempt < maxRetries - 1) {
-                    sleep(delayMs)
+                    sleep(retryAfterMs ?: delayMs)
                     delayMs *= 2
                 }
             }
@@ -635,7 +670,7 @@ RESPOND WITH ONLY THIS JSON:
                         if (!it.isSuccessful) {
                             if (continuation.isActive) {
                                 continuation.resumeWithException(
-                                    Exception("API error: ${it.code} - ${it.message}")
+                                    httpFailureFor(it.code, it.message, it.header("Retry-After"))
                                 )
                             }
                             return
