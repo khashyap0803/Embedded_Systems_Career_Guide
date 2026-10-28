@@ -320,30 +320,31 @@ class HomeFragment : Fragment() {
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                // Check if report exists in cloud
-                val reportDoc = withContext(Dispatchers.IO) {
+            // Check if report exists in cloud
+            val action = assessmentCardAction {
+                withContext(Dispatchers.IO) {
                     firestore.collection("users")
                         .document(username)
                         .collection("data")
                         .document("report")
                         .get()
                         .await()
+                        .exists()
                 }
-
-                if (reportDoc.exists()) {
-                    // Report exists - show options
-                    showAssessmentOptions(hasReport = true)
-                } else {
-                    // No report - start assessment directly
+            }
+            when (action) {
+                // Report exists - show options
+                AssessmentCardAction.SHOW_OPTIONS -> showAssessmentOptions(hasReport = true)
+                // No report - start assessment directly
+                AssessmentCardAction.START_ASSESSMENT -> {
                     val intent = Intent(requireContext(), AssessmentActivity::class.java)
                     startActivity(intent)
                 }
-            } catch (e: Exception) {
-                Log.e("HomeFragment", "Error checking assessment status", e)
-                // On error, let user try to start assessment
-                val intent = Intent(requireContext(), AssessmentActivity::class.java)
-                startActivity(intent)
+                AssessmentCardAction.UNAVAILABLE -> Toast.makeText(
+                    context,
+                    "Could not check your assessment. Check your connection and try again.",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
     }
@@ -591,5 +592,26 @@ class HomeFragment : Fragment() {
             Log.w("HomeFragment", "Could not resolve stage count, using cached $cached", e)
             cached
         }
+
+        /**
+         * What the Assessment card does, given a lookup of the student's report.
+         *
+         * A failed lookup used to start a first-time assessment: no View Report
+         * option, no retake warning, and finishing it overwrote the report and
+         * rebuilt the path without the retake's progress reset. Tapping the card
+         * and then leaving Home did the same, because the cancellation was caught as
+         * one more failure.
+         */
+        internal suspend fun assessmentCardAction(reportExists: suspend () -> Boolean): AssessmentCardAction =
+            try {
+                if (reportExists()) AssessmentCardAction.SHOW_OPTIONS else AssessmentCardAction.START_ASSESSMENT
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.e("HomeFragment", "Error checking assessment status", e)
+                AssessmentCardAction.UNAVAILABLE
+            }
     }
+
+    internal enum class AssessmentCardAction { SHOW_OPTIONS, START_ASSESSMENT, UNAVAILABLE }
 }
