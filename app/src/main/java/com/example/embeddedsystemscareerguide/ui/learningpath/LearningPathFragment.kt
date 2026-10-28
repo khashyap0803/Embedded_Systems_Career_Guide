@@ -552,7 +552,9 @@ class LearningPathFragment : Fragment() {
             // Save directly to cloud - NO local storage
             viewLifecycleOwner.lifecycleScope.launch {
                 try {
-                    progressSyncService.saveProgress(cloudProgress!!)
+                    // Streak fields only: writing the whole cached progress back
+                    // could undo a stage completed since this screen loaded it.
+                    progressSyncService.saveStreak(newStreak, newBestStreak, today)
                     Log.d("LearningPath", "Streak updated in cloud: $currentStreak -> $newStreak")
                 } catch (e: Exception) {
                     Log.e("LearningPath", "Failed to save streak to cloud", e)
