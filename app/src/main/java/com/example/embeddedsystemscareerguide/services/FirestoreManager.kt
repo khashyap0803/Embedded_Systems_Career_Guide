@@ -63,6 +63,66 @@ class FirestoreManager private constructor(private val context: Context) {
                 instance ?: FirestoreManager(context.applicationContext).also { instance = it }
             }
         }
+
+        /**
+         * Completed stage ids and their stars, from the progress document
+         * (users/{username}/data/progress) as UserProgressSyncService writes it.
+         */
+        @Suppress("UNCHECKED_CAST")
+        internal fun completionFrom(progress: Map<String, Any?>): Pair<List<String>, Map<String, Int>> {
+            val completed = (progress["completedStages"] as? List<String>).orEmpty()
+            val stars = (progress["stageStars"] as? Map<String, Number>).orEmpty()
+                .filterKeys { it in completed }
+                .mapValues { it.value.toInt() }
+            return completed to stars
+        }
+
+        /** The retake's history summary, from what [collectUserPerformanceData] read. */
+        internal fun performanceFrom(
+            stages: List<PersonalizedStage>,
+            completedStageIds: List<String>,
+            stageStars: Map<String, Int>,
+            quizScores: Map<String, Int>,
+            wrongQuestions: List<WrongQuestionRecord>
+        ): UserPerformanceData {
+            val stagesById = stages.associateBy { it.id.toString() }
+            val weakTopics = mutableListOf<String>()
+            val strongTopics = mutableListOf<String>()
+
+            // Topics with low stars (1 or less) are weak
+            stageStars.forEach { (stageId, stars) ->
+                val topicsForStage = stagesById[stageId]?.topics ?: emptyList()
+                if (stars <= 1) {
+                    weakTopics.addAll(topicsForStage)
+                } else if (stars >= 3) {
+                    strongTopics.addAll(topicsForStage)
+                }
+            }
+
+            // Also consider topics from wrong questions as weak
+            wrongQuestions.forEach { record ->
+                if (record.topic.isNotEmpty() && !weakTopics.contains(record.topic)) {
+                    weakTopics.add(record.topic)
+                }
+            }
+
+            val totalXp = completedStageIds.sumOf { stagesById[it]?.xpReward ?: 0 }
+
+            val averageScore = if (quizScores.isNotEmpty()) {
+                quizScores.values.average().toInt()
+            } else 0
+
+            return UserPerformanceData(
+                completedStageIds = completedStageIds,
+                stageScores = quizScores,
+                stageStars = stageStars,
+                weakTopics = weakTopics.distinct(),
+                strongTopics = strongTopics.distinct(),
+                wrongQuestions = wrongQuestions,
+                totalXpEarned = totalXp,
+                averageQuizScore = averageScore
+            )
+        }
     }
 
     private val firestore = FirebaseFirestore.getInstance()
@@ -279,21 +339,24 @@ class FirestoreManager private constructor(private val context: Context) {
             val username = getCurrentUsername()
             val userDoc = getUserDocRef(username)
             
-            // 1. Get completed stages with stars
-            val stages = userDoc.collection(COLLECTION_PERSONALIZED_STAGES)
+            // 1. Get completed stages with stars.
+            //
+            // The stages are read from where savePersonalizedStages writes them; this
+            // used to read users/{username}/personalized_stages, which nothing writes.
+            // Completion and stars come from the progress document that
+            // UserProgressSyncService.completeStageInCloud maintains - nothing sets
+            // isCompleted or starsEarned on a stage document. Between the two, every
+            // retake was regenerated from an empty history.
+            val stages = getStagesDocRef(username)
+                .collection(COLLECTION_PERSONALIZED_STAGES)
                 .get()
                 .await()
-            
-            val completedStageIds = mutableListOf<String>()
-            val stageStars = mutableMapOf<String, Int>()
-            
-            stages.documents.forEach { doc ->
-                val stage = doc.toObject(PersonalizedStage::class.java)
-                if (stage?.isCompleted == true) {
-                    completedStageIds.add(stage.id.toString())
-                    stageStars[stage.id.toString()] = stage.starsEarned
-                }
-            }
+                .documents.mapNotNull { it.toObject(PersonalizedStage::class.java) }
+            val progress = userDoc.collection(COLLECTION_DATA)
+                .document("progress")
+                .get()
+                .await()
+            val (completedStageIds, stageStars) = completionFrom(progress.data.orEmpty())
             
             // 2. Get quiz history for each stage
             val quizScores = mutableMapOf<String, Int>()
@@ -331,53 +394,14 @@ class FirestoreManager private constructor(private val context: Context) {
                 }
             }
             
-            // 3. Determine weak and strong topics based on performance
-            val weakTopics = mutableListOf<String>()
-            val strongTopics = mutableListOf<String>()
-            
-            // Topics with low stars (1 or less) are weak
-            stageStars.forEach { (stageId, stars) ->
-                val stage = stages.documents.find { it.id == stageId }
-                    ?.toObject(PersonalizedStage::class.java)
-                
-                val topicsForStage = stage?.topics ?: emptyList()
-                if (stars <= 1) {
-                    weakTopics.addAll(topicsForStage)
-                } else if (stars >= 3) {
-                    strongTopics.addAll(topicsForStage)
-                }
-            }
-            
-            // Also consider topics from wrong questions as weak
-            wrongQuestions.forEach { record ->
-                if (record.topic.isNotEmpty() && !weakTopics.contains(record.topic)) {
-                    weakTopics.add(record.topic)
-                }
-            }
-            
-            // 4. Calculate overall progress
-            val totalXp = stages.documents.sumOf { doc ->
-                val stage = doc.toObject(PersonalizedStage::class.java)
-                if (stage?.isCompleted == true) stage.xpReward else 0
-            }
-            
-            val averageScore = if (quizScores.isNotEmpty()) {
-                quizScores.values.average().toInt()
-            } else 0
+            // 3-4. Weak/strong topics and overall progress
+            val performance = performanceFrom(stages, completedStageIds, stageStars, quizScores, wrongQuestions)
             
             Log.d(TAG, "Collected performance: ${completedStageIds.size} completed, " +
-                    "avg score: $averageScore, weak: ${weakTopics.size}, strong: ${strongTopics.size}")
+                    "avg score: ${performance.averageQuizScore}, weak: ${performance.weakTopics.size}, " +
+                    "strong: ${performance.strongTopics.size}")
             
-            UserPerformanceData(
-                completedStageIds = completedStageIds,
-                stageScores = quizScores,
-                stageStars = stageStars,
-                weakTopics = weakTopics.distinct(),
-                strongTopics = strongTopics.distinct(),
-                wrongQuestions = wrongQuestions,
-                totalXpEarned = totalXp,
-                averageQuizScore = averageScore
-            )
+            performance
         } catch (e: Exception) {
             Log.e(TAG, "Error collecting performance data", e)
             UserPerformanceData()
