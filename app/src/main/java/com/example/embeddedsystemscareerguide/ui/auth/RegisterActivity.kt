@@ -36,6 +36,35 @@ class RegisterActivity : AppCompatActivity() {
 
     companion object {
         private val USERNAME_PATTERN = Regex("^[a-z0-9_]{3,20}$")
+
+        /**
+         * Claims the username for the account created a moment ago, deleting that
+         * account if the claim fails.
+         *
+         * Only a taken username (ABORTED) used to delete it. Any other failure -
+         * offline, PERMISSION_DENIED - left a Firebase Auth account with no
+         * username or profile behind, so the student's next attempt to register
+         * failed with "email already in use".
+         *
+         * A cancellation is left alone: the transaction may still commit, and
+         * deleting the account under a claimed username would orphan the claim.
+         */
+        internal suspend fun claimOrRollBack(claim: suspend () -> Unit, deleteAccount: suspend () -> Unit) {
+            try {
+                claim()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                try {
+                    deleteAccount()
+                } catch (cleanup: CancellationException) {
+                    throw cleanup
+                } catch (cleanup: Exception) {
+                    Log.w("RegisterActivity", "Could not delete the account after a failed username claim", cleanup)
+                }
+                throw e
+            }
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -297,7 +326,8 @@ class RegisterActivity : AppCompatActivity() {
                 
                 var usernameClaimSuccess = false
                 try {
-                    firestore.runTransaction { transaction ->
+                    claimOrRollBack(
+                        claim = { firestore.runTransaction { transaction ->
                         val usernameDoc = transaction.get(usernameRef)
                         
                         if (usernameDoc.exists()) {
@@ -323,13 +353,14 @@ class RegisterActivity : AppCompatActivity() {
                             "createdAt" to System.currentTimeMillis(),
                             "lastLogin" to System.currentTimeMillis()
                         ))
-                    }.await()
+                    }.await() },
+                        deleteAccount = { auth.currentUser?.delete()?.await() }
+                    )
                     usernameClaimSuccess = true
                 } catch (e: com.google.firebase.firestore.FirebaseFirestoreException) {
                     if (e.code == com.google.firebase.firestore.FirebaseFirestoreException.Code.ABORTED) {
-                        // Username was taken during transaction
-                        // Delete the auth user we just created
-                        auth.currentUser?.delete()?.await()
+                        // Username was taken during transaction; claimOrRollBack has
+                        // already deleted the auth user we just created
                         throw Exception("Username was taken by another user. Please choose a different one.")
                     } else {
                         throw e
