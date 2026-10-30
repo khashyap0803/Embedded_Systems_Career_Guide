@@ -161,7 +161,8 @@ When providing code examples, format them properly for readability.
                 val responseBody = response.body?.string() ?: throw Exception("Empty response")
 
                 if (!response.isSuccessful) {
-                    Log.e(TAG, "API Error: ${response.code} - $responseBody")
+                    // The status and the body's length, not its text: Log.e survives R8 into release builds.
+                    Log.e(TAG, "API Error: ${response.code} (${responseBody.length}-char body)")
                     if (response.code == 429) {
                         // Typed so the caller can tell "too many requests" apart
                         // from "the server is broken"; the status code is

@@ -729,7 +729,8 @@ $userInputText
                 val responseBody = response.body?.string() ?: throw Exception("Empty response")
 
                 if (!response.isSuccessful) {
-                    Log.e(TAG, "API Error: ${response.code} - $responseBody")
+                    // The status and the body's length, not its text: Log.e survives R8 into release builds.
+                    Log.e(TAG, "API Error: ${response.code} (${responseBody.length}-char body)")
                     throw httpFailureFor(response.code, response.header("Retry-After"))
                 }
 

@@ -1034,7 +1034,8 @@ Return ONLY this JSON (no markdown, no explanation):
 
                     jsonResponse.get("error")?.let { error ->
                         val errorMessage = error.asJsonObject.get("message")?.asString ?: "Unknown API error"
-                        throw Exception("Ollama API error: $errorMessage")
+                        // Not the server's text: this message is logged at Log.w, which survives R8.
+                        throw Exception("Ollama API error (${errorMessage.length}-char message)")
                     }
 
                     val content = jsonResponse.get("response")?.asString
