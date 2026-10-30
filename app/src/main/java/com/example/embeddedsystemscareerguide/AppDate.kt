@@ -32,13 +32,13 @@ object AppDate {
 
     /**
      * True if [dateString] (an ISO-8601 `yyyy-MM-dd` date, as written by [todayIso])
-     * is exactly one calendar day before today. Returns false for a blank, malformed,
+     * is exactly one calendar day before [today]. Returns false for a blank, malformed,
      * or unparseable value rather than throwing.
      */
-    fun isYesterday(dateString: String): Boolean {
+    fun isYesterday(dateString: String, today: LocalDate = LocalDate.now()): Boolean {
         if (dateString.isBlank()) return false
         return try {
-            LocalDate.parse(dateString) == LocalDate.now().minusDays(1)
+            LocalDate.parse(dateString) == today.minusDays(1)
         } catch (e: Exception) {
             false
         }

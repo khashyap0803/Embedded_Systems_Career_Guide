@@ -25,6 +25,7 @@ import com.example.embeddedsystemscareerguide.services.UserProgressSyncService
 import com.example.embeddedsystemscareerguide.ui.assessment.AssessmentActivity
 import com.example.embeddedsystemscareerguide.ui.assessment.ReportViewerActivity
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.CancellationException
@@ -137,22 +138,30 @@ class HomeFragment : Fragment() {
     private fun loadProgressFromCloud() {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                val progress = progressSyncService.loadProgressFromCloud()
+                // Today's streak first (once a day, whichever screen asks first), so the
+                // read below includes it rather than yesterday's.
+                UserProgressSyncService.streakMessage(progressSyncService.recordDailyVisit())?.let {
+                    Toast.makeText(requireContext(), it, Toast.LENGTH_LONG).show()
+                }
+                val load = progressSyncService.loadProgressResult()
                 totalStageCount = resolveTotalStageCount()
 
-                if (progress != null) {
-                    cloudProgress = progress
-                    Log.d("HomeFragment", "Loaded from cloud: XP=${progress.totalXP}, streak=${progress.streak}")
-                    updateProgressDashboard(progress)
-                    updateStudyStreak(progress.streak)
-                    updateAchievements(progress)
-                } else {
-                    // New user - use defaults
-                    cloudProgress = UserProgressSyncService.UserProgress()
-                    updateProgressDashboard(cloudProgress!!)
-                    updateStudyStreak(1)
-                    updateAchievements(cloudProgress!!)
-                    Log.d("HomeFragment", "No cloud progress, using defaults")
+                when (val view = homeViewFor(load, lastShownFigures())) {
+                    is HomeView.Progress -> {
+                        // Loaded, or a new user's defaults when there is no document yet
+                        val progress = view.progress
+                        cloudProgress = progress
+                        Log.d("HomeFragment", "Loaded from cloud: XP=${progress.totalXP}, streak=${progress.streak}")
+                        val figures = HomeFigures.of(progress)
+                        updateProgressDashboard(figures)
+                        updateStudyStreak(progress.streak)
+                        updateAchievements(progress)
+                        saveShownFigures(figures)
+                    }
+                    is HomeView.Unavailable -> {
+                        Log.w("HomeFragment", "Could not read progress; keeping what Home last showed")
+                        showProgressUnavailable(view.lastShown)
+                    }
                 }
                 
             } catch (e: CancellationException) {
@@ -160,7 +169,7 @@ class HomeFragment : Fragment() {
                 throw e
             } catch (e: Exception) {
                 Log.e("HomeFragment", "Error loading from cloud", e)
-                Toast.makeText(context, "Could not load data. Check connection.", Toast.LENGTH_SHORT).show()
+                showProgressUnavailable(lastShownFigures())
             } finally {
                 // A cancelled load reaches this after onDestroyView has cleared
                 // the binding, and the non-null getter crashed the app.
@@ -245,13 +254,54 @@ class HomeFragment : Fragment() {
     }
 
     /**
+     * A failed read. Home keeps what it last showed - never a new student's zeros -
+     * says so, and offers Retry (pull-to-refresh works too). Nothing is written,
+     * here or to Firestore.
+     */
+    private fun showProgressUnavailable(lastShown: HomeFigures?) {
+        val b = _binding ?: return
+        lastShown?.let {
+            updateProgressDashboard(it)
+            updateStudyStreak(it.streak)
+        }
+        Snackbar.make(b.root, FirestoreManager.PROGRESS_LOAD_FAILED_MESSAGE, Snackbar.LENGTH_LONG)
+            .setAction(R.string.learning_path_retry) {
+                // The Snackbar lives in the Activity's layout and can outlast Home's view.
+                if (_binding != null) loadProgressFromCloud()
+            }
+            .show()
+    }
+
+    private fun learningPrefs() =
+        requireContext().getSharedPreferences(PrefsKeys.PREFS_LEARNING, Context.MODE_PRIVATE)
+
+    /** What Home last displayed, or null if it never has. */
+    private fun lastShownFigures(): HomeFigures? {
+        val prefs = learningPrefs()
+        if (!prefs.contains(KEY_SHOWN_TOTAL_XP)) return null
+        return HomeFigures(
+            totalXP = prefs.getInt(KEY_SHOWN_TOTAL_XP, 0),
+            streak = prefs.getInt(KEY_SHOWN_STREAK, 1),
+            completedStages = prefs.getInt(KEY_SHOWN_COMPLETED_STAGES, 0)
+        )
+    }
+
+    private fun saveShownFigures(figures: HomeFigures) {
+        learningPrefs().edit()
+            .putInt(KEY_SHOWN_TOTAL_XP, figures.totalXP)
+            .putInt(KEY_SHOWN_STREAK, figures.streak)
+            .putInt(KEY_SHOWN_COMPLETED_STAGES, figures.completedStages)
+            .apply()
+    }
+
+    /**
      * CLOUD-ONLY: Update progress dashboard from cloud data
      */
-    private fun updateProgressDashboard(progress: UserProgressSyncService.UserProgress) {
-        val totalXP = progress.totalXP
+    private fun updateProgressDashboard(figures: HomeFigures) {
+        val totalXP = figures.totalXP
         val currentLevel = totalXP / AppConstants.XP_PER_LEVEL + 1
-        val currentStreak = progress.streak
-        val completedStages = progress.completedStages.size
+        val currentStreak = figures.streak
+        val completedStages = figures.completedStages
         val totalStages = totalStageCount
         val overallProgress = if (totalStages > 0) (completedStages * 100) / totalStages else 0
 
@@ -577,6 +627,28 @@ class HomeFragment : Fragment() {
         /** Shared with LearningPathFragment, which writes the same key. */
         private const val KEY_TOTAL_STAGES = "home_total_stages"
 
+        // What Home last displayed. Its own keys: the other home_* values are also
+        // written with first-launch zeros by LearningPathFragment, before any read.
+        private const val KEY_SHOWN_TOTAL_XP = "home_shown_total_xp"
+        private const val KEY_SHOWN_STREAK = "home_shown_streak"
+        private const val KEY_SHOWN_COMPLETED_STAGES = "home_shown_completed_stages"
+
+        /**
+         * What Home shows for a read of the progress document.
+         *
+         * Home used loadProgressFromCloud, which returns null both when there is no
+         * document and when the read failed, and drew a new student's 0 XP, 1-day
+         * streak and 0 stages for either. A failed read now keeps [lastShown].
+         */
+        internal fun homeViewFor(
+            load: UserProgressSyncService.ProgressLoad,
+            lastShown: HomeFigures?
+        ): HomeView = when (load) {
+            is UserProgressSyncService.ProgressLoad.Loaded -> HomeView.Progress(load.progress)
+            UserProgressSyncService.ProgressLoad.Absent -> HomeView.Progress(UserProgressSyncService.UserProgress())
+            is UserProgressSyncService.ProgressLoad.Failed -> HomeView.Unavailable(lastShown)
+        }
+
         /**
          * The length of the stored path, or [cached] when it cannot be read.
          *
@@ -614,4 +686,20 @@ class HomeFragment : Fragment() {
     }
 
     internal enum class AssessmentCardAction { SHOW_OPTIONS, START_ASSESSMENT, UNAVAILABLE }
+
+    /** The progress figures Home's dashboard shows. */
+    internal data class HomeFigures(val totalXP: Int, val streak: Int, val completedStages: Int) {
+        companion object {
+            fun of(progress: UserProgressSyncService.UserProgress) =
+                HomeFigures(progress.totalXP, progress.streak, progress.completedStages.size)
+        }
+    }
+
+    /** What [homeViewFor] decided. */
+    internal sealed class HomeView {
+        /** Progress to draw: what was read, or a new student's defaults. */
+        data class Progress(val progress: UserProgressSyncService.UserProgress) : HomeView()
+        /** The read failed: keep [lastShown] (null if Home never showed any) and say so. */
+        data class Unavailable(val lastShown: HomeFigures?) : HomeView()
+    }
 }

@@ -13,6 +13,7 @@ import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.view.doOnLayout
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.findNavController
 import androidx.navigation.fragment.NavHostFragment
@@ -20,6 +21,7 @@ import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupActionBarWithNavController
 import com.example.embeddedsystemscareerguide.databinding.ActivityMainBinding
 import com.example.embeddedsystemscareerguide.services.AuthManager
+import com.example.embeddedsystemscareerguide.services.UserProgressSyncService
 import com.example.embeddedsystemscareerguide.ui.assessment.AssessmentActivity
 import com.example.embeddedsystemscareerguide.ui.auth.LoginActivity
 import com.example.embeddedsystemscareerguide.ui.practice.PracticeContentActivity
@@ -27,6 +29,7 @@ import com.example.embeddedsystemscareerguide.ui.widget.RadialFabMenuView
 import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
 
@@ -82,6 +85,21 @@ class MainActivity : AppCompatActivity() {
 
         } catch (e: Exception) {
             e.printStackTrace()
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        if (FirebaseAuth.getInstance().currentUser == null) return
+
+        // The daily streak, counted once per calendar day whichever screen is open -
+        // including after the app sat in the background past midnight. It used to be
+        // counted only when Learning Path was opened. Home and Learning Path ask too
+        // before reading progress; whichever asks first does it.
+        lifecycleScope.launch {
+            UserProgressSyncService.streakMessage(UserProgressSyncService(this@MainActivity).recordDailyVisit())?.let {
+                android.widget.Toast.makeText(this@MainActivity, it, android.widget.Toast.LENGTH_LONG).show()
+            }
         }
     }
 

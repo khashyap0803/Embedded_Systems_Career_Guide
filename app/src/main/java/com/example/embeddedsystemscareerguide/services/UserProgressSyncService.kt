@@ -7,10 +7,15 @@ import com.example.embeddedsystemscareerguide.AppConstants
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
+import com.example.embeddedsystemscareerguide.AppDate
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
+import java.time.LocalDate
 
 /**
  * Service for syncing user progress data between local SharedPreferences and Firebase Firestore.
@@ -83,6 +88,89 @@ class UserProgressSyncService(private val context: Context) {
             "lastVisitDate" to lastVisitDate,
             "lastUpdated" to now
         )
+
+        /**
+         * The once-a-day streak rule, unchanged from LearningPathFragment: a first
+         * visit keeps the stored streak (at least 1), a second visit the same day
+         * changes nothing, the day after the last visit adds 1, and a longer gap
+         * starts again at 1. The best streak only ever goes up. Null when there is
+         * nothing to write.
+         */
+        internal fun dailyStreak(progress: UserProgress, today: LocalDate): StreakUpdate? {
+            val todayIso = today.toString()
+            val lastVisit = progress.lastVisitDate
+            val consecutive = AppDate.isYesterday(lastVisit, today)
+            val newStreak = when {
+                lastVisit.isEmpty() -> progress.streak.coerceAtLeast(1)
+                lastVisit == todayIso -> progress.streak
+                consecutive -> progress.streak + 1
+                else -> 1
+            }
+            val newBest = maxOf(newStreak, progress.bestStreak)
+            if (newStreak == progress.streak && newBest == progress.bestStreak && lastVisit == todayIso) return null
+            return StreakUpdate(
+                previous = progress.streak,
+                streak = newStreak,
+                bestStreak = newBest,
+                date = todayIso,
+                broken = lastVisit.isNotEmpty() && lastVisit != todayIso && !consecutive
+            )
+        }
+
+        /**
+         * How long the daily update waits for Firestore to confirm the streak write.
+         * Offline a write never confirms, but it is already in the local cache and is
+         * sent on reconnect - and Home and Learning Path wait on this before reading.
+         */
+        internal const val STREAK_SAVE_WAIT_MS = 3_000L
+
+        // Which student's day has been counted, as "username|yyyy-MM-dd". Process-wide,
+        // because each screen makes its own UserProgressSyncService.
+        private val dailyVisitLock = Mutex()
+        private var dailyVisitCounted: String? = null
+
+        /**
+         * Counts today's visit for [key]'s student once: MainActivity asks whenever it
+         * starts, and Home and Learning Path ask before they read progress, so
+         * whichever comes first does the update and the others wait for it and then
+         * find it done. A failed read writes nothing and is tried again next time.
+         *
+         * @return the update, to the one caller that made it; null otherwise
+         */
+        internal suspend fun recordDailyVisit(
+            key: String,
+            today: LocalDate,
+            load: suspend () -> ProgressLoad,
+            save: suspend (StreakUpdate) -> Boolean,
+            saveWaitMs: Long = STREAK_SAVE_WAIT_MS
+        ): StreakUpdate? = dailyVisitLock.withLock {
+            val counted = "$key|$today"
+            if (dailyVisitCounted == counted) return null
+            val progress = when (val read = load()) {
+                is ProgressLoad.Loaded -> read.progress
+                ProgressLoad.Absent -> UserProgress()
+                is ProgressLoad.Failed -> return null
+            }
+            val update = dailyStreak(progress, today)
+            // Unconfirmed after saveWaitMs counts as made: see STREAK_SAVE_WAIT_MS.
+            if (update != null && withTimeoutOrNull(saveWaitMs) { save(update) } == false) return null
+            dailyVisitCounted = counted
+            update
+        }
+
+        /** The toast for a streak update, as Learning Path used to show it, or null for none. */
+        fun streakMessage(update: StreakUpdate?): String? = when {
+            update == null -> null
+            update.broken && update.previous > 1 ->
+                "🔥 Previous streak: ${update.previous} days\nStarting fresh! Let's build a new streak!"
+            update.streak > update.previous -> when (update.streak) {
+                7 -> "🔥 1 WEEK STREAK! Amazing dedication!"
+                14 -> "🔥 2 WEEK STREAK! You're unstoppable!"
+                30 -> "🔥 30 DAY STREAK! Legendary commitment!"
+                else -> if (update.streak % 10 == 0) "🔥 ${update.streak} DAY STREAK! Keep it up!" else null
+            }
+            else -> null
+        }
 
         /**
          * The fields a retake's progress reset writes - and the only ones. XP and
@@ -305,6 +393,29 @@ class UserProgressSyncService(private val context: Context) {
             Log.e(TAG, "Failed to save streak to cloud", e)
             false
         }
+    }
+
+    /** Today's streak, as [dailyStreak] works it out. */
+    data class StreakUpdate(
+        val previous: Int,
+        val streak: Int,
+        val bestStreak: Int,
+        val date: String,
+        val broken: Boolean
+    )
+
+    /**
+     * Counts today's visit: the daily streak update, once per calendar day per student.
+     * See the companion's recordDailyVisit.
+     */
+    suspend fun recordDailyVisit(): StreakUpdate? {
+        val username = getCurrentUsername() ?: return null
+        return recordDailyVisit(
+            key = username,
+            today = LocalDate.now(),
+            load = { loadProgressResult() },
+            save = { saveStreak(it.streak, it.bestStreak, it.date) }
+        )
     }
 
     /**

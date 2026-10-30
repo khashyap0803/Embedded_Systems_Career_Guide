@@ -290,8 +290,8 @@ Generate 5 SHORT questions now:
             val type = object : TypeToken<List<QuizQuestion>>() {}.type
             parsedQuestions = gson.fromJson(cleanJson, type)
         } catch (e: Exception) {
-            Log.e(TAG, "Error parsing quiz response: ${e.message}")
-            Log.e(TAG, "Raw response (first 500 chars): ${response.take(500)}")
+            // The reply's length, not its text: Log.e survives R8 into release builds.
+            Log.e(TAG, "Error parsing quiz response (${response.length} chars): ${e.message}")
 
             // Try an alternative parsing approach - parse question by question
             try {
