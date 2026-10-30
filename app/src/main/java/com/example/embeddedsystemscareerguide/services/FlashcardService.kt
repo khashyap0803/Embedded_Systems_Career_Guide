@@ -206,8 +206,8 @@ class FlashcardService(private val context: Context) {
         needsReview: Boolean
     ): Result<Unit> = withContext(Dispatchers.IO) {
         try {
+            // Its Result, not success regardless: a failed save was reported as saved.
             firestoreManager.updateFlashcardReview(stageId, flashcardId, needsReview)
-            Result.success(Unit)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
