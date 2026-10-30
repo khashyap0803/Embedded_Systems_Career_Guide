@@ -64,6 +64,8 @@
     <string name="xp_reward">+%1$d XP</string>
     <string name="learning_path_build_failed">We couldn\'t build your learning path</string>
     <string name="learning_path_build_failed_hint">Check your connection and try again. Your assessment report is saved.</string>
+    <string name="learning_path_load_failed">We couldn\'t load your learning path</string>
+    <string name="learning_path_load_failed_hint">Check your connection and try again. Your progress is safe.</string>
     <string name="learning_path_retry">Retry</string>
 
     <plurals name="streak_days">
