@@ -26,6 +26,7 @@ import com.example.embeddedsystemscareerguide.services.CodeBlock
 import com.example.embeddedsystemscareerguide.services.CodeBlockCategory
 import com.example.embeddedsystemscareerguide.services.GeminiChallengeService
 import com.example.embeddedsystemscareerguide.services.PreReleaseEventService
+import com.example.embeddedsystemscareerguide.services.StudentMessages
 import com.google.android.material.card.MaterialCardView
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
@@ -280,7 +281,8 @@ class Challenge1Activity : AppCompatActivity() {
                     // If all retries failed, show error and abort
                     if (codeBlocksList.isNullOrEmpty()) {
                         showLoading(false)
-                        showGeminiErrorDialog("Failed to generate code blocks after 3 attempts: ${lastError?.message}")
+                        android.util.Log.d("Challenge1", "Code block generation failed", lastError)
+                        showGeminiErrorDialog(StudentMessages.aiFailure(lastError))
                         return@launch
                     }
                     
@@ -314,7 +316,8 @@ class Challenge1Activity : AppCompatActivity() {
             } else {
                 // Show error dialog and allow retry
                 showLoading(false)
-                showGeminiErrorDialog(geminiResult.exceptionOrNull()?.message ?: "Failed to generate problems")
+                android.util.Log.d("Challenge1", "Problem generation failed", geminiResult.exceptionOrNull())
+                showGeminiErrorDialog(StudentMessages.aiFailure(geminiResult.exceptionOrNull()))
             }
         }
     }
@@ -626,7 +629,7 @@ class Challenge1Activity : AppCompatActivity() {
     private fun showGeminiErrorDialog(errorMessage: String) {
         AlertDialog.Builder(this)
             .setTitle("⚠️ Generation Failed")
-            .setMessage("Failed to generate problems.\n\nError: $errorMessage\n\nPlease check your internet connection and try again.")
+            .setMessage("Failed to generate problems.\n\n$errorMessage")
             .setPositiveButton("🔄 Retry") { _, _ ->
                 problems.clear()
                 problemAnswers.clear()

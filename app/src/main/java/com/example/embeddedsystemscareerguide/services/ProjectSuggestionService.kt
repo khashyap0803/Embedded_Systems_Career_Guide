@@ -104,8 +104,9 @@ class ProjectSuggestionService(private val context: Context) {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            Log.e(TAG, "Error generating projects", e)
-            callback.onError("Failed to generate projects: ${e.message}")
+            Log.e(TAG, "Error generating projects (${e.javaClass.simpleName})")
+            Log.d(TAG, "Error generating projects", e)
+            callback.onError("Couldn't load project suggestions. ${StudentMessages.aiFailure(e)}")
         }
     }
 

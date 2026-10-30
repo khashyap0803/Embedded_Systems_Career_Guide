@@ -28,6 +28,7 @@ import com.example.embeddedsystemscareerguide.R
 import com.example.embeddedsystemscareerguide.databinding.ActivityLoginBinding
 import com.example.embeddedsystemscareerguide.ui.challenge.ChallengeLoginActivity
 import com.example.embeddedsystemscareerguide.ui.introduction.IntroductionActivity
+import com.example.embeddedsystemscareerguide.services.StudentMessages
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
@@ -113,18 +114,9 @@ class LoginActivity : AppCompatActivity() {
             if (e.statusCode == GoogleSignInStatusCodes.SIGN_IN_CANCELLED) {
                 return@registerForActivityResult
             }
-            val errorMessage = when (e.statusCode) {
-                12500 -> "Google Sign-In failed. Please check your internet connection."
-                12502 -> "Sign-in is currently in progress"
-                // This build's signing certificate is not registered with Firebase.
-                // Nothing the student can fix; email login still works.
-                10 -> "Google Sign-In isn't available in this version of the app (code 10). " +
-                    "Please sign in with your email and password."
-                7 -> "Network error. Please check your connection."
-                else -> "Google sign in failed (${e.statusCode}): ${e.message}"
-            }
-            Log.e("LoginActivity", "Google Sign-In failed with code: ${e.statusCode}", e)
-            showError(errorMessage)
+            Log.e("LoginActivity", "Google Sign-In failed with code: ${e.statusCode}")
+            Log.d("LoginActivity", "Google Sign-In failure", e)
+            showError(StudentMessages.googleSignIn(e.statusCode))
         }
     }
 
@@ -365,7 +357,8 @@ class LoginActivity : AppCompatActivity() {
                     }
                 } else {
                     hideLoading()
-                    showError("Login failed: ${task.exception?.message}")
+                    Log.d("LoginActivity", "Email sign-in failed", task.exception)
+                    showError(StudentMessages.signIn(task.exception))
                 }
             }
     }
@@ -430,10 +423,10 @@ class LoginActivity : AppCompatActivity() {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                Log.e("LoginActivity", "Error looking up username: ${e.message}", e)
+                Log.d("LoginActivity", "Error looking up username", e)
                 withContext(Dispatchers.Main) {
                     hideLoading()
-                    showError("Error: ${e.message}")
+                    showError(StudentMessages.signIn(e))
                 }
             }
         }
@@ -479,7 +472,8 @@ class LoginActivity : AppCompatActivity() {
                     }
                 } else {
                     hideLoading()
-                    showError("Authentication failed: ${task.exception?.message}")
+                    Log.d("LoginActivity", "Google credential sign-in failed", task.exception)
+                    showError(StudentMessages.signIn(task.exception))
                 }
             }
     }
@@ -542,7 +536,8 @@ class LoginActivity : AppCompatActivity() {
                 throw e
             } catch (e: Exception) {
                 hideLoading()
-                showError("Error checking profile: ${e.message}")
+                Log.d("LoginActivity", "Error checking profile", e)
+                showError(StudentMessages.signIn(e))
             }
         }
     }
@@ -615,7 +610,8 @@ class LoginActivity : AppCompatActivity() {
                     throw e
                 } catch (e: Exception) {
                     hideLoading()
-                    usernameLayout.error = "Error: ${e.message}"
+                    Log.d("LoginActivity", "Error saving the chosen username", e)
+                    usernameLayout.error = StudentMessages.register(e)
                 }
             }
         }
@@ -906,9 +902,10 @@ class LoginActivity : AppCompatActivity() {
                             .setPositiveButton("OK", null)
                             .show()
                     } else {
+                        Log.d("LoginActivity", "Password reset email failed", task.exception)
                         MaterialAlertDialogBuilder(this)
                             .setTitle("Error")
-                            .setMessage("Failed to send reset email: ${task.exception?.message}")
+                            .setMessage(StudentMessages.passwordReset(task.exception))
                             .setPositiveButton("OK", null)
                             .show()
                     }

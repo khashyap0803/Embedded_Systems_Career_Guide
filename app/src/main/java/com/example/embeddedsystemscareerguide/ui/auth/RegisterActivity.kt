@@ -18,6 +18,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.example.embeddedsystemscareerguide.R
 import com.example.embeddedsystemscareerguide.databinding.ActivityRegisterBinding
+import com.example.embeddedsystemscareerguide.services.StudentMessages
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.*
@@ -364,7 +365,7 @@ class RegisterActivity : AppCompatActivity() {
                     if (e.code == com.google.firebase.firestore.FirebaseFirestoreException.Code.ABORTED) {
                         // Username was taken during transaction; claimOrRollBack has
                         // already deleted the auth user we just created
-                        throw Exception("Username was taken by another user. Please choose a different one.")
+                        throw StudentMessages.UsernameTakenException()
                     } else {
                         throw e
                     }
@@ -382,7 +383,8 @@ class RegisterActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 binding.progressBarRegister.visibility = View.GONE
                 binding.buttonRegister.isEnabled = true
-                Toast.makeText(this@RegisterActivity, "Registration failed: ${e.message}", Toast.LENGTH_LONG).show()
+                Log.d("RegisterActivity", "Registration failed", e)
+                Toast.makeText(this@RegisterActivity, StudentMessages.register(e), Toast.LENGTH_LONG).show()
             }
         }
     }

@@ -286,8 +286,12 @@ class ReportViewerActivity : AppCompatActivity() {
                 Toast.makeText(this, "✓ Report saved to Downloads/$fileName", Toast.LENGTH_LONG).show()
             }
         } catch (e: Exception) {
-            Toast.makeText(this, "Error saving report: ${e.message}", Toast.LENGTH_SHORT).show()
-            e.printStackTrace()
+            Log.d("ReportViewer", "Saving the report to Downloads failed", e)
+            Toast.makeText(
+                this,
+                "Couldn't save the report to Downloads. Check that your phone has free space and try again.",
+                Toast.LENGTH_LONG
+            ).show()
         }
     }
 

@@ -21,6 +21,7 @@ import com.example.embeddedsystemscareerguide.models.AssessmentReport
 import com.example.embeddedsystemscareerguide.models.Question
 import com.example.embeddedsystemscareerguide.models.QuestionAnswer
 import com.example.embeddedsystemscareerguide.services.GeminiReportService
+import com.example.embeddedsystemscareerguide.services.StudentMessages
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.gson.Gson
@@ -631,12 +632,12 @@ class AssessmentActivity : AppCompatActivity() {
                 backCallback.isEnabled = true
                 binding.buttonNext.isEnabled = true
                 binding.buttonBack.isEnabled = true
+                Log.d("Assessment", "Report generation failed", e)
                 Toast.makeText(
                     this@AssessmentActivity,
-                    "Error generating report: ${e.message}. Please try again.",
+                    "Couldn't finish your report. ${StudentMessages.aiFailure(e)}",
                     Toast.LENGTH_LONG
                 ).show()
-                e.printStackTrace()
             }
         }
     }

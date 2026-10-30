@@ -75,8 +75,9 @@ class FlashcardService(private val context: Context) {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            Log.e(TAG, "Error getting flashcards", e)
-            callback.onError("Failed to load flashcards: ${e.message}")
+            Log.e(TAG, "Error getting flashcards (${e.javaClass.simpleName})")
+            Log.d(TAG, "Error getting flashcards", e)
+            callback.onError("Couldn't load flashcards. ${StudentMessages.aiFailure(e)}")
         }
     }
 
