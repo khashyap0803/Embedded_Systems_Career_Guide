@@ -3,6 +3,7 @@ package com.example.embeddedsystemscareerguide
 import com.example.embeddedsystemscareerguide.models.LearningStage
 import com.example.embeddedsystemscareerguide.ui.learningpath.LearningPathFragment
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
 
@@ -71,5 +72,13 @@ class StageSaveFailureTest {
     fun `both ways a stage save can fail put the path back`() {
         // completeStageInCloud returning null, and it throwing.
         assertEquals(2, calls(body("completeStage"), "saveFailed"))
+    }
+
+    @Test
+    fun `both ways a better star score can fail to save put the old stars back`() {
+        val stars = body("updateStageStars")
+        // updateStarsInCloud returning null, and it throwing.
+        assertEquals(2, calls(stars, "saveFailed"))
+        assertTrue("a failed save must restore the old stars", "stage.starsEarned = oldStars" in stars)
     }
 }

@@ -993,7 +993,18 @@ class LearningPathFragment : Fragment() {
         
         // Optimistic UI update
         stage.starsEarned = newStars
-        
+
+        // Like a stage completion, this save is a transaction that fails outright
+        // offline. The new stars used to stay on screen until a reload took them
+        // back, with no message at all.
+        fun saveFailed() {
+            stage.starsEarned = oldStars
+            createGamePath()
+            showSaveFailed("Couldn't save your new score. Check your connection and try again.") {
+                updateStageStars(stageId, newStars, oldStars)
+            }
+        }
+
         // Save to cloud (async)
         viewLifecycleOwner.lifecycleScope.launch {
             try {
@@ -1012,11 +1023,13 @@ class LearningPathFragment : Fragment() {
                         Toast.LENGTH_LONG).show()
                 } else {
                     Log.e("LearningPath", "Failed to update stars in cloud")
+                    saveFailed()
                 }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 Log.e("LearningPath", "Error updating stars in cloud", e)
+                saveFailed()
             }
         }
     }
