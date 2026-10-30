@@ -233,7 +233,11 @@ class FlashcardService(private val context: Context) {
     suspend fun getAllCardsNeedingReview(): Result<Map<Int, List<Flashcard>>> = 
         withContext(Dispatchers.IO) {
         try {
-            val stages = firestoreManager.getStagesWithProgress().getOrNull() ?: emptyList()
+            val stages = when (val read = firestoreManager.readPath()) {
+                is PathRead.Path -> read.stages
+                PathRead.NoPath -> emptyList()
+                is PathRead.Failed -> return@withContext Result.failure(read.cause)
+            }
             val reviewMap = mutableMapOf<Int, List<Flashcard>>()
             
             stages.filter { it.isCompleted }.forEach { stage ->

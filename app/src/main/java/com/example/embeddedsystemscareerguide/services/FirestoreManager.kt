@@ -54,6 +54,9 @@ class FirestoreManager private constructor(private val context: Context) {
         const val COLLECTION_PROJECTS = "projects"
         const val COLLECTION_INTERVIEW_PREP = "interview_prep"
         const val COLLECTION_DAILY_TIPS = "daily_tips"
+
+        /** Shown wherever the student's path or progress could not be read. */
+        const val PROGRESS_LOAD_FAILED_MESSAGE = "Couldn't load your progress. Check your connection and try again."
         
         // Singleton instance
         @Volatile
@@ -104,6 +107,20 @@ class FirestoreManager private constructor(private val context: Context) {
          */
         internal fun currentStageOf(stages: List<PersonalizedStage>): PersonalizedStage? =
             stages.firstOrNull { !it.isCompleted } ?: stages.lastOrNull()
+
+        /**
+         * Keeps a failed read apart from an empty path. Callers used to turn a failure
+         * into an empty list, so a network or permission error told the student to
+         * take the assessment.
+         */
+        internal fun pathReadOf(read: Result<List<PersonalizedStage>>): PathRead {
+            val stages = read.getOrElse {
+                // getPersonalizedStages hands a cancellation back as a failed Result.
+                if (it is CancellationException) throw it
+                return PathRead.Failed(it)
+            }
+            return if (stages.isEmpty()) PathRead.NoPath else PathRead.Path(stages)
+        }
 
         /**
          * [getStagesWithProgress] with its two reads passed in. A missing progress
@@ -326,6 +343,9 @@ class FirestoreManager private constructor(private val context: Context) {
             }
         }
     )
+
+    /** [getStagesWithProgress], with "no path yet" and "couldn't read" kept apart. */
+    internal suspend fun readPath(): PathRead = pathReadOf(getStagesWithProgress())
 
     /**
      * Check if user has personalized stages
@@ -904,6 +924,16 @@ data class UserProfile(
     val hasCompletedAssessment: Boolean = false,
     val assessmentScore: Int = 0
 )
+
+/** What [FirestoreManager.readPath] found. */
+internal sealed class PathRead {
+    /** The student's path, with completion from the progress document. Never empty. */
+    data class Path(val stages: List<PersonalizedStage>) : PathRead()
+    /** The read succeeded and there is no path yet: the student takes the assessment. */
+    object NoPath : PathRead()
+    /** The read failed. Not a missing path: never send the student to the assessment for it. */
+    data class Failed(val cause: Throwable) : PathRead()
+}
 
 /**
  * Personalized learning stage

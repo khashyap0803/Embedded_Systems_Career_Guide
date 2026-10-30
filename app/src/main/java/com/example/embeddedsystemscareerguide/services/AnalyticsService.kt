@@ -83,13 +83,19 @@ class AnalyticsService(private val context: Context) {
             callback.onProgress("Analyzing your progress...")
 
             // Collect data
-            val stages = firestoreManager.getStagesWithProgress().getOrNull() ?: emptyList()
-            val progress = firestoreManager.getProgress().getOrNull()
-
-            if (stages.isEmpty()) {
-                callback.onError("No learning path found. Please complete the assessment first.")
-                return@withContext
+            val stages = when (val read = firestoreManager.readPath()) {
+                is PathRead.Path -> read.stages
+                PathRead.NoPath -> {
+                    callback.onError("No learning path found. Please complete the assessment first.")
+                    return@withContext
+                }
+                is PathRead.Failed -> {
+                    Log.w(TAG, "Could not read the learning path", read.cause)
+                    callback.onError(FirestoreManager.PROGRESS_LOAD_FAILED_MESSAGE)
+                    return@withContext
+                }
             }
+            val progress = firestoreManager.getProgress().getOrNull()
 
             // Calculate basic analytics
             val totalStages = stages.size
@@ -379,11 +385,15 @@ class AnalyticsService(private val context: Context) {
     }
 
     /**
-     * Get quick stats for dashboard display
+     * Get quick stats for dashboard display. A failed read is a failure, not zeros.
      */
-    suspend fun getQuickStats(): LearningAnalytics = withContext(Dispatchers.IO) {
+    suspend fun getQuickStats(): Result<LearningAnalytics> = withContext(Dispatchers.IO) {
         try {
-            val stages = firestoreManager.getStagesWithProgress().getOrNull() ?: emptyList()
+            val stages = when (val read = firestoreManager.readPath()) {
+                is PathRead.Path -> read.stages
+                PathRead.NoPath -> emptyList()
+                is PathRead.Failed -> return@withContext Result.failure(read.cause)
+            }
             val progress = firestoreManager.getProgress().getOrNull()
             
             val completedStages = stages.count { it.isCompleted }
@@ -393,7 +403,7 @@ class AnalyticsService(private val context: Context) {
                 stages.sumOf { it.starsEarned }.toFloat() / completedStages
             } else 0f
             
-            LearningAnalytics(
+            Result.success(LearningAnalytics(
                 totalXP = totalXP,
                 totalStages = totalStages,
                 completedStages = completedStages,
@@ -401,10 +411,10 @@ class AnalyticsService(private val context: Context) {
                 currentStreak = progress?.currentStreak ?: 0,
                 longestStreak = progress?.longestStreak ?: 0,
                 progressPercentage = (completedStages * 100) / totalStages.coerceAtLeast(1)
-            )
+            ))
         } catch (e: Exception) {
             Log.e(TAG, "Error getting quick stats", e)
-            LearningAnalytics()
+            Result.failure(e)
         }
     }
 }

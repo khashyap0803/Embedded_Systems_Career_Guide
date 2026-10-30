@@ -104,7 +104,7 @@ class PracticeFragment : Fragment() {
                     Log.w("PracticeFragment", "Could not read the learning path for Quick Practice", quiz.cause)
                     Toast.makeText(
                         requireContext(),
-                        "Could not load your learning path. Check your connection and try again.",
+                        FirestoreManager.PROGRESS_LOAD_FAILED_MESSAGE,
                         Toast.LENGTH_LONG
                     ).show()
                     return@launch
