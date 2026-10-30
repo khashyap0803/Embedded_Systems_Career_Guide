@@ -158,6 +158,37 @@ class UserProgressSyncService(private val context: Context) {
             update
         }
 
+        /**
+         * [recordDailyVisit], also handing back the progress it read, with today's
+         * streak applied - what a read straight after it would return - so a caller
+         * about to read progress anyway can skip that second read. The progress is
+         * null when nothing was read (the day was already counted) or the read failed:
+         * the caller then reads for itself, as before.
+         */
+        internal suspend fun recordDailyVisitWithProgress(
+            key: String,
+            today: LocalDate,
+            load: suspend () -> ProgressLoad,
+            save: suspend (StreakUpdate) -> Boolean,
+            saveWaitMs: Long = STREAK_SAVE_WAIT_MS
+        ): DailyVisit {
+            var read: ProgressLoad? = null
+            val update = recordDailyVisit(key, today, { load().also { read = it } }, save, saveWaitMs)
+            return DailyVisit(update, progressAfterVisit(read, update))
+        }
+
+        /** The progress document as it stands after a visit that read [read] and wrote [update]. */
+        internal fun progressAfterVisit(read: ProgressLoad?, update: StreakUpdate?): ProgressLoad? {
+            fun UserProgress.withStreak(u: StreakUpdate) =
+                copy(streak = u.streak, bestStreak = u.bestStreak, lastVisitDate = u.date)
+            return when (read) {
+                null, is ProgressLoad.Failed -> null
+                is ProgressLoad.Loaded -> ProgressLoad.Loaded(update?.let { read.progress.withStreak(it) } ?: read.progress)
+                // The streak write creates the document with only the streak fields.
+                ProgressLoad.Absent -> update?.let { ProgressLoad.Loaded(UserProgress().withStreak(it)) } ?: read
+            }
+        }
+
         /** The toast for a streak update, as Learning Path used to show it, or null for none. */
         fun streakMessage(update: StreakUpdate?): String? = when {
             update == null -> null
@@ -310,13 +341,19 @@ class UserProgressSyncService(private val context: Context) {
         val broken: Boolean
     )
 
+    /** What [recordDailyVisitWithProgress] did: the streak update, and the progress it read. */
+    data class DailyVisit(val update: StreakUpdate?, val progress: ProgressLoad?)
+
     /**
      * Counts today's visit: the daily streak update, once per calendar day per student.
      * See the companion's recordDailyVisit.
      */
-    suspend fun recordDailyVisit(): StreakUpdate? {
-        val username = getCurrentUsername() ?: return null
-        return recordDailyVisit(
+    suspend fun recordDailyVisit(): StreakUpdate? = recordDailyVisitWithProgress().update
+
+    /** [recordDailyVisit], also handing back what it read; see the companion's version. */
+    suspend fun recordDailyVisitWithProgress(): DailyVisit {
+        val username = getCurrentUsername() ?: return DailyVisit(null, null)
+        return recordDailyVisitWithProgress(
             key = username,
             today = LocalDate.now(),
             load = { loadProgressResult() },
