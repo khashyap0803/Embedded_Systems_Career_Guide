@@ -135,7 +135,7 @@ class PracticeContentActivity : AppCompatActivity() {
     }
 
     private suspend fun loadInterviewQuestions() {
-        val stages = firestoreManager.getPersonalizedStages().getOrNull() ?: emptyList()
+        val stages = firestoreManager.getStagesWithProgress().getOrNull() ?: emptyList()
         val completedTopics = stages.filter { it.isCompleted }.map { it.title }
         val topics = completedTopics.ifEmpty { listOf("Embedded Systems Fundamentals") }
 
@@ -176,11 +176,10 @@ class PracticeContentActivity : AppCompatActivity() {
         showItems(projects.map { PracticeContentItem.ProjectItem(it) })
     }
 
-    /** The user's current stage: first unlocked-but-incomplete, else the first stage, else null if none exist yet. */
+    /** The user's current stage (see FirestoreManager.currentStageOf), or null if no path exists yet. */
     private suspend fun resolveCurrentStage(): PersonalizedStage? {
-        val stages = firestoreManager.getPersonalizedStages().getOrNull() ?: emptyList()
-        if (stages.isEmpty()) return null
-        return stages.firstOrNull { it.isUnlocked && !it.isCompleted } ?: stages.first()
+        val stages = firestoreManager.getStagesWithProgress().getOrNull() ?: emptyList()
+        return FirestoreManager.currentStageOf(stages)
     }
 
     private fun showItems(items: List<PracticeContentItem>) {

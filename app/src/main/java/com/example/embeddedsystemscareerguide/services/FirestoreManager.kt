@@ -7,6 +7,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import com.google.gson.Gson
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -75,6 +76,54 @@ class FirestoreManager private constructor(private val context: Context) {
                 .filterKeys { it in completed }
                 .mapValues { it.value.toInt() }
             return completed to stars
+        }
+
+        /**
+         * [stages] with completion, stars and unlocking taken from the progress document.
+         *
+         * The flags saved on each stage document are written once, when the path is
+         * generated, and never updated, so read on their own they put every student on
+         * stage 1 with nothing completed. Unlocking follows LearningPathFragment: the
+         * first stage is open, and each later stage opens once the one before it is completed.
+         */
+        internal fun withProgress(stages: List<PersonalizedStage>, progress: Map<String, Any?>): List<PersonalizedStage> {
+            val (completed, stars) = completionFrom(progress)
+            return stages.mapIndexed { index, stage ->
+                val id = stage.id.toString()
+                stage.copy(
+                    isCompleted = id in completed,
+                    starsEarned = stars[id] ?: 0,
+                    isUnlocked = index == 0 || stages[index - 1].id.toString() in completed
+                )
+            }
+        }
+
+        /**
+         * The stage the student is on: the first one not completed, or the last one once
+         * all are. A student with nothing completed is on the first stage; null means no path.
+         */
+        internal fun currentStageOf(stages: List<PersonalizedStage>): PersonalizedStage? =
+            stages.firstOrNull { !it.isCompleted } ?: stages.lastOrNull()
+
+        /**
+         * [getStagesWithProgress] with its two reads passed in. A missing progress
+         * document (nothing completed yet) is an empty map; a failed read is a failure,
+         * not "nothing completed".
+         */
+        internal suspend fun stagesWithProgress(
+            loadStages: suspend () -> Result<List<PersonalizedStage>>,
+            loadProgress: suspend () -> Map<String, Any?>
+        ): Result<List<PersonalizedStage>> {
+            val stages = loadStages().getOrElse { return Result.failure(it) }
+            if (stages.isEmpty()) return Result.success(stages)
+            return try {
+                Result.success(withProgress(stages, loadProgress()))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.e(TAG, "Error reading progress for stages", e)
+                Result.failure(e)
+            }
         }
 
         /** The retake's history summary, from what [collectUserPerformanceData] read. */
@@ -258,6 +307,25 @@ class FirestoreManager private constructor(private val context: Context) {
             Result.failure(e)
         }
     }
+
+    /**
+     * The personalized stages with completion and stars from the progress document
+     * (users/{username}/data/progress), the source [collectUserPerformanceData] uses.
+     * Use this wherever completion or the current stage matters: [getPersonalizedStages]
+     * returns the flags as generated, with nothing completed.
+     */
+    suspend fun getStagesWithProgress(): Result<List<PersonalizedStage>> = stagesWithProgress(
+        loadStages = { getPersonalizedStages() },
+        loadProgress = {
+            withContext(Dispatchers.IO) {
+                getUserDocRef(getCurrentUsername()).collection(COLLECTION_DATA)
+                    .document("progress")
+                    .get()
+                    .await()
+                    .data.orEmpty()
+            }
+        }
+    )
 
     /**
      * Check if user has personalized stages

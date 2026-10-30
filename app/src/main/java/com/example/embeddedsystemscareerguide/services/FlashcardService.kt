@@ -233,7 +233,7 @@ class FlashcardService(private val context: Context) {
     suspend fun getAllCardsNeedingReview(): Result<Map<Int, List<Flashcard>>> = 
         withContext(Dispatchers.IO) {
         try {
-            val stages = firestoreManager.getPersonalizedStages().getOrNull() ?: emptyList()
+            val stages = firestoreManager.getStagesWithProgress().getOrNull() ?: emptyList()
             val reviewMap = mutableMapOf<Int, List<Flashcard>>()
             
             stages.filter { it.isCompleted }.forEach { stage ->

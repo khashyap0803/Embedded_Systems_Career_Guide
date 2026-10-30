@@ -83,7 +83,7 @@ class AnalyticsService(private val context: Context) {
             callback.onProgress("Analyzing your progress...")
 
             // Collect data
-            val stages = firestoreManager.getPersonalizedStages().getOrNull() ?: emptyList()
+            val stages = firestoreManager.getStagesWithProgress().getOrNull() ?: emptyList()
             val progress = firestoreManager.getProgress().getOrNull()
 
             if (stages.isEmpty()) {
@@ -383,7 +383,7 @@ class AnalyticsService(private val context: Context) {
      */
     suspend fun getQuickStats(): LearningAnalytics = withContext(Dispatchers.IO) {
         try {
-            val stages = firestoreManager.getPersonalizedStages().getOrNull() ?: emptyList()
+            val stages = firestoreManager.getStagesWithProgress().getOrNull() ?: emptyList()
             val progress = firestoreManager.getProgress().getOrNull()
             
             val completedStages = stages.count { it.isCompleted }

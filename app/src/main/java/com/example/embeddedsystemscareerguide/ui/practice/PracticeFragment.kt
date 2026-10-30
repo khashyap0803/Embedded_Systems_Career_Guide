@@ -94,7 +94,7 @@ class PracticeFragment : Fragment() {
      */
     private fun launchQuickQuiz() {
         viewLifecycleOwner.lifecycleScope.launch {
-            val stage = when (val quiz = quickQuizFor(firestoreManager.getPersonalizedStages())) {
+            val stage = when (val quiz = quickQuizFor(firestoreManager.getStagesWithProgress())) {
                 is QuickQuiz.Start -> quiz.stage
                 QuickQuiz.NeedsAssessment -> {
                     Toast.makeText(requireContext(), R.string.practice_needs_assessment, Toast.LENGTH_LONG).show()
@@ -163,8 +163,8 @@ class PracticeFragment : Fragment() {
                 if (it is CancellationException) throw it
                 return QuickQuiz.Unavailable(it)
             }
-            if (list.isEmpty()) return QuickQuiz.NeedsAssessment
-            return QuickQuiz.Start(list.firstOrNull { it.isUnlocked && !it.isCompleted } ?: list.first())
+            val stage = FirestoreManager.currentStageOf(list) ?: return QuickQuiz.NeedsAssessment
+            return QuickQuiz.Start(stage)
         }
     }
 
