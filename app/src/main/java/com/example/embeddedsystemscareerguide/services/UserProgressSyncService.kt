@@ -158,6 +158,37 @@ class UserProgressSyncService(private val context: Context) {
             update
         }
 
+        /**
+         * [recordDailyVisit], also handing back the progress it read, with today's
+         * streak applied - what a read straight after it would return - so a caller
+         * about to read progress anyway can skip that second read. The progress is
+         * null when nothing was read (the day was already counted) or the read failed:
+         * the caller then reads for itself, as before.
+         */
+        internal suspend fun recordDailyVisitWithProgress(
+            key: String,
+            today: LocalDate,
+            load: suspend () -> ProgressLoad,
+            save: suspend (StreakUpdate) -> Boolean,
+            saveWaitMs: Long = STREAK_SAVE_WAIT_MS
+        ): DailyVisit {
+            var read: ProgressLoad? = null
+            val update = recordDailyVisit(key, today, { load().also { read = it } }, save, saveWaitMs)
+            return DailyVisit(update, progressAfterVisit(read, update))
+        }
+
+        /** The progress document as it stands after a visit that read [read] and wrote [update]. */
+        internal fun progressAfterVisit(read: ProgressLoad?, update: StreakUpdate?): ProgressLoad? {
+            fun UserProgress.withStreak(u: StreakUpdate) =
+                copy(streak = u.streak, bestStreak = u.bestStreak, lastVisitDate = u.date)
+            return when (read) {
+                null, is ProgressLoad.Failed -> null
+                is ProgressLoad.Loaded -> ProgressLoad.Loaded(update?.let { read.progress.withStreak(it) } ?: read.progress)
+                // The streak write creates the document with only the streak fields.
+                ProgressLoad.Absent -> update?.let { ProgressLoad.Loaded(UserProgress().withStreak(it)) } ?: read
+            }
+        }
+
         /** The toast for a streak update, as Learning Path used to show it, or null for none. */
         fun streakMessage(update: StreakUpdate?): String? = when {
             update == null -> null
@@ -235,41 +266,6 @@ class UserProgressSyncService(private val context: Context) {
     }
 
     /**
-     * @Deprecated - Use loadProgressFromCloud() instead
-     * Read current progress from local SharedPreferences
-     * KEPT FOR LEGACY COMPATIBILITY - Will be removed in future
-     */
-    @Deprecated("Use loadProgressFromCloud() instead - cloud is the source of truth")
-    fun getLocalProgress(): UserProgress {
-        val totalXP = prefs.getInt(KEY_TOTAL_XP, 0)
-        val currentStage = prefs.getInt(KEY_CURRENT_STAGE, 1)
-        val streak = prefs.getInt(KEY_STREAK, 1)
-        val bestStreak = prefs.getInt(KEY_BEST_STREAK, 1)
-        val lastVisitDate = prefs.getString(KEY_LAST_VISIT_DATE, "") ?: ""
-        val completedStagesSet = prefs.getStringSet(KEY_COMPLETED_STAGES, emptySet()) ?: emptySet()
-        
-        // Load stage stars
-        val stageStars = mutableMapOf<String, Int>()
-        for (stageId in completedStagesSet) {
-            val stars = prefs.getInt(KEY_STAGE_STARS + stageId, 0)
-            if (stars > 0) {
-                stageStars[stageId] = stars
-            }
-        }
-
-        return UserProgress(
-            totalXP = totalXP,
-            currentStage = currentStage,
-            streak = streak,
-            bestStreak = bestStreak,
-            lastVisitDate = lastVisitDate,
-            completedStages = completedStagesSet.toList(),
-            stageStars = stageStars,
-            lastUpdated = System.currentTimeMillis()
-        )
-    }
-
-    /**
      * Save progress to local SharedPreferences
      */
     fun saveLocalProgress(progress: UserProgress) {
@@ -313,65 +309,6 @@ class UserProgressSyncService(private val context: Context) {
     }
 
     /**
-     * Save progress to Firebase Firestore (cloud) using username path
-     * Path: users/{username}/data/progress
-     * @return true if successful, false otherwise
-     */
-    suspend fun saveProgressToCloud(): Boolean {
-        val username = getCurrentUsername()
-        if (username == null) {
-            Log.w(TAG, "Cannot save to cloud: Username not found")
-            return false
-        }
-
-        return try {
-            val progress = getLocalProgress()
-            
-            firestore.collection(COLLECTION_USERS)
-                .document(username)
-                .collection(COLLECTION_DATA)
-                .document(DOCUMENT_PROGRESS)
-                .set(progress.toMap(), SetOptions.merge())
-                .await()
-            
-            Log.d(TAG, "Successfully saved progress to cloud for user: $username")
-            true
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to save progress to cloud", e)
-            false
-        }
-    }
-    
-    /**
-     * CLOUD-ONLY: Save a specific progress object directly to cloud
-     * Does NOT read from local SharedPreferences
-     * @param progress The progress object to save
-     * @return true if successful, false otherwise
-     */
-    suspend fun saveProgress(progress: UserProgress): Boolean {
-        val username = getCurrentUsername()
-        if (username == null) {
-            Log.w(TAG, "Cannot save to cloud: Username not found")
-            return false
-        }
-
-        return try {
-            firestore.collection(COLLECTION_USERS)
-                .document(username)
-                .collection(COLLECTION_DATA)
-                .document(DOCUMENT_PROGRESS)
-                .set(progress.toMap(), SetOptions.merge())
-                .await()
-            
-            Log.d(TAG, "Successfully saved progress to cloud for user: $username")
-            true
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to save progress to cloud", e)
-            false
-        }
-    }
-
-    /**
      * Saves the daily streak without writing any other progress field.
      * See [streakFields].
      */
@@ -404,13 +341,19 @@ class UserProgressSyncService(private val context: Context) {
         val broken: Boolean
     )
 
+    /** What [recordDailyVisitWithProgress] did: the streak update, and the progress it read. */
+    data class DailyVisit(val update: StreakUpdate?, val progress: ProgressLoad?)
+
     /**
      * Counts today's visit: the daily streak update, once per calendar day per student.
      * See the companion's recordDailyVisit.
      */
-    suspend fun recordDailyVisit(): StreakUpdate? {
-        val username = getCurrentUsername() ?: return null
-        return recordDailyVisit(
+    suspend fun recordDailyVisit(): StreakUpdate? = recordDailyVisitWithProgress().update
+
+    /** [recordDailyVisit], also handing back what it read; see the companion's version. */
+    suspend fun recordDailyVisitWithProgress(): DailyVisit {
+        val username = getCurrentUsername() ?: return DailyVisit(null, null)
+        return recordDailyVisitWithProgress(
             key = username,
             today = LocalDate.now(),
             load = { loadProgressResult() },
@@ -478,6 +421,8 @@ class UserProgressSyncService(private val context: Context) {
                 ?: return ProgressLoad.Absent
 
             ProgressLoad.Loaded(parseProgress(data))
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Failed to load progress from cloud", e)
             ProgressLoad.Failed(e)
@@ -531,93 +476,11 @@ class UserProgressSyncService(private val context: Context) {
                 Log.d(TAG, "No cloud progress document exists for user: $username")
                 null
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Failed to load progress from cloud", e)
             null
-        }
-    }
-
-    /**
-     * Merge local and cloud progress, taking the better values
-     * Strategy: Take higher XP, more completed stages, higher stars, better streak
-     */
-    fun mergeProgress(local: UserProgress, cloud: UserProgress): UserProgress {
-        // Merge completed stages (union of both)
-        val mergedCompletedStages = (local.completedStages + cloud.completedStages).distinct()
-        
-        // Merge stage stars (take higher stars for each stage)
-        val mergedStageStars = mutableMapOf<String, Int>()
-        val allStageIds = (local.stageStars.keys + cloud.stageStars.keys)
-        for (stageId in allStageIds) {
-            val localStars = local.stageStars[stageId] ?: 0
-            val cloudStars = cloud.stageStars[stageId] ?: 0
-            mergedStageStars[stageId] = maxOf(localStars, cloudStars)
-        }
-        
-        // Calculate current stage based on completed stages
-        val mergedCurrentStage = if (mergedCompletedStages.isEmpty()) {
-            1
-        } else {
-            val maxCompleted = mergedCompletedStages.mapNotNull { it.toIntOrNull() }.maxOrNull() ?: 0
-            minOf(maxCompleted + 1, 16) // Cap at 16 stages
-        }
-        
-        // Determine which progress is more recent for time-sensitive data
-        val useCloudForDate = cloud.lastUpdated > local.lastUpdated
-        
-        return UserProgress(
-            totalXP = maxOf(local.totalXP, cloud.totalXP),
-            currentStage = mergedCurrentStage,
-            streak = if (useCloudForDate) cloud.streak else local.streak,
-            bestStreak = maxOf(local.bestStreak, cloud.bestStreak),
-            lastVisitDate = if (useCloudForDate) cloud.lastVisitDate else local.lastVisitDate,
-            completedStages = mergedCompletedStages,
-            stageStars = mergedStageStars,
-            lastUpdated = maxOf(local.lastUpdated, cloud.lastUpdated)
-        )
-    }
-
-    /**
-     * Sync progress between local and cloud
-     * 1. Load cloud progress
-     * 2. Merge with local progress
-     * 3. Save merged progress to both local and cloud
-     * @return true if sync was successful
-     */
-    suspend fun syncProgress(): Boolean {
-        val username = getCurrentUsername()
-        if (username == null) {
-            Log.w(TAG, "Cannot sync: Username not found")
-            return false
-        }
-
-        return try {
-            val localProgress = getLocalProgress()
-            val cloudProgress = loadProgressFromCloud()
-
-            val mergedProgress = if (cloudProgress != null) {
-                mergeProgress(localProgress, cloudProgress)
-            } else {
-                // No cloud data, use local
-                localProgress
-            }
-
-            // Save to local
-            saveLocalProgress(mergedProgress)
-            
-            // Save to cloud
-            firestore.collection(COLLECTION_USERS)
-                .document(username)
-                .collection(COLLECTION_DATA)
-                .document(DOCUMENT_PROGRESS)
-                .set(mergedProgress.toMap(), SetOptions.merge())
-                .await()
-
-            Log.d(TAG, "Successfully synced progress for user: $username")
-            true
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to sync progress", e)
-            false
         }
     }
 
@@ -636,6 +499,8 @@ class UserProgressSyncService(private val context: Context) {
                 .await()
             
             document.exists() && document.data?.isNotEmpty() == true
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Failed to check cloud progress", e)
             false
@@ -717,6 +582,8 @@ class UserProgressSyncService(private val context: Context) {
             // spinner hung forever. Failing loudly lets the UI recover.
             Log.e(TAG, "Timed out completing stage $stageId in cloud", e)
             null
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Failed to complete stage in cloud", e)
             null
@@ -783,6 +650,8 @@ class UserProgressSyncService(private val context: Context) {
         } catch (e: TimeoutCancellationException) {
             Log.e(TAG, "Timed out updating stars for stage $stageId", e)
             null
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Failed to update stars in cloud", e)
             null
@@ -825,6 +694,8 @@ class UserProgressSyncService(private val context: Context) {
             
             Log.d(TAG, "Streak updated in cloud: $newStreak days")
             true
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Failed to update streak in cloud", e)
             false

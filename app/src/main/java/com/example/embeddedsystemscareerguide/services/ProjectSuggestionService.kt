@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.JsonObject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -100,6 +101,8 @@ class ProjectSuggestionService(private val context: Context) {
                 callback.onSuccess(projects)
             }
 
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error generating projects", e)
             callback.onError("Failed to generate projects: ${e.message}")
@@ -337,6 +340,8 @@ class ProjectSuggestionService(private val context: Context) {
             firestoreManager.updateProjectStatus(projectId, status)
             Log.d(TAG, "Updated project $projectId status to $status")
             Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error updating project status", e)
             Result.failure(e)

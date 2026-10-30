@@ -164,11 +164,8 @@ class MisconceptionDiagnosticHarness {
      */
     @Test
     fun `test the comment's claim against the key it was written about`() {
-        val histFile = File(
-            "C:/Users/nani0/AppData/Local/Temp/claude/" +
-                "F--Documents-android-Embedded-Systems-Career-Guide/" +
-                "2424306d-39c5-4be8-b9c7-984c9e1fdfad/scratchpad/key_d6aedcb.json"
-        )
+        // Put the dumped key under the module's build/harness/ to run this.
+        val histFile = File(File("").absoluteFile, "build/harness/key_d6aedcb.json")
         if (!histFile.exists()) { println("historical key not dumped; skipping"); return }
         val hist: AssessmentAnswerKey =
             Gson().fromJson(histFile.readText(), AssessmentAnswerKey::class.java)

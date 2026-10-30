@@ -139,11 +139,14 @@ class HomeFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
                 // Today's streak first (once a day, whichever screen asks first), so the
-                // read below includes it rather than yesterday's.
-                UserProgressSyncService.streakMessage(progressSyncService.recordDailyVisit())?.let {
+                // progress shown includes it rather than yesterday's.
+                val visit = progressSyncService.recordDailyVisitWithProgress()
+                UserProgressSyncService.streakMessage(visit.update)?.let {
                     Toast.makeText(requireContext(), it, Toast.LENGTH_LONG).show()
                 }
-                val load = progressSyncService.loadProgressResult()
+                // If this call counted the day it has just read progress: use that rather
+                // than reading it a second time.
+                val load = visit.progress ?: progressSyncService.loadProgressResult()
                 totalStageCount = resolveTotalStageCount()
 
                 when (val view = homeViewFor(load, lastShownFigures())) {

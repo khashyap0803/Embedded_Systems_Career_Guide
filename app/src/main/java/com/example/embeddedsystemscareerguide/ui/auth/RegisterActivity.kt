@@ -22,6 +22,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.*
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.CancellationException
 
 class RegisterActivity : AppCompatActivity() {
 
@@ -207,6 +208,8 @@ class RegisterActivity : AppCompatActivity() {
                 // Allow tapping to retry
                 setupRetryClickListener()
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e("RegisterActivity", "Error checking username: ${e.javaClass.simpleName} - ${e.message}", e)
             withContext(Dispatchers.Main) {
@@ -374,6 +377,8 @@ class RegisterActivity : AppCompatActivity() {
                     finishAffinity()
                 }
                 
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 binding.progressBarRegister.visibility = View.GONE
                 binding.buttonRegister.isEnabled = true

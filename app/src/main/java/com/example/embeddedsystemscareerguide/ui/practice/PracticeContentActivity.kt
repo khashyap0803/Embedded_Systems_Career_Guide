@@ -19,6 +19,7 @@ import com.example.embeddedsystemscareerguide.services.PathRead
 import com.example.embeddedsystemscareerguide.services.PersonalizedStage
 import com.example.embeddedsystemscareerguide.services.Project
 import com.example.embeddedsystemscareerguide.services.ProjectSuggestionService
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
 /**
@@ -92,6 +93,8 @@ class PracticeContentActivity : AppCompatActivity() {
                     Mode.INTERVIEW -> loadInterviewQuestions()
                     Mode.PROJECTS -> loadProjects()
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 android.util.Log.e("PracticeContent", "Failed to load content for $mode", e)
                 showEmpty(getString(R.string.practice_error_generic))

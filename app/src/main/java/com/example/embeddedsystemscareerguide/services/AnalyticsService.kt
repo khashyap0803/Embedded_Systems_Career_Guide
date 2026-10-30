@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.JsonObject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
@@ -183,6 +184,8 @@ class AnalyticsService(private val context: Context) {
             Log.d(TAG, "Analytics generated: $progressPercentage% complete, ${recommendations.size} recommendations")
             callback.onSuccess(analytics, recommendations)
 
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error generating analytics", e)
             callback.onError("Failed to generate analytics: ${e.message}")
@@ -270,6 +273,8 @@ class AnalyticsService(private val context: Context) {
                     return aiRecommendations
                 }
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.w(TAG, "AI recommendation failed, using rule-based: ${e.message}")
         }
@@ -432,6 +437,8 @@ class AnalyticsService(private val context: Context) {
                 longestStreak = streak.best,
                 progressPercentage = (completedStages * 100) / totalStages.coerceAtLeast(1)
             ))
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error getting quick stats", e)
             Result.failure(e)

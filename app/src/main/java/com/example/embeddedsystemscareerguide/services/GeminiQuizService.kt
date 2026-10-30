@@ -4,6 +4,7 @@ import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.google.gson.reflect.TypeToken
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -200,6 +201,8 @@ Generate 5 SHORT questions now:
                 } catch (e: RateLimitCapReached) {
                     Log.w(TAG, "Batch ${callIndex + 1}: waited ${rateLimitBudget.waitedMs}ms on 429s; using the fallback quiz")
                     return@withContext Quiz(getFallbackQuestions(stageTitle), isFallback = true)
+                } catch (e: CancellationException) {
+                    throw e
                 } catch (e: Exception) {
                     Log.w(TAG, "Batch ${callIndex + 1} failed: ${e.message}")
                 }
@@ -223,6 +226,8 @@ Generate 5 SHORT questions now:
             Log.d(TAG, "Returning ${getFallbackQuestions(stageTitle).size} fallback questions (API failed)")
             return@withContext Quiz(getFallbackQuestions(stageTitle), isFallback = true)
 
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error generating quiz", e)
             return@withContext Quiz(getFallbackQuestions(stageTitle), isFallback = true)

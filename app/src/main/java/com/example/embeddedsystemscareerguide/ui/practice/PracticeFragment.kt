@@ -136,6 +136,8 @@ class PracticeFragment : Fragment() {
                     binding.textTotalXp.text = "0 XP"
                     binding.textCompletedStages.text = "0 Stages Completed"
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.e("PracticeFragment", "Error loading from cloud", e)
                 binding.textTotalXp.text = "0 XP"

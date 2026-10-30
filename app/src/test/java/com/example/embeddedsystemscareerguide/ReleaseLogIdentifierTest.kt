@@ -8,9 +8,9 @@ import java.io.File
 
 /**
  * Log.w, Log.e and Log.i survive R8 in release builds. Some of them carried the
- * student's roll number, and the quiz and challenge services wrote the model's
- * reply text. Log.d and Log.v are not checked: they are allowed to carry
- * diagnostics.
+ * student's roll number, the quiz and challenge services wrote the model's reply
+ * text, and the chat and report services wrote the server's HTTP error body.
+ * Log.d and Log.v are not checked: they are allowed to carry diagnostics.
  */
 class ReleaseLogIdentifierTest {
 
@@ -30,19 +30,26 @@ class ReleaseLogIdentifierTest {
         "reply", "content", "jsonArray", "problemStatement"
     )
 
+    /** Variables that hold an HTTP response body, such as a server's error page or JSON. */
+    private val responseBody = setOf("responseBody", "errorBody", "body", "rawBody", "bodyString")
+
     /**
-     * Whether a reply-text variable is interpolated into the message. Its length,
-     * size or HTTP code may be logged; the text may not. A bare ${'$'}name always
-     * prints the text, even with ".length" written after it.
+     * Whether one of [names] is interpolated into the message. Its length, size or
+     * HTTP code may be logged; the text may not. A bare ${'$'}name always prints the
+     * text, even with ".length" written after it.
      */
-    private fun logsReplyText(call: String): Boolean {
-        val bare = Regex("""\$([A-Za-z_]\w*)""").findAll(call).any { it.groupValues[1] in replyText }
+    private fun interpolates(call: String, names: Set<String>): Boolean {
+        val bare = Regex("""\$([A-Za-z_]\w*)""").findAll(call).any { it.groupValues[1] in names }
         val braced = Regex("""\$\{\s*([A-Za-z_]\w*)([^}]*)\}""").findAll(call).any {
-            it.groupValues[1] in replyText &&
+            it.groupValues[1] in names &&
                 !it.groupValues[2].trim().matches(Regex("""\??\.(length|size|code)"""))
         }
         return bare || braced
     }
+
+    private fun logsReplyText(call: String) = interpolates(call, replyText)
+
+    private fun logsResponseBody(call: String) = interpolates(call, responseBody)
 
     private fun releaseLogCalls(): List<String> {
         // Tests run from the module directory.
@@ -82,6 +89,19 @@ class ReleaseLogIdentifierTest {
         assertTrue(logsReplyText("""Log.w(TAG, "Bad reply ${'$'}cleaned.length")"""))
         assertFalse(logsReplyText("""Log.e(TAG, "Error parsing quiz response (${'$'}{response.length} chars): ${'$'}{e.message}")"""))
         assertFalse(logsReplyText("""Log.e(TAG, "API Error: ${'$'}{response.code}")"""))
+    }
+
+    @Test
+    fun `release logs carry no HTTP error bodies`() {
+        val offenders = releaseLogCalls().filter { logsResponseBody(it) }
+        assertEquals(offenders.joinToString("\n"), 0, offenders.size)
+    }
+
+    @Test
+    fun `the check sees an error body when there is one`() {
+        assertTrue(logsResponseBody("""Log.e(TAG, "API Error: ${'$'}{response.code} - ${'$'}responseBody")"""))
+        assertTrue(logsResponseBody("""Log.w(TAG, "Failed: ${'$'}{errorBody?.take(200)}")"""))
+        assertFalse(logsResponseBody("""Log.e(TAG, "API Error: ${'$'}{response.code} (${'$'}{responseBody.length}-char body)")"""))
     }
 
     @Test

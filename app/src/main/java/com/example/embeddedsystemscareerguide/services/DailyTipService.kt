@@ -77,6 +77,8 @@ class DailyTipService(private val context: Context) {
             save(fallbackTip)
             Result.success(fallbackTip)
             
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error getting today's tip", e)
             Result.failure(e)

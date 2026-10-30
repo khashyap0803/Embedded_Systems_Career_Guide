@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.JsonObject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -71,6 +72,8 @@ class FlashcardService(private val context: Context) {
             callback.onProgress("Generating flashcards with AI...")
             generateAndCacheFlashcards(stage, callback)
 
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error getting flashcards", e)
             callback.onError("Failed to load flashcards: ${e.message}")
@@ -118,6 +121,8 @@ class FlashcardService(private val context: Context) {
             Log.d(TAG, "Generated and cached ${flashcards.size} flashcards for stage ${stage.id}")
             callback.onSuccess(flashcards)
 
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error generating flashcards", e)
             val fallback = createFallbackFlashcards(stage)
@@ -202,6 +207,8 @@ class FlashcardService(private val context: Context) {
         try {
             firestoreManager.updateFlashcardReview(stageId, flashcardId, needsReview)
             Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error updating flashcard review status", e)
             Result.failure(e)
@@ -221,6 +228,8 @@ class FlashcardService(private val context: Context) {
             } else {
                 Result.failure(result.exceptionOrNull() ?: Exception("Unknown error"))
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error getting flashcards needing review", e)
             Result.failure(e)
@@ -249,6 +258,8 @@ class FlashcardService(private val context: Context) {
             }
             
             Result.success(reviewMap)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error getting all cards needing review", e)
             Result.failure(e)

@@ -800,6 +800,8 @@ class AssessmentActivity : AppCompatActivity() {
                     val wasGood = existing.getBoolean("isDegraded") != true
                     isFresh && wasGood
                 }
+                // runCatching catches a cancellation too; leaving the screen is not a failed read.
+                verdict.exceptionOrNull()?.let { if (it is kotlinx.coroutines.CancellationException) throw it }
                 if (verdict.isFailure) {
                     android.util.Log.w(
                         "AssessmentActivity",
@@ -836,6 +838,8 @@ class AssessmentActivity : AppCompatActivity() {
             
             android.util.Log.d("AssessmentActivity", "Report saved for user: $username")
             SaveOutcome.SAVED
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
         } catch (e: Exception) {
             e.printStackTrace()
             SaveOutcome.FAILED

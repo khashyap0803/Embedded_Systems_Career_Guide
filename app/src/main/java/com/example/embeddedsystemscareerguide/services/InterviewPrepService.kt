@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.JsonObject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -103,6 +104,8 @@ class InterviewPrepService(private val context: Context) {
                 callback(Result.success(questions))
             }
 
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error generating interview questions", e)
             callback(Result.failure(e))
@@ -184,6 +187,8 @@ class InterviewPrepService(private val context: Context) {
             val evaluation = parseEvaluationFromResponse(responseText)
             callback(Result.success(evaluation))
 
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error evaluating answer", e)
             callback(Result.failure(e))
