@@ -591,6 +591,17 @@ class AssessmentActivity : AppCompatActivity() {
                                 showCompletionState(completionKind)
                             }
                         }
+
+                        override fun onRetakeNotStarted() {
+                            val callback = this
+                            runOnUiThread {
+                                showRetakeNotStarted {
+                                    lifecycleScope.launch {
+                                        stageGenerator.regenerateStages(userName, assessmentResult, callback)
+                                    }
+                                }
+                            }
+                        }
                     }
                     
                     // V2: Use regenerateStages for retakes (considers history),
@@ -699,6 +710,33 @@ class AssessmentActivity : AppCompatActivity() {
         }
 
         // Setup Continue to Home button
+        binding.btnContinueHome.setOnClickListener {
+            navigateToHome()
+        }
+    }
+
+    /**
+     * A retake whose progress reset was refused replaced nothing: the old learning
+     * path and progress stand. The new report is already saved, so Try again runs
+     * only the path step again; Continue to Home keeps the path the student had.
+     */
+    private fun showRetakeNotStarted(retry: () -> Unit) {
+        binding.loadingState.visibility = android.view.View.GONE
+        binding.completionState.visibility = android.view.View.VISIBLE
+
+        binding.completionIcon.setText(R.string.report_state_attention_icon)
+        binding.completionTitle.setText(R.string.retake_not_started_title)
+        binding.completionBody.setText(R.string.retake_not_started_body)
+        binding.completionTitle.setTextColor(ContextCompat.getColor(this, R.color.amber_400))
+        binding.btnPreviewReport.setText(R.string.retake_try_again)
+
+        binding.btnPreviewReport.setOnClickListener {
+            binding.completionState.visibility = android.view.View.GONE
+            binding.loadingState.visibility = android.view.View.VISIBLE
+            binding.progressText.text = "Generating your personalized learning path..."
+            binding.progressSubstatus.text = "Creating AI-powered stages..."
+            retry()
+        }
         binding.btnContinueHome.setOnClickListener {
             navigateToHome()
         }

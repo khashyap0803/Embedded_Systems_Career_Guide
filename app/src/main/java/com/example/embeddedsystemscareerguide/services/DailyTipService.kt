@@ -80,8 +80,8 @@ class DailyTipService(private val context: Context) {
     internal suspend fun generateTips(): List<DailyTip> {
         try {
             // Get user context for personalization
-            val stages = firestoreManager.getPersonalizedStages().getOrNull() ?: emptyList()
-            val currentStage = stages.find { !it.isCompleted }
+            val stages = firestoreManager.getStagesWithProgress().getOrNull() ?: emptyList()
+            val currentStage = FirestoreManager.currentStageOf(stages)
             val completedTopics = stages.filter { it.isCompleted }.map { it.title }
             
             val prompt = OllamaService.PromptTemplates.dailyTips(

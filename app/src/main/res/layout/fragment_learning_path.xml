@@ -181,6 +181,45 @@
         </RelativeLayout>
     </ScrollView>
 
+    <!-- Shown when the path could not be built from the saved report -->
+    <LinearLayout
+        android:id="@+id/layout_path_build_failed"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="32dp"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="@string/learning_path_build_failed"
+            android:textAppearance="@style/TextAppearance.Material3.TitleLarge"
+            android:textColor="?attr/appTextPrimary"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:text="@string/learning_path_build_failed_hint"
+            android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+            android:textColor="?attr/appTextSecondary" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/button_retry_path"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="@string/learning_path_retry"
+            app:cornerRadius="12dp" />
+
+    </LinearLayout>
+
     <!-- Removed Floating Action Button for Help as requested -->
 
 </FrameLayout>

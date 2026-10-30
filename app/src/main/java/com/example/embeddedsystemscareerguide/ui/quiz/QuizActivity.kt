@@ -36,6 +36,9 @@ class QuizActivity : AppCompatActivity() {
     private var stageTitle: String = "Quiz"
     private var stageTopics: List<String> = emptyList()
 
+    /** The general fallback set, not a quiz on this stage: titled as such and never recorded. */
+    private var isFallbackQuiz = false
+
     companion object {
         const val EXTRA_STAGE_ID = "stage_id"
         const val EXTRA_STAGE_TITLE = "stage_title"
@@ -48,6 +51,7 @@ class QuizActivity : AppCompatActivity() {
         private const val STATE_CORRECT = "state_correct"
         private const val STATE_ANSWERED = "state_answered"
         private const val STATE_STARTED_AT = "state_started_at"
+        private const val STATE_FALLBACK = "state_fallback"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -105,6 +109,7 @@ class QuizActivity : AppCompatActivity() {
             outState.putInt(STATE_CORRECT, correctAnswers)
             outState.putBoolean(STATE_ANSWERED, hasAnswered)
             outState.putLong(STATE_STARTED_AT, quizStartedAtMs)
+            outState.putBoolean(STATE_FALLBACK, isFallbackQuiz)
         }
         super.onSaveInstanceState(outState)
     }
@@ -120,6 +125,8 @@ class QuizActivity : AppCompatActivity() {
         correctAnswers = state.getInt(STATE_CORRECT, 0)
         hasAnswered = state.getBoolean(STATE_ANSWERED, false)
         quizStartedAtMs = state.getLong(STATE_STARTED_AT, System.currentTimeMillis())
+        isFallbackQuiz = state.getBoolean(STATE_FALLBACK, false)
+        showTitle()
 
         showLoading(false)
         displayQuestion()
@@ -153,12 +160,15 @@ class QuizActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 // M1 fix: Use AppConstants for quiz question count
-                questions = quizService.generateQuiz(
+                val quiz = quizService.generateQuiz(
                     stageTitle = stageTitle,
                     stageTopics = stageTopics,
                     numberOfQuestions = AppConstants.QUESTIONS_PER_QUIZ,
                     difficulty = "medium"
                 )
+                questions = quiz.questions
+                isFallbackQuiz = quiz.isFallback
+                showTitle()
                 
                 showLoading(false)
                 
@@ -293,6 +303,11 @@ class QuizActivity : AppCompatActivity() {
             else -> 0
         }
 
+        if (isFallbackQuiz) {
+            showPracticeResults(percentage)
+            return
+        }
+
         // Record the attempt. saveQuizResult had no callers at all, so
         // getQuizHistory always came back empty and every downstream use of it
         // was dead: collectUserPerformanceData could not derive weak topics,
@@ -354,6 +369,29 @@ class QuizActivity : AppCompatActivity() {
             }
             .setCancelable(false)
             .show()
+    }
+
+    /**
+     * Results of the general fallback quiz. It is not about this stage, so it is not
+     * recorded as an attempt: no QuizResult, no stars, and no RESULT_OK, which is
+     * what makes LearningPathFragment complete the stage.
+     */
+    private fun showPracticeResults(percentage: Int) {
+        MaterialAlertDialogBuilder(this, R.style.Theme_App_AlertDialog)
+            .setTitle(R.string.quiz_fallback_title)
+            .setMessage(getString(R.string.quiz_fallback_result, correctAnswers, questions.size, percentage))
+            .setPositiveButton("Done") { _, _ ->
+                finish()
+            }
+            .setNeutralButton("🔄 Try Again") { _, _ ->
+                retryQuiz()
+            }
+            .setCancelable(false)
+            .show()
+    }
+
+    private fun showTitle() {
+        binding.textStageTitle.text = if (isFallbackQuiz) getString(R.string.quiz_fallback_title) else stageTitle
     }
 
     private fun returnResult() {

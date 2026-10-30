@@ -58,6 +58,9 @@ class LearningPathFragment : Fragment() {
     // Flag to prevent duplicate stage loading (onViewCreated + onResume both fire on initial load)
     private var isLoadingStages = false
 
+    // The path could not be built; the student retries with the button, not onResume
+    private var pathBuildFailed = false
+
 
     // M4 fix: Constants delegate to PrefsKeys for centralization
     companion object {
@@ -94,6 +97,32 @@ class LearningPathFragment : Fragment() {
             if (cause is CancellationException) throw cause
             return PathSource.Unavailable(cause)
         }
+
+        /**
+         * Builds the path from the saved report, for [PathSource.RegenerateFromReport].
+         *
+         * Every failure - the report can't be read, generation reports an error or
+         * throws - is [PathBuild.Failed], which the screen answers with a Retry button.
+         * Each one used to send the student, clearing the back stack, to retake the
+         * assessment, although [resolvePathSource] had just found their report. A
+         * null report here is therefore a failed read (getAssessmentReport returns
+         * null for both), not a missing one.
+         */
+        internal suspend fun buildPathFromReport(
+            loadReport: suspend () -> Map<String, Any>?,
+            generate: suspend (Map<String, Any>) -> Result<Unit>
+        ): PathBuild = try {
+            val report = loadReport()
+            if (report == null) {
+                PathBuild.Failed(IllegalStateException("Assessment report could not be read"))
+            } else {
+                generate(report).fold({ PathBuild.Built }, { PathBuild.Failed(it) })
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            PathBuild.Failed(e)
+        }
     }
 
     /** What [resolvePathSource] decided. */
@@ -102,6 +131,12 @@ class LearningPathFragment : Fragment() {
         object RegenerateFromReport : PathSource()
         object TakeAssessment : PathSource()
         data class Unavailable(val cause: Throwable) : PathSource()
+    }
+
+    /** What [buildPathFromReport] did. */
+    internal sealed class PathBuild {
+        object Built : PathBuild()
+        data class Failed(val cause: Throwable) : PathBuild()
     }
 
 
@@ -123,6 +158,8 @@ class LearningPathFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         // L2 fix: Removed empty setupUI() call
+        binding.buttonRetryPath.setOnClickListener { loadStagesFromFirestore() }
+
         // V2: Try to load personalized stages from Firestore first
         loadStagesFromFirestore()
         
@@ -147,6 +184,11 @@ class LearningPathFragment : Fragment() {
             return
         }
         
+        if (pathBuildFailed) {
+            Log.d("LearningPath", "Skipping reload - waiting for Retry")
+            return
+        }
+        
         if (stages.isEmpty()) {
             // First time or after rotation - load stages first
             loadStagesFromFirestore()
@@ -160,6 +202,7 @@ class LearningPathFragment : Fragment() {
      * V2: Load stages from Firestore (personalized AI-generated stages)
      * If no personalized stages exist:
      * - Check if assessment report exists → regenerate stages from it
+     *   (if that fails → "We couldn't build your learning path" with Retry)
      * - If no report → redirect to assessment page
      * 
      * NO FALLBACK TO 16 HARDCODED STAGES
@@ -171,6 +214,7 @@ class LearningPathFragment : Fragment() {
             return
         }
         isLoadingStages = true
+        showPathBuildFailed(false)
         
         viewLifecycleOwner.lifecycleScope.launch {
             try {
@@ -257,9 +301,9 @@ class LearningPathFragment : Fragment() {
     private fun regenerateStagesFromReport(firestoreManager: com.example.embeddedsystemscareerguide.services.FirestoreManager) {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                val reportData = firestoreManager.getAssessmentReport()
-                
-                if (reportData != null) {
+                val build = buildPathFromReport(
+                    loadReport = { firestoreManager.getAssessmentReport() }
+                ) { reportData ->
                     Log.d("LearningPath", "Got assessment report, generating stages...")
                     
                     // Convert report to AssessmentResult
@@ -270,13 +314,13 @@ class LearningPathFragment : Fragment() {
                         .getString("current_username", "User") ?: "User"
                     
                     // Show loading toast
-                    activity?.runOnUiThread {
-                        Toast.makeText(context, "Regenerating your learning path...", Toast.LENGTH_LONG).show()
-                    }
+                    Toast.makeText(context, "Regenerating your learning path...", Toast.LENGTH_LONG).show()
                     
                     // Generate stages using StageGeneratorService
                     val stageGenerator = com.example.embeddedsystemscareerguide.services.StageGeneratorService.getInstance(requireContext())
                     
+                    // The callbacks run inside the call, so the outcome is known when it returns.
+                    var outcome: Result<Unit> = Result.failure(IllegalStateException("Stage generation did not finish"))
                     stageGenerator.generatePersonalizedStages(
                         userName = username,
                         assessmentResult = assessmentResult,
@@ -287,42 +331,49 @@ class LearningPathFragment : Fragment() {
                             
                             override fun onSuccess(stages: List<PersonalizedStage>) {
                                 Log.d("LearningPath", "Successfully generated ${stages.size} stages")
-                                activity?.runOnUiThread {
-                                    Toast.makeText(context, "Learning path regenerated!", Toast.LENGTH_SHORT).show()
-                                    // Reset flag before reloading
-                                    isLoadingStages = false
-                                    // Reload stages from Firestore (they're now saved)
-                                    loadStagesFromFirestore()
-                                }
+                                outcome = Result.success(Unit)
                             }
                             
                             override fun onError(error: String) {
-                                Log.e("LearningPath", "Stage generation failed: $error")
-                                isLoadingStages = false
-                                activity?.runOnUiThread {
-                                    Toast.makeText(context, "Failed to generate stages: $error", Toast.LENGTH_LONG).show()
-                                    // Redirect to assessment as fallback
-                                    redirectToAssessment()
-                                }
+                                outcome = Result.failure(Exception(error))
                             }
                         }
                     )
-                } else {
-                    Log.e("LearningPath", "Failed to get report data, redirecting to assessment")
-                    isLoadingStages = false
-                    redirectToAssessment()
+                    outcome
+                }
+                
+                isLoadingStages = false
+                when (build) {
+                    PathBuild.Built -> {
+                        Toast.makeText(context, "Learning path regenerated!", Toast.LENGTH_SHORT).show()
+                        // Reload stages from Firestore (they're now saved)
+                        loadStagesFromFirestore()
+                    }
+                    is PathBuild.Failed -> {
+                        Log.e("LearningPath", "Could not build the learning path", build.cause)
+                        showPathBuildFailed(true)
+                    }
                 }
             } catch (e: CancellationException) {
                 // Regeneration takes minutes; leaving the screen meanwhile is not a
                 // reason to send the student back to the assessment.
                 isLoadingStages = false
                 throw e
-            } catch (e: Exception) {
-                Log.e("LearningPath", "Error regenerating stages", e)
-                isLoadingStages = false
-                redirectToAssessment()
             }
         }
+    }
+
+    /**
+     * The "We couldn't build your learning path" state. Its Retry button goes back
+     * through [loadStagesFromFirestore]: a path that did get saved is shown, the
+     * generation runs again if there still isn't one, and only a report that turns
+     * out not to exist sends the student to the assessment.
+     */
+    private fun showPathBuildFailed(show: Boolean) {
+        pathBuildFailed = show
+        val b = _binding ?: return
+        b.layoutPathBuildFailed.visibility = if (show) View.VISIBLE else View.GONE
+        b.scrollViewMap.visibility = if (show) View.GONE else View.VISIBLE
     }
 
     /**

@@ -28,6 +28,9 @@ class GeminiQuizService {
         /** QuizActivity always shows exactly four answer cards. */
         private const val OPTION_COUNT = 4
 
+        /** The longest one quiz waits on 429s in total, Retry-After included. */
+        internal const val RATE_LIMIT_WAIT_CAP_MS = 30_000L
+
         /**
          * Whether QuizActivity can show [q] and mark it correctly.
          *
@@ -55,12 +58,59 @@ class GeminiQuizService {
          * the message text, retried every other 4xx, and retried a 429 on its own
          * 1s/2s - all three attempts inside the window the gateway had just asked
          * for, after which the student got the generic fallback quiz.
+         *
+         * Waits after a 429 are paid from [budget], which spans the whole quiz. A
+         * wait that would take it past [RATE_LIMIT_WAIT_CAP_MS] is not made:
+         * [RateLimitCapReached] is thrown instead, and the quiz falls back. Without
+         * the cap, sustained 429s could hold the student on the loading screen for
+         * 2 batches x 2 waits x 60s.
          */
         internal suspend fun retryQuizCall(
+            budget: RateLimitBudget = RateLimitBudget(),
             sleep: suspend (Long) -> Unit = { delay(it) },
             call: suspend () -> String
-        ): String = OllamaService.retryWithBackoff(sleep = sleep, call = call).getOrThrow()
+        ): String {
+            var rateLimited = false
+            return OllamaService.retryWithBackoff(
+                sleep = { ms ->
+                    if (rateLimited && !budget.spend(ms)) throw RateLimitCapReached()
+                    sleep(ms)
+                },
+                call = {
+                    rateLimited = false
+                    try {
+                        call()
+                    } catch (e: OllamaService.RateLimitedException) {
+                        rateLimited = true
+                        throw e
+                    }
+                }
+            ).getOrThrow()
+        }
     }
+
+    /** One quiz's time spent waiting on 429s, against [RATE_LIMIT_WAIT_CAP_MS]. */
+    internal class RateLimitBudget(private val capMs: Long = RATE_LIMIT_WAIT_CAP_MS) {
+        var waitedMs = 0L
+            private set
+
+        /** Takes [ms] from the budget, or returns false (taking nothing) if it doesn't fit. */
+        fun spend(ms: Long): Boolean {
+            if (waitedMs + ms > capMs) return false
+            waitedMs += ms
+            return true
+        }
+    }
+
+    /** The quiz's 429 waits reached [RATE_LIMIT_WAIT_CAP_MS]; it stops retrying and falls back. */
+    internal class RateLimitCapReached : Exception(NetworkModule.RATE_LIMITED_MESSAGE)
+
+    /**
+     * A quiz to show. [isFallback] means none of it came from the model: it is the
+     * general fallback set, which QuizActivity titles "General practice questions"
+     * and does not record as an attempt at the stage.
+     */
+    data class Quiz(val questions: List<QuizQuestion>, val isFallback: Boolean)
 
     data class QuizQuestion(
         val question: String,
@@ -93,10 +143,19 @@ class GeminiQuizService {
         stageTopics: List<String>,
         numberOfQuestions: Int = 10,  // 10 questions per stage
         difficulty: String = "medium"
-    ): List<QuizQuestion> = withContext(Dispatchers.IO) {
+    ): Quiz = generateQuiz(stageTitle, numberOfQuestions, sleep = { delay(it) }) { executeApiCall(it) }
+
+    /** [generateQuiz] with the request and the retry waits passed in. */
+    internal suspend fun generateQuiz(
+        stageTitle: String,
+        numberOfQuestions: Int,
+        sleep: suspend (Long) -> Unit,
+        request: suspend (String) -> String
+    ): Quiz = withContext(Dispatchers.IO) {
         try {
             Log.d(TAG, "Generating quiz for: $stageTitle")
             
+            val rateLimitBudget = RateLimitBudget()
             val allQuestions = mutableListOf<QuizQuestion>()
             val questionsPerCall = 5  // Request 5 at a time to avoid truncation
             val callsNeeded = (numberOfQuestions + questionsPerCall - 1) / questionsPerCall
@@ -129,7 +188,7 @@ CRITICAL REQUIREMENTS:
 
 Generate 5 SHORT questions now:
 """
-                    val response = callGeminiAPI(prompt)
+                    val response = retryQuizCall(rateLimitBudget, sleep) { request(prompt) }
                     val parsed = parseQuizResponse(response)
                     allQuestions.addAll(parsed)
                     Log.d(TAG, "Batch ${callIndex + 1}: Got ${parsed.size} questions")
@@ -138,6 +197,9 @@ Generate 5 SHORT questions now:
                     if (callIndex < callsNeeded - 1) {
                         kotlinx.coroutines.delay(500)
                     }
+                } catch (e: RateLimitCapReached) {
+                    Log.w(TAG, "Batch ${callIndex + 1}: waited ${rateLimitBudget.waitedMs}ms on 429s; using the fallback quiz")
+                    return@withContext Quiz(getFallbackQuestions(stageTitle), isFallback = true)
                 } catch (e: Exception) {
                     Log.w(TAG, "Batch ${callIndex + 1} failed: ${e.message}")
                 }
@@ -146,7 +208,7 @@ Generate 5 SHORT questions now:
             // If we got enough questions, return them
             if (allQuestions.size >= numberOfQuestions) {
                 Log.d(TAG, "Returning $numberOfQuestions questions from API")
-                return@withContext allQuestions.take(numberOfQuestions)
+                return@withContext Quiz(allQuestions.take(numberOfQuestions), isFallback = false)
             }
             
             // If we got some but not enough, fill with fallbacks
@@ -154,26 +216,19 @@ Generate 5 SHORT questions now:
                 val needed = numberOfQuestions - allQuestions.size
                 val fallbacks = getFallbackQuestions(stageTitle).take(needed)
                 Log.d(TAG, "Returning ${allQuestions.size} API + $needed fallback = ${allQuestions.size + needed} questions")
-                return@withContext allQuestions + fallbacks
+                return@withContext Quiz(allQuestions + fallbacks, isFallback = false)
             }
             
             // If nothing worked, return all fallbacks
             Log.d(TAG, "Returning ${getFallbackQuestions(stageTitle).size} fallback questions (API failed)")
-            return@withContext getFallbackQuestions(stageTitle)
+            return@withContext Quiz(getFallbackQuestions(stageTitle), isFallback = true)
 
         } catch (e: Exception) {
             Log.e(TAG, "Error generating quiz", e)
-            return@withContext getFallbackQuestions(stageTitle)
+            return@withContext Quiz(getFallbackQuestions(stageTitle), isFallback = true)
         }
     }
 
-    /**
-     * N4 fix: Added exponential backoff retry for transient API failures
-     */
-    private suspend fun callGeminiAPI(prompt: String): String = withContext(Dispatchers.IO) {
-        retryQuizCall { executeApiCall(prompt) }
-    }
-    
     private suspend fun executeApiCall(prompt: String): String {
         val requestBody = JsonObject().apply {
             addProperty("model", NetworkModule.DEFAULT_MODEL)

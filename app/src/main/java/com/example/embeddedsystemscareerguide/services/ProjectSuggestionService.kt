@@ -55,7 +55,7 @@ class ProjectSuggestionService(private val context: Context) {
             callback.onProgress("Analyzing your skills...")
 
             // Get completed stages to understand skill level
-            val stages = firestoreManager.getPersonalizedStages().getOrNull() ?: emptyList()
+            val stages = firestoreManager.getStagesWithProgress().getOrNull() ?: emptyList()
             val completedTopics = stages.filter { it.isCompleted }.map { it.title }
             
             if (completedTopics.isEmpty()) {
