@@ -170,6 +170,8 @@ Return ONLY valid JSON array with exactly 3 problems:
                 )
             }
             Result.success(result)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Failed to generate Challenge 1 problems", e)
             Result.failure(e)
@@ -265,6 +267,8 @@ DO NOT include comments - students should order pure code blocks.
             
             Log.i(TAG, "Generated ${result.size} code blocks for a ${problemStatement.length}-char problem")
             Result.success(result)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Failed to generate code blocks", e)
             Result.failure(e)
@@ -352,6 +356,8 @@ RULES:
                 )
             }
             Result.success(result)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Failed to generate Challenge 2 questions", e)
             Result.failure(e)
@@ -443,6 +449,8 @@ Return ONLY valid JSON array:
                 )
             }
             Result.success(result)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Failed to generate Challenge 3 questions", e)
             Result.failure(e)
@@ -614,6 +622,8 @@ Return ONLY this JSON (no markdown, no explanation):
                 // 4xx errors (bad API key, etc.) are not retryable
                 Log.e(TAG, "Non-retryable client error in evaluateChallenge1", e)
                 return@withContext Result.failure(e)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 lastException = e
                 Log.w(TAG, "evaluateChallenge1 parse attempt $parseAttempt failed: ${e.message}")
@@ -783,6 +793,8 @@ Return ONLY this JSON (no markdown, no explanation):
             } catch (e: ClientException) {
                 Log.e(TAG, "Non-retryable client error in evaluateChallenge2", e)
                 return@withContext Result.failure(e)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 lastException = e
                 Log.w(TAG, "evaluateChallenge2 parse attempt $parseAttempt failed: ${e.message}")
@@ -958,6 +970,8 @@ Return ONLY this JSON (no markdown, no explanation):
             } catch (e: ClientException) {
                 Log.e(TAG, "Non-retryable client error in evaluateChallenge3", e)
                 return@withContext Result.failure(e)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 lastException = e
                 Log.w(TAG, "evaluateChallenge3 parse attempt $parseAttempt failed: ${e.message}")

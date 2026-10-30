@@ -3,6 +3,7 @@ package com.example.embeddedsystemscareerguide.services
 import android.util.Log
 import com.example.embeddedsystemscareerguide.models.challenge.ChallengeConstants
 import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.tasks.await
 
 /**
@@ -40,6 +41,8 @@ object ChallengeAuth {
         return try {
             val token = user.getIdToken(forceRefresh).await()
             token.claims[ChallengeConstants.CLAIM_ADMIN] == true
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             // Offline, expired session, or revoked token: deny.
             Log.w(TAG, "Could not resolve admin claim, denying access", e)

@@ -534,6 +534,8 @@ class Challenge2Activity : AppCompatActivity() {
                     android.util.Log.w("Challenge2", "Evaluation failed", evalResult.exceptionOrNull())
                     null
                 }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
                 android.util.Log.w("Challenge2", "Evaluation exception", e)
                 null
@@ -696,6 +698,8 @@ class Challenge2Activity : AppCompatActivity() {
                     warningCount = firebaseCount
                     android.util.Log.i("Challenge2", "Synced warningCount from Firebase: $warningCount")
                 }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
                 android.util.Log.w("Challenge2", "Failed to sync warningCount", e)
             }

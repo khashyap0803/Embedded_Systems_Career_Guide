@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.JsonObject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -98,6 +99,8 @@ class StageContentService(private val context: Context) {
             }
             generateAndCacheContent(stage, callback)
 
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error getting stage content", e)
             withContext(Dispatchers.Main) {
@@ -147,6 +150,8 @@ class StageContentService(private val context: Context) {
                     // Exponential backoff: 1s, 2s, 4s
                     kotlinx.coroutines.delay(1000L * (1 shl (retryCount - 1)))
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.e(TAG, "Error in generateWithRetry", e)
                 retryCount++
@@ -402,6 +407,8 @@ Return ONLY valid JSON:
                 }
             }
 
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error generating content", e)
             // Previously this reported onSuccess(fallback), so an outage
@@ -1648,6 +1655,8 @@ int main(void) {
                     })
                 }
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error preloading stages", e)
         }

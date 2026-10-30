@@ -936,6 +936,8 @@ class LearningPathFragment : Fragment() {
                         "⚠️ Couldn't save progress to cloud. Please check your connection.",
                         Toast.LENGTH_LONG).show()
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.e("LearningPath", "Error completing stage in cloud", e)
                 Toast.makeText(requireContext(),
@@ -981,6 +983,8 @@ class LearningPathFragment : Fragment() {
                 } else {
                     Log.e("LearningPath", "Failed to update stars in cloud")
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.e("LearningPath", "Error updating stars in cloud", e)
             }

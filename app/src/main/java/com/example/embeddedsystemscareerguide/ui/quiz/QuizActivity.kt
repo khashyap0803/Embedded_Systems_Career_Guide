@@ -17,6 +17,7 @@ import com.example.embeddedsystemscareerguide.services.GeminiQuizService
 import com.example.embeddedsystemscareerguide.services.QuizResult
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
 class QuizActivity : AppCompatActivity() {
@@ -178,6 +179,8 @@ class QuizActivity : AppCompatActivity() {
                     Toast.makeText(this@QuizActivity, "Failed to load quiz", Toast.LENGTH_SHORT).show()
                     finish()
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 showLoading(false)
                 Toast.makeText(this@QuizActivity, "Error loading quiz: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -327,6 +330,8 @@ class QuizActivity : AppCompatActivity() {
                     )
                 )
             }.onFailure {
+                // runCatching catches a cancellation too; leaving the screen is not a failed save.
+                if (it is CancellationException) throw it
                 // Never block the results screen on history bookkeeping.
                 Log.w("QuizActivity", "Could not save quiz result", it)
             }

@@ -412,6 +412,8 @@ class LoginActivity : AppCompatActivity() {
                     signInWithEmail(email, password)
                 }
 
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.e("LoginActivity", "Error looking up username: ${e.message}", e)
                 withContext(Dispatchers.Main) {
@@ -513,6 +515,8 @@ class LoginActivity : AppCompatActivity() {
                         promptForUsername(user)
                     }
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 hideLoading()
                 showError("Error checking profile: ${e.message}")
@@ -584,6 +588,8 @@ class LoginActivity : AppCompatActivity() {
                     
                     showSuccess("Welcome, @$username!")
                     navigateToMainActivity(username)
+                } catch (e: CancellationException) {
+                    throw e
                 } catch (e: Exception) {
                     hideLoading()
                     usernameLayout.error = "Error: ${e.message}"
@@ -806,6 +812,8 @@ class LoginActivity : AppCompatActivity() {
                 } else {
                     android.util.Log.d("LoginActivity", "New user, no cloud progress yet: $username")
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 android.util.Log.e("LoginActivity", "Error loading progress: ${e.message}")
             }

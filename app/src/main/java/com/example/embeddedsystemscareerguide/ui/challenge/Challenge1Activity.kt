@@ -209,6 +209,8 @@ class Challenge1Activity : AppCompatActivity() {
                                 val firebaseCount = warnSnapshot.getValue(Int::class.java) ?: 0
                                 warningCount = firebaseCount
                                 android.util.Log.i("Challenge1", "Init synced warningCount=$warningCount from Firebase")
+                            } catch (e: kotlinx.coroutines.CancellationException) {
+                                throw e
                             } catch (e: Exception) {
                                 android.util.Log.w("Challenge1", "Failed to sync initial warningCount", e)
                             }
@@ -1159,6 +1161,8 @@ class Challenge1Activity : AppCompatActivity() {
                     android.util.Log.e("Challenge1", "All Gemini evaluations failed after retries")
                     null
                 }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
                 android.util.Log.e("Challenge1", "Gemini evaluation exception", e)
                 null
@@ -1329,6 +1333,8 @@ class Challenge1Activity : AppCompatActivity() {
                     warningCount = firebaseCount
                     android.util.Log.i("Challenge1", "Synced warningCount from Firebase: $warningCount")
                 }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
                 android.util.Log.w("Challenge1", "Failed to sync warningCount", e)
             }

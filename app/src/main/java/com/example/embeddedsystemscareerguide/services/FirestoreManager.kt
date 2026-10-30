@@ -268,6 +268,8 @@ class FirestoreManager private constructor(private val context: Context) {
             getUserDocRef(username).set(profile, SetOptions.merge()).await()
             Log.d(TAG, "User profile saved for: ${profile.displayName}")
             Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error saving user profile", e)
             Result.failure(e)
@@ -283,6 +285,8 @@ class FirestoreManager private constructor(private val context: Context) {
             val doc = getUserDocRef(username).get().await()
             val profile = doc.toObject(UserProfile::class.java)
             Result.success(profile)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error getting user profile", e)
             Result.failure(e)
@@ -316,6 +320,8 @@ class FirestoreManager private constructor(private val context: Context) {
             batch.commit().await()
             Log.d(TAG, "Saved ${stages.size} personalized stages")
             Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error saving personalized stages", e)
             Result.failure(e)
@@ -339,6 +345,8 @@ class FirestoreManager private constructor(private val context: Context) {
             }
             Log.d(TAG, "Loaded ${stages.size} personalized stages")
             Result.success(stages)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error getting personalized stages", e)
             Result.failure(e)
@@ -415,6 +423,8 @@ class FirestoreManager private constructor(private val context: Context) {
                 .get()
                 .await()
             !docs.isEmpty
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error checking personalized stages", e)
             false
@@ -443,6 +453,8 @@ class FirestoreManager private constructor(private val context: Context) {
                 Log.d(TAG, "No assessment report found for user: $username")
                 null
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error getting assessment report", e)
             null
@@ -466,6 +478,8 @@ class FirestoreManager private constructor(private val context: Context) {
                 .get()
                 .await()
             Result.success(doc.exists())
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error checking assessment report", e)
             Result.failure(e)
@@ -546,6 +560,8 @@ class FirestoreManager private constructor(private val context: Context) {
                     "strong: ${performance.strongTopics.size}")
             
             performance
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error collecting performance data", e)
             UserPerformanceData()
@@ -567,6 +583,8 @@ class FirestoreManager private constructor(private val context: Context) {
                 .await()
             Log.d(TAG, "Saved content for stage $stageId")
             Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error saving stage content", e)
             Result.failure(e)
@@ -586,6 +604,8 @@ class FirestoreManager private constructor(private val context: Context) {
                 .await()
             val content = doc.toObject(StageContent::class.java)
             Result.success(content)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error getting stage content", e)
             Result.failure(e)
@@ -608,6 +628,8 @@ class FirestoreManager private constructor(private val context: Context) {
                 .await()
             Log.d(TAG, "Saved ${flashcards.size} flashcards for stage $stageId")
             Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error saving flashcards", e)
             Result.failure(e)
@@ -639,6 +661,8 @@ class FirestoreManager private constructor(private val context: Context) {
                 )
             }
             Result.success(flashcards)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error getting flashcards", e)
             Result.failure(e)
@@ -658,6 +682,8 @@ class FirestoreManager private constructor(private val context: Context) {
                 saveFlashcards(stageId, flashcards)
             }
             Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error updating flashcard review", e)
             Result.failure(e)
@@ -679,6 +705,8 @@ class FirestoreManager private constructor(private val context: Context) {
                 .await()
             Log.d(TAG, "Saved quiz result for stage $stageId")
             Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error saving quiz result", e)
             Result.failure(e)
@@ -702,6 +730,8 @@ class FirestoreManager private constructor(private val context: Context) {
                 doc.toObject(QuizResult::class.java)
             }
             Result.success(results)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error getting quiz history", e)
             Result.failure(e)
@@ -723,6 +753,8 @@ class FirestoreManager private constructor(private val context: Context) {
                 .await()
             Log.d(TAG, "Progress saved: XP=${progress.totalXp}, Completed=${progress.completedStages}")
             Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error saving progress", e)
             Result.failure(e)
@@ -742,6 +774,8 @@ class FirestoreManager private constructor(private val context: Context) {
                 .await()
             val progress = doc.toObject(UserProgress::class.java)
             Result.success(progress)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error getting progress", e)
             Result.failure(e)
@@ -762,6 +796,8 @@ class FirestoreManager private constructor(private val context: Context) {
                 .set(message)
                 .await()
             Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error saving chat message", e)
             Result.failure(e)
@@ -785,6 +821,8 @@ class FirestoreManager private constructor(private val context: Context) {
                 doc.toObject(ChatMessage::class.java)
             }
             Result.success(messages)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error getting chat history", e)
             Result.failure(e)
@@ -809,6 +847,8 @@ class FirestoreManager private constructor(private val context: Context) {
             batch.commit().await()
             Log.d(TAG, "Chat history cleared")
             Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error clearing chat history", e)
             Result.failure(e)
@@ -829,6 +869,8 @@ class FirestoreManager private constructor(private val context: Context) {
                 .set(report)
                 .await()
             Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error saving analytics report", e)
             Result.failure(e)
@@ -850,6 +892,8 @@ class FirestoreManager private constructor(private val context: Context) {
             
             val report = docs.documents.firstOrNull()?.toObject(AnalyticsReport::class.java)
             Result.success(report)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error getting analytics", e)
             Result.failure(e)
@@ -871,6 +915,8 @@ class FirestoreManager private constructor(private val context: Context) {
                 .set(data)
                 .await()
             Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error saving projects", e)
             Result.failure(e)
@@ -889,6 +935,8 @@ class FirestoreManager private constructor(private val context: Context) {
                 .set(mapOf("status" to status, "updatedAt" to System.currentTimeMillis()))
                 .await()
             Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error updating project status", e)
             Result.failure(e)
@@ -909,6 +957,8 @@ class FirestoreManager private constructor(private val context: Context) {
                 .set(tip)
                 .await()
             Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error saving daily tip", e)
             Result.failure(e)
@@ -934,6 +984,8 @@ class FirestoreManager private constructor(private val context: Context) {
                 .await()
             val tip = doc.toObject(DailyTip::class.java)
             Result.success(tip)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error getting daily tip", e)
             Result.failure(e)

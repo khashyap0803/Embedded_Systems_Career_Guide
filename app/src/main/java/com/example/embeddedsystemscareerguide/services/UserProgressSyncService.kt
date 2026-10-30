@@ -365,6 +365,8 @@ class UserProgressSyncService(private val context: Context) {
             
             Log.d(TAG, "Successfully saved progress to cloud for user: $username")
             true
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Failed to save progress to cloud", e)
             false
@@ -478,6 +480,8 @@ class UserProgressSyncService(private val context: Context) {
                 ?: return ProgressLoad.Absent
 
             ProgressLoad.Loaded(parseProgress(data))
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Failed to load progress from cloud", e)
             ProgressLoad.Failed(e)
@@ -531,6 +535,8 @@ class UserProgressSyncService(private val context: Context) {
                 Log.d(TAG, "No cloud progress document exists for user: $username")
                 null
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Failed to load progress from cloud", e)
             null
@@ -636,6 +642,8 @@ class UserProgressSyncService(private val context: Context) {
                 .await()
             
             document.exists() && document.data?.isNotEmpty() == true
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Failed to check cloud progress", e)
             false
@@ -717,6 +725,8 @@ class UserProgressSyncService(private val context: Context) {
             // spinner hung forever. Failing loudly lets the UI recover.
             Log.e(TAG, "Timed out completing stage $stageId in cloud", e)
             null
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Failed to complete stage in cloud", e)
             null
@@ -783,6 +793,8 @@ class UserProgressSyncService(private val context: Context) {
         } catch (e: TimeoutCancellationException) {
             Log.e(TAG, "Timed out updating stars for stage $stageId", e)
             null
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Failed to update stars in cloud", e)
             null
@@ -825,6 +837,8 @@ class UserProgressSyncService(private val context: Context) {
             
             Log.d(TAG, "Streak updated in cloud: $newStreak days")
             true
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Failed to update streak in cloud", e)
             false

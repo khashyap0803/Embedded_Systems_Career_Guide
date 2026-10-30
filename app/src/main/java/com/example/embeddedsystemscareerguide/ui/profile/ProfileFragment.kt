@@ -20,6 +20,7 @@ import com.example.embeddedsystemscareerguide.ui.auth.LoginActivity
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
@@ -105,6 +106,8 @@ class ProfileFragment : Fragment() {
                     binding.imageViewProfileAvatar.setImageResource(avatarDrawables[savedIndex])
                     binding.imageViewProfileAvatar.backgroundTintList = null
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.e("ProfileFragment", "Failed to load saved avatar", e)
                 // Non-fatal: the generic placeholder set in XML remains visible.
@@ -161,6 +164,8 @@ class ProfileFragment : Fragment() {
                     binding.textXpCount.text = "0"
                     binding.textStreakCount.text = "0"
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.e("ProfileFragment", "Failed to load progress stats", e)
             }
