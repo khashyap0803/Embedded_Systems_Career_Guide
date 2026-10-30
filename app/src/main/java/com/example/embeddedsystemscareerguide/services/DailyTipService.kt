@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.JsonObject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -36,10 +37,16 @@ class DailyTipService(private val context: Context) {
     private val firestoreManager = FirestoreManager.getInstance(context)
     private val gson = Gson()
 
+    /** Tips from [generateTips], and whether [getTodaysTip] may store them as the day's tips. */
+    internal data class Tips(val tips: List<DailyTip>, val store: Boolean)
+
     /**
      * Get today's tip, generating new ones if needed
      */
-    suspend fun getTodaysTip(): Result<DailyTip> = withContext(Dispatchers.IO) {
+    suspend fun getTodaysTip(): Result<DailyTip> = getTodaysTip(save = { firestoreManager.saveDailyTip(it) })
+
+    /** [getTodaysTip] with the write passed in. */
+    internal suspend fun getTodaysTip(save: suspend (DailyTip) -> Unit): Result<DailyTip> = withContext(Dispatchers.IO) {
         try {
             val todayDate = getTodayDateString()
             
@@ -55,17 +62,19 @@ class DailyTipService(private val context: Context) {
             Log.d(TAG, "No tip for today, generating new tips")
             val newTips = generateTips()
             
-            if (newTips.isNotEmpty()) {
+            if (newTips.tips.isNotEmpty()) {
                 // Save all generated tips
-                newTips.forEach { tip ->
-                    firestoreManager.saveDailyTip(tip)
+                if (newTips.store) {
+                    newTips.tips.forEach { tip ->
+                        save(tip)
+                    }
                 }
-                return@withContext Result.success(newTips.first())
+                return@withContext Result.success(newTips.tips.first())
             }
             
             // Fallback tip
             val fallbackTip = createFallbackTip(todayDate)
-            firestoreManager.saveDailyTip(fallbackTip)
+            save(fallbackTip)
             Result.success(fallbackTip)
             
         } catch (e: Exception) {
@@ -77,10 +86,19 @@ class DailyTipService(private val context: Context) {
     /**
      * Generate tips based on user's current progress
      */
-    internal suspend fun generateTips(): List<DailyTip> {
+    internal suspend fun generateTips(): Tips {
         try {
             // Get user context for personalization
-            val stages = firestoreManager.getStagesWithProgress().getOrNull() ?: emptyList()
+            val stages = when (val read = firestoreManager.readPath()) {
+                is PathRead.Path -> read.stages
+                PathRead.NoPath -> emptyList()
+                is PathRead.Failed -> {
+                    // A stored tip is served all day without asking again, and this one
+                    // knows nothing about where the student is - so show it, don't store it.
+                    Log.w(TAG, "Could not read the learning path; using a generic tip for now", read.cause)
+                    return Tips(createFallbackTips(), store = false)
+                }
+            }
             val currentStage = FirestoreManager.currentStageOf(stages)
             val completedTopics = stages.filter { it.isCompleted }.map { it.title }
             
@@ -94,15 +112,17 @@ class DailyTipService(private val context: Context) {
             
             if (result.isFailure) {
                 Log.e(TAG, "API call failed: ${result.exceptionOrNull()?.message}")
-                return createFallbackTips()
+                return Tips(createFallbackTips(), store = true)
             }
 
             val responseText = result.getOrNull() ?: ""
-            return parseTipsFromResponse(responseText)
+            return Tips(parseTipsFromResponse(responseText), store = true)
             
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error generating tips", e)
-            return createFallbackTips()
+            return Tips(createFallbackTips(), store = true)
         }
     }
 

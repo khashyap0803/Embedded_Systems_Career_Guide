@@ -29,7 +29,7 @@ class DailyTipFallbackTest {
 
     @Test
     fun `a failed generation yields only today's tip`() {
-        val tips = runBlocking { service.generateTips() }
+        val tips = runBlocking { service.generateTips() }.tips
         assertEquals(1, tips.size)
         assertEquals(AppDate.todayIso(), tips.single().date)
         assertTrue(tips.single().tip.isNotBlank())

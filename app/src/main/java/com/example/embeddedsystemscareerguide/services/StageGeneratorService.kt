@@ -25,6 +25,14 @@ class StageGeneratorService(private val context: Context) {
     companion object {
         private const val TAG = "StageGeneratorService"
         private const val TARGET_STAGES = 40  // Target number of stages
+
+        /**
+         * The most stages a parsed path keeps. The model is asked for TARGET_STAGES
+         * but nothing bounded what it returned. With this cap, a retake's single
+         * WriteBatch is at most 1 reset + 100 deletes + 100 saves = 201 writes,
+         * well inside Firestore's 500.
+         */
+        internal const val MAX_STAGES = 100
         private const val MAX_RETRIES = 3     // Maximum API retry attempts
         private const val INITIAL_RETRY_DELAY_MS = 1000L  // 1 second initial delay
         
@@ -36,29 +44,6 @@ class StageGeneratorService(private val context: Context) {
                 instance ?: StageGeneratorService(context.applicationContext).also { instance = it }
             }
         }
-
-        /**
-         * Replaces a retaker's path: reset their stage progress, then swap in the new
-         * stages. If the reset is refused (progress unreadable, write failed), nothing
-         * is deleted or saved, so the old path and progress stay as they were. Saving
-         * anyway used to leave the old completedStages ids marking the new stages done.
-         */
-        internal suspend fun replacePathForRetake(
-            resetProgress: suspend () -> Boolean,
-            deleteOldStages: suspend () -> Unit,
-            saveStages: suspend () -> Result<Unit>
-        ): RetakeReplace {
-            if (!resetProgress()) return RetakeReplace.NotStarted
-            deleteOldStages()
-            return saveStages().fold({ RetakeReplace.Replaced }, { RetakeReplace.SaveFailed(it) })
-        }
-    }
-
-    /** What [replacePathForRetake] did. */
-    internal sealed class RetakeReplace {
-        object Replaced : RetakeReplace()
-        object NotStarted : RetakeReplace()
-        data class SaveFailed(val cause: Throwable) : RetakeReplace()
     }
 
     private val geminiService = OllamaService.getInstance(context)
@@ -89,7 +74,7 @@ class StageGeneratorService(private val context: Context) {
         fun onSuccess(stages: List<PersonalizedStage>)
         fun onError(error: String)
 
-        /** A retake's progress reset was refused, so nothing was replaced: the old path and progress stand. */
+        /** A retake's path could not be replaced, so nothing was written: the old path and progress stand. */
         fun onRetakeNotStarted() = onError("Couldn't start your retake. Please try again.")
     }
 
@@ -327,7 +312,7 @@ class StageGeneratorService(private val context: Context) {
      * Parse AI response into PersonalizedStage objects
      * Enhanced with robust JSON error handling
      */
-    private fun parseStagesFromResponse(response: String): List<PersonalizedStage> {
+    internal fun parseStagesFromResponse(response: String): List<PersonalizedStage> {
         return try {
             // Clean up response - remove markdown code blocks if present
             var cleanedResponse = response
@@ -377,7 +362,7 @@ class StageGeneratorService(private val context: Context) {
             }
             
             Log.d(TAG, "Parsed ${stages.size} stages from response")
-            stages
+            stages.take(MAX_STAGES)
             
         } catch (e: Exception) {
             Log.e(TAG, "Failed to parse stages response", e)
@@ -617,27 +602,15 @@ class StageGeneratorService(private val context: Context) {
                 stage.copy(isUnlocked = index == 0)
             }
             
-            // V2: Reset user's stage progress (completedStages, stageStars) first.
-            // This ensures old progress doesn't apply to new stages; if it can't be
-            // reset, the old stages are neither deleted nor replaced.
-            val progressSyncService = UserProgressSyncService(context)
-            val replace = replacePathForRetake(
-                resetProgress = { progressSyncService.resetStageProgressInCloud() },
-                deleteOldStages = { firestoreManager.deleteAllPersonalizedStages() },
-                saveStages = { firestoreManager.savePersonalizedStages(unlockedStages) }
-            )
-            when (replace) {
-                RetakeReplace.Replaced -> Log.d(TAG, "Reset user stage progress and saved new stages")
-                RetakeReplace.NotStarted -> {
-                    Log.w(TAG, "Stage progress reset refused; keeping the old path")
-                    callback.onRetakeNotStarted()
-                    return@withContext
-                }
-                is RetakeReplace.SaveFailed -> {
-                    Log.e(TAG, "Failed to save stages: ${replace.cause.message}")
-                    callback.onError("Failed to save learning path. Please try again.")
-                    return@withContext
-                }
+            // V2: Reset user's stage progress (completedStages, stageStars), delete the
+            // old stages and save the new ones in one WriteBatch, so old progress never
+            // applies to new stages and a failure leaves the old path and progress as
+            // they were.
+            val replaced = firestoreManager.replacePathForRetake(unlockedStages)
+            if (replaced.isFailure) {
+                Log.w(TAG, "Retake path not replaced; keeping the old path", replaced.exceptionOrNull())
+                callback.onRetakeNotStarted()
+                return@withContext
             }
 
             Log.d(TAG, "Successfully regenerated and saved ${unlockedStages.size} stages")

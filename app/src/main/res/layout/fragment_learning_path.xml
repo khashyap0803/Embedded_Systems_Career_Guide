@@ -181,7 +181,8 @@
         </RelativeLayout>
     </ScrollView>
 
-    <!-- Shown when the path could not be built from the saved report -->
+    <!-- Shown when the path could not be loaded, or built from the saved report.
+         LearningPathFragment.showPathFailed sets the wording. -->
     <LinearLayout
         android:id="@+id/layout_path_build_failed"
         android:layout_width="match_parent"
@@ -193,6 +194,7 @@
         android:visibility="gone">
 
         <TextView
+            android:id="@+id/text_path_failed_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:gravity="center"
@@ -202,6 +204,7 @@
             android:textStyle="bold" />
 
         <TextView
+            android:id="@+id/text_path_failed_hint"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"

@@ -58,8 +58,8 @@ class LearningPathFragment : Fragment() {
     // Flag to prevent duplicate stage loading (onViewCreated + onResume both fire on initial load)
     private var isLoadingStages = false
 
-    // The path could not be built; the student retries with the button, not onResume
-    private var pathBuildFailed = false
+    // The path could not be loaded or built; the student retries with the button, not onResume
+    private var pathFailed = false
 
 
     // M4 fix: Constants delegate to PrefsKeys for centralization
@@ -139,6 +139,14 @@ class LearningPathFragment : Fragment() {
         data class Failed(val cause: Throwable) : PathBuild()
     }
 
+    /** Why there is no path on screen, as [showPathFailed] words it. Both offer Retry. */
+    internal enum class PathFailure(val title: Int, val hint: Int) {
+        /** The saved path, or the check for a report, could not be read. */
+        LOAD(R.string.learning_path_load_failed, R.string.learning_path_load_failed_hint),
+        /** The path could not be built from the saved report. */
+        BUILD(R.string.learning_path_build_failed, R.string.learning_path_build_failed_hint)
+    }
+
 
 
     override fun onCreateView(
@@ -184,7 +192,7 @@ class LearningPathFragment : Fragment() {
             return
         }
         
-        if (pathBuildFailed) {
+        if (pathFailed) {
             Log.d("LearningPath", "Skipping reload - waiting for Retry")
             return
         }
@@ -203,6 +211,7 @@ class LearningPathFragment : Fragment() {
      * If no personalized stages exist:
      * - Check if assessment report exists → regenerate stages from it
      *   (if that fails → "We couldn't build your learning path" with Retry)
+     * If the read fails → "We couldn't load your learning path" with Retry
      * - If no report → redirect to assessment page
      * 
      * NO FALLBACK TO 16 HARDCODED STAGES
@@ -214,7 +223,7 @@ class LearningPathFragment : Fragment() {
             return
         }
         isLoadingStages = true
-        showPathBuildFailed(false)
+        showPathFailed(null)
         
         viewLifecycleOwner.lifecycleScope.launch {
             try {
@@ -271,7 +280,7 @@ class LearningPathFragment : Fragment() {
                     is PathSource.Unavailable -> {
                         Log.w("LearningPath", "Could not read the learning path; not treating it as missing", source.cause)
                         isLoadingStages = false
-                        showPathUnavailable()
+                        showPathFailed(PathFailure.LOAD)
                     }
                 }
                 
@@ -282,17 +291,9 @@ class LearningPathFragment : Fragment() {
             } catch (e: Exception) {
                 Log.e("LearningPath", "Error loading from Firestore", e)
                 isLoadingStages = false
-                showPathUnavailable()
+                showPathFailed(PathFailure.LOAD)
             }
         }
-    }
-
-    private fun showPathUnavailable() {
-        Toast.makeText(
-            context,
-            "Could not load your learning path. Check your connection - your progress is safe.",
-            Toast.LENGTH_LONG
-        ).show()
     }
 
     /**
@@ -351,7 +352,7 @@ class LearningPathFragment : Fragment() {
                     }
                     is PathBuild.Failed -> {
                         Log.e("LearningPath", "Could not build the learning path", build.cause)
-                        showPathBuildFailed(true)
+                        showPathFailed(PathFailure.BUILD)
                     }
                 }
             } catch (e: CancellationException) {
@@ -364,16 +365,21 @@ class LearningPathFragment : Fragment() {
     }
 
     /**
-     * The "We couldn't build your learning path" state. Its Retry button goes back
-     * through [loadStagesFromFirestore]: a path that did get saved is shown, the
-     * generation runs again if there still isn't one, and only a report that turns
-     * out not to exist sends the student to the assessment.
+     * The "We couldn't load / build your learning path" state, or none for null.
+     * Its Retry button goes back through [loadStagesFromFirestore]: a saved path is
+     * shown, the generation runs again if there still isn't one, and only a report
+     * that turns out not to exist sends the student to the assessment. A failed load
+     * used to be a toast on an empty screen.
      */
-    private fun showPathBuildFailed(show: Boolean) {
-        pathBuildFailed = show
+    private fun showPathFailed(failure: PathFailure?) {
+        pathFailed = failure != null
         val b = _binding ?: return
-        b.layoutPathBuildFailed.visibility = if (show) View.VISIBLE else View.GONE
-        b.scrollViewMap.visibility = if (show) View.GONE else View.VISIBLE
+        if (failure != null) {
+            b.textPathFailedTitle.setText(failure.title)
+            b.textPathFailedHint.setText(failure.hint)
+        }
+        b.layoutPathBuildFailed.visibility = if (failure != null) View.VISIBLE else View.GONE
+        b.scrollViewMap.visibility = if (failure != null) View.GONE else View.VISIBLE
     }
 
     /**

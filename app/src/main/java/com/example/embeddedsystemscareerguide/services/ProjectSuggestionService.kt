@@ -55,7 +55,16 @@ class ProjectSuggestionService(private val context: Context) {
             callback.onProgress("Analyzing your skills...")
 
             // Get completed stages to understand skill level
-            val stages = firestoreManager.getStagesWithProgress().getOrNull() ?: emptyList()
+            val stages = when (val read = firestoreManager.readPath()) {
+                is PathRead.Path -> read.stages
+                PathRead.NoPath -> emptyList()
+                is PathRead.Failed -> {
+                    // Not beginner projects: that is what "nothing completed" gets.
+                    Log.w(TAG, "Could not read the learning path", read.cause)
+                    callback.onError(FirestoreManager.PROGRESS_LOAD_FAILED_MESSAGE)
+                    return@withContext
+                }
+            }
             val completedTopics = stages.filter { it.isCompleted }.map { it.title }
             
             if (completedTopics.isEmpty()) {

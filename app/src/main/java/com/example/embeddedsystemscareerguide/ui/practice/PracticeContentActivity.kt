@@ -15,6 +15,7 @@ import com.example.embeddedsystemscareerguide.databinding.ActivityPracticeConten
 import com.example.embeddedsystemscareerguide.services.FirestoreManager
 import com.example.embeddedsystemscareerguide.services.FlashcardService
 import com.example.embeddedsystemscareerguide.services.InterviewPrepService
+import com.example.embeddedsystemscareerguide.services.PathRead
 import com.example.embeddedsystemscareerguide.services.PersonalizedStage
 import com.example.embeddedsystemscareerguide.services.Project
 import com.example.embeddedsystemscareerguide.services.ProjectSuggestionService
@@ -101,10 +102,16 @@ class PracticeContentActivity : AppCompatActivity() {
     }
 
     private suspend fun loadFlashcards() {
-        val stage = resolveCurrentStage()
-        if (stage == null) {
-            showEmpty(getString(R.string.practice_needs_assessment))
-            return
+        val stage = when (val read = firestoreManager.readPath()) {
+            is PathRead.Path -> FirestoreManager.currentStageOf(read.stages) ?: return
+            PathRead.NoPath -> {
+                showEmpty(getString(R.string.practice_needs_assessment))
+                return
+            }
+            is PathRead.Failed -> {
+                showProgressLoadFailed(read.cause)
+                return
+            }
         }
         currentStage = stage
 
@@ -135,7 +142,14 @@ class PracticeContentActivity : AppCompatActivity() {
     }
 
     private suspend fun loadInterviewQuestions() {
-        val stages = firestoreManager.getStagesWithProgress().getOrNull() ?: emptyList()
+        val stages = when (val read = firestoreManager.readPath()) {
+            is PathRead.Path -> read.stages
+            PathRead.NoPath -> emptyList()
+            is PathRead.Failed -> {
+                showProgressLoadFailed(read.cause)
+                return
+            }
+        }
         val completedTopics = stages.filter { it.isCompleted }.map { it.title }
         val topics = completedTopics.ifEmpty { listOf("Embedded Systems Fundamentals") }
 
@@ -176,10 +190,13 @@ class PracticeContentActivity : AppCompatActivity() {
         showItems(projects.map { PracticeContentItem.ProjectItem(it) })
     }
 
-    /** The user's current stage (see FirestoreManager.currentStageOf), or null if no path exists yet. */
-    private suspend fun resolveCurrentStage(): PersonalizedStage? {
-        val stages = firestoreManager.getStagesWithProgress().getOrNull() ?: emptyList()
-        return FirestoreManager.currentStageOf(stages)
+    /**
+     * A failed read is not a missing path: the student is told to check the
+     * connection and pull down to retry, not to take the assessment.
+     */
+    private fun showProgressLoadFailed(cause: Throwable) {
+        android.util.Log.w("PracticeContent", "Could not read the learning path for $mode", cause)
+        showEmpty(FirestoreManager.PROGRESS_LOAD_FAILED_MESSAGE)
     }
 
     private fun showItems(items: List<PracticeContentItem>) {

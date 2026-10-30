@@ -596,7 +596,7 @@ class PreReleaseEventService private constructor() {
             
             getParticipantRef(rollNumber).updateChildren(updates)
                 .addOnSuccessListener { 
-                    Log.i(TAG, "Resumed session for $rollNumber")
+                    Log.i(TAG, "Resumed session")
                     cont.resume(true) 
                 }
                 .addOnFailureListener { e ->
@@ -640,7 +640,7 @@ class PreReleaseEventService private constructor() {
                         
                         getParticipantRef(rollNumber).updateChildren(updates)
                             .addOnSuccessListener { 
-                                Log.i(TAG, "Added $minutes minutes to $rollNumber ($activeChallengeKey) and set resumable")
+                                Log.i(TAG, "Added $minutes minutes ($activeChallengeKey) and set resumable")
                                 cont.resume(true) 
                             }
                             .addOnFailureListener { e ->
@@ -713,7 +713,7 @@ class PreReleaseEventService private constructor() {
                     } else {
                         // Fallback: create a basic ParticipantStatus from available data
                         // This handles cases where status node is missing but participant exists
-                        Log.w(TAG, "Participant $rollNumber missing status node, creating fallback")
+                        Log.w(TAG, "Participant missing status node, creating fallback")
                         val fallback = ParticipantStatus(
                             rollNumber = rollNumber,
                             currentStatus = if (totalScore > 0) ParticipantStatus.STATUS_COMPLETED else ParticipantStatus.STATUS_WAITING,
@@ -837,7 +837,7 @@ class PreReleaseEventService private constructor() {
         val challengeKey = "challenge$challengeNumber"
         getParticipantRef(rollNumber).child("$challengeKey/generatedQuestions").setValue(questionsJson)
             .addOnSuccessListener { 
-                Log.i(TAG, "Saved generated questions for $rollNumber challenge $challengeNumber")
+                Log.i(TAG, "Saved generated questions for challenge $challengeNumber")
                 cont.resume(true) 
             }
             .addOnFailureListener { e ->
@@ -950,7 +950,7 @@ class PreReleaseEventService private constructor() {
         )
         getParticipantRef(rollNumber).updateChildren(updates)
             .addOnSuccessListener { 
-                Log.i(TAG, "Saved challenge $challengeNumber state for $rollNumber (timeRemaining=${timeRemainingMs}ms, problemIndex=$currentProblemIndex)")
+                Log.i(TAG, "Saved challenge $challengeNumber state (timeRemaining=${timeRemainingMs}ms, problemIndex=$currentProblemIndex)")
                 cont.resume(true) 
             }
             .addOnFailureListener { e ->
@@ -973,7 +973,7 @@ class PreReleaseEventService private constructor() {
                     val problemIndex = snapshot.child("savedProblemIndex").getValue(Int::class.java) ?: 0
                     
                     if (savedState != null) {
-                        Log.i(TAG, "Loaded challenge $challengeNumber state for $rollNumber (timeRemaining=${timeRemainingMs}ms, problemIndex=$problemIndex)")
+                        Log.i(TAG, "Loaded challenge $challengeNumber state (timeRemaining=${timeRemainingMs}ms, problemIndex=$problemIndex)")
                         cont.resume(Triple(savedState, timeRemainingMs, problemIndex))
                     } else {
                         cont.resume(null)

@@ -83,6 +83,18 @@ class UserProgressSyncService(private val context: Context) {
             "lastVisitDate" to lastVisitDate,
             "lastUpdated" to now
         )
+
+        /**
+         * The fields a retake's progress reset writes - and the only ones. XP and
+         * the streak are left alone, so the reset needs no read first and can go
+         * into the same WriteBatch as the new stages (FirestoreManager.retakeWrites).
+         */
+        internal fun stageResetFields(now: Long): Map<String, Any> = mapOf(
+            "currentStage" to 1,
+            "completedStages" to emptyList<String>(),
+            "stageStars" to emptyMap<String, Int>(),
+            "lastUpdated" to now
+        )
     }
 
     private val auth = FirebaseAuth.getInstance()
@@ -704,51 +716,6 @@ class UserProgressSyncService(private val context: Context) {
             true
         } catch (e: Exception) {
             Log.e(TAG, "Failed to update streak in cloud", e)
-            false
-        }
-    }
-    
-    /**
-     * V2: Reset stage progress in cloud when regenerating personalized stages
-     * Clears completedStages and stageStars but preserves XP and streak
-     * @return true if successful, false otherwise
-     */
-    suspend fun resetStageProgressInCloud(): Boolean {
-        val username = getCurrentUsername()
-        if (username == null) {
-            Log.e(TAG, "Cannot reset progress: Username not found")
-            return false
-        }
-
-        return try {
-            val currentProgress = writeBaseFor(loadProgressResult()) ?: run {
-                Log.w(TAG, "Not resetting stage progress: current progress could not be read")
-                return false
-            }
-
-            // Reset only stage-related progress, preserve XP and streak
-            val resetProgress = currentProgress.copy(
-                currentStage = 1,
-                completedStages = emptyList(),
-                stageStars = emptyMap(),
-                lastUpdated = System.currentTimeMillis()
-            )
-            
-            // Save to cloud
-            firestore.collection(COLLECTION_USERS)
-                .document(username)
-                .collection(COLLECTION_DATA)
-                .document(DOCUMENT_PROGRESS)
-                .set(resetProgress.toMap(), SetOptions.merge())
-                .await()
-            
-            // Update local cache
-            saveLocalProgress(resetProgress)
-            
-            Log.d(TAG, "Stage progress reset in cloud for user: $username")
-            true
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to reset stage progress in cloud", e)
             false
         }
     }

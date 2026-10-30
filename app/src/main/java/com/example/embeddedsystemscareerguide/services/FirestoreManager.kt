@@ -54,6 +54,12 @@ class FirestoreManager private constructor(private val context: Context) {
         const val COLLECTION_PROJECTS = "projects"
         const val COLLECTION_INTERVIEW_PREP = "interview_prep"
         const val COLLECTION_DAILY_TIPS = "daily_tips"
+
+        /** Firestore's limit on the writes in one WriteBatch. */
+        internal const val MAX_BATCH_WRITES = 500
+
+        /** Shown wherever the student's path or progress could not be read. */
+        const val PROGRESS_LOAD_FAILED_MESSAGE = "Couldn't load your progress. Check your connection and try again."
         
         // Singleton instance
         @Volatile
@@ -104,6 +110,37 @@ class FirestoreManager private constructor(private val context: Context) {
          */
         internal fun currentStageOf(stages: List<PersonalizedStage>): PersonalizedStage? =
             stages.firstOrNull { !it.isCompleted } ?: stages.lastOrNull()
+
+        /**
+         * Keeps a failed read apart from an empty path. Callers used to turn a failure
+         * into an empty list, so a network or permission error told the student to
+         * take the assessment.
+         */
+        /**
+         * Every write a retake makes, for one WriteBatch: reset the stage progress,
+         * delete the old stages the new path doesn't reuse, save the new stages. A set
+         * without merge replaces the whole document, so an old stage whose id comes
+         * back is overwritten rather than deleted first.
+         */
+        internal fun retakeWrites(
+            oldStageIds: List<String>,
+            newStages: List<PersonalizedStage>,
+            now: Long
+        ): List<RetakeWrite> {
+            val newIds = newStages.map { it.id.toString() }.toSet()
+            return listOf<RetakeWrite>(RetakeWrite.ResetProgress(UserProgressSyncService.stageResetFields(now))) +
+                oldStageIds.filter { it !in newIds }.map { RetakeWrite.DeleteStage(it) } +
+                newStages.map { RetakeWrite.SaveStage(it) }
+        }
+
+        internal fun pathReadOf(read: Result<List<PersonalizedStage>>): PathRead {
+            val stages = read.getOrElse {
+                // getPersonalizedStages hands a cancellation back as a failed Result.
+                if (it is CancellationException) throw it
+                return PathRead.Failed(it)
+            }
+            return if (stages.isEmpty()) PathRead.NoPath else PathRead.Path(stages)
+        }
 
         /**
          * [getStagesWithProgress] with its two reads passed in. A missing progress
@@ -326,6 +363,45 @@ class FirestoreManager private constructor(private val context: Context) {
             }
         }
     )
+
+    /** [getStagesWithProgress], with "no path yet" and "couldn't read" kept apart. */
+    internal suspend fun readPath(): PathRead = pathReadOf(getStagesWithProgress())
+
+    /**
+     * A retake's path swap as one WriteBatch ([retakeWrites]), so Firestore applies
+     * all of it or none of it. The reset and the save used to be separate writes,
+     * and a failed save after a successful reset left the old path with its
+     * progress wiped.
+     */
+    suspend fun replacePathForRetake(stages: List<PersonalizedStage>): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            val username = getCurrentUsername()
+            val stagesRef = getStagesDocRef(username).collection(COLLECTION_PERSONALIZED_STAGES)
+            val progressRef = getUserDocRef(username).collection(COLLECTION_DATA).document("progress")
+            val oldIds = stagesRef.get().await().documents.map { it.id }
+            val writes = retakeWrites(oldIds, stages, System.currentTimeMillis())
+            check(writes.size <= MAX_BATCH_WRITES) {
+                "A retake needs ${writes.size} writes; one batch holds $MAX_BATCH_WRITES"
+            }
+
+            val batch = firestore.batch()
+            writes.forEach { write ->
+                when (write) {
+                    is RetakeWrite.ResetProgress -> batch.set(progressRef, write.fields, SetOptions.merge())
+                    is RetakeWrite.DeleteStage -> batch.delete(stagesRef.document(write.stageId))
+                    is RetakeWrite.SaveStage -> batch.set(stagesRef.document(write.stage.id.toString()), write.stage)
+                }
+            }
+            batch.commit().await()
+            Log.d(TAG, "Retake path saved: ${stages.size} stages in ${writes.size} writes")
+            Result.success(Unit)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.e(TAG, "Error replacing the path for a retake", e)
+            Result.failure(e)
+        }
+    }
 
     /**
      * Check if user has personalized stages
@@ -904,6 +980,23 @@ data class UserProfile(
     val hasCompletedAssessment: Boolean = false,
     val assessmentScore: Int = 0
 )
+
+/** What [FirestoreManager.readPath] found. */
+internal sealed class PathRead {
+    /** The student's path, with completion from the progress document. Never empty. */
+    data class Path(val stages: List<PersonalizedStage>) : PathRead()
+    /** The read succeeded and there is no path yet: the student takes the assessment. */
+    object NoPath : PathRead()
+    /** The read failed. Not a missing path: never send the student to the assessment for it. */
+    data class Failed(val cause: Throwable) : PathRead()
+}
+
+/** One write in [FirestoreManager.retakeWrites]. */
+internal sealed class RetakeWrite {
+    data class ResetProgress(val fields: Map<String, Any>) : RetakeWrite()
+    data class DeleteStage(val stageId: String) : RetakeWrite()
+    data class SaveStage(val stage: PersonalizedStage) : RetakeWrite()
+}
 
 /**
  * Personalized learning stage
