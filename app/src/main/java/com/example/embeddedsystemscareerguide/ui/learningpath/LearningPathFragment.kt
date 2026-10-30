@@ -28,6 +28,7 @@ import com.example.embeddedsystemscareerguide.databinding.FragmentLearningPathBi
 import com.example.embeddedsystemscareerguide.models.LearningStage
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.snackbar.Snackbar
 
 /**
  * Learning Path Fragment - Main gamified learning journey screen
@@ -66,6 +67,38 @@ class LearningPathFragment : Fragment() {
     companion object {
         private val PREFS_NAME = PrefsKeys.PREFS_LEARNING
         private val KEY_CURRENT_STAGE = PrefsKeys.CURRENT_STAGE
+
+        /** A finished quiz, from the result alone; null when it names no stage. */
+        internal fun quizOutcome(stageId: Int, score: Int, total: Int): QuizOutcome? =
+            if (stageId < 0) null else QuizOutcome(stageId.toString(), score, total)
+
+        /**
+         * Shows [stageId] completed with [stars] and the stage after it unlocked,
+         * before the save is confirmed. Returns what puts both back as they were.
+         */
+        internal fun markCompleted(stages: List<LearningStage>, stageId: String, stars: Int): () -> Unit {
+            val stage = stages.find { it.id == stageId } ?: return {}
+            val next = stageId.toIntOrNull()?.let { n -> stages.find { it.id == (n + 1).toString() } }
+            val wasCompleted = stage.isCompleted
+            val hadStars = stage.starsEarned
+            val nextWasUnlocked = next?.isUnlocked ?: false
+            stage.isCompleted = true
+            stage.starsEarned = stars
+            next?.isUnlocked = true
+            return {
+                stage.isCompleted = wasCompleted
+                stage.starsEarned = hadStars
+                next?.isUnlocked = nextWasUnlocked
+            }
+        }
+
+        /** What a finished quiz does to [stage], which it was taken for. */
+        internal fun quizAction(outcome: QuizOutcome, stage: LearningStage): QuizAction = when {
+            outcome.stars < 1 -> QuizAction.NOT_PASSED
+            !stage.isCompleted -> QuizAction.COMPLETE
+            outcome.stars > stage.starsEarned -> QuizAction.IMPROVE_STARS
+            else -> QuizAction.KEEP_BEST
+        }
 
         /**
          * Decides what this screen shows, from the stored path and, if there is
@@ -474,7 +507,8 @@ class LearningPathFragment : Fragment() {
             // object back to Firestore, so a single offline moment permanently
             // erased the user's XP, stars, and completed stages. Only Absent is a
             // real new user; Failed leaves cloudProgress untouched and reports it.
-            when (val load = progressSyncService.loadProgressResult()) {
+            val load = progressSyncService.loadProgressResult()
+            when (load) {
                 is UserProgressSyncService.ProgressLoad.Loaded -> {
                     val progress = load.progress
                     cloudProgress = progress
@@ -503,9 +537,19 @@ class LearningPathFragment : Fragment() {
 
             createGamePath()
             updateHomePageProgress()
+
+            // A quiz that finished while this screen was being recreated. After a
+            // failed read it waits for the next load, so it is never judged against
+            // stages whose progress is unknown.
+            if (load !is UserProgressSyncService.ProgressLoad.Failed && stages.isNotEmpty()) {
+                pendingQuizOutcome?.let {
+                    pendingQuizOutcome = null
+                    handleQuizOutcome(it)
+                }
+            }
         }
     }
-    
+
     /**
      * Apply UserProgress to stage objects
      */
@@ -754,63 +798,68 @@ class LearningPathFragment : Fragment() {
             ArrayList(stage.topics)
         )
         
-        // Store current stage for completion after quiz
-        currentQuizStage = stage
-        
         quizLauncher.launch(intent)
     }
 
-    // Activity result launcher for quiz
-    private var currentQuizStage: LearningStage? = null
+    // The quiz hands back the stage it was for: QuizActivity returns its own launch
+    // intent, which carries EXTRA_STAGE_ID. This screen used to remember the stage in
+    // a field instead, and the field was gone whenever Android recreated the screen
+    // while the quiz was open (a font or language change, or the app closed in the
+    // background), so a passed quiz was silently dropped.
+    private var pendingQuizOutcome: QuizOutcome? = null
     private val quizLauncher = registerForActivityResult(
         androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
     ) { result ->
-        if (result.resultCode == android.app.Activity.RESULT_OK) {
-            val data = result.data
-            val score = data?.getIntExtra(
-                com.example.embeddedsystemscareerguide.ui.quiz.QuizActivity.RESULT_QUIZ_SCORE, 0
-            ) ?: 0
-            val total = data?.getIntExtra(
-                com.example.embeddedsystemscareerguide.ui.quiz.QuizActivity.RESULT_TOTAL_QUESTIONS, 5
-            ) ?: 5
-            
-            // Calculate stars based on score
-            val percentage = (score * 100) / total
-            val stars = when {
-                percentage >= 80 -> 3
-                percentage >= 60 -> 2
-                percentage >= 40 -> 1
-                else -> 0
+        if (result.resultCode != android.app.Activity.RESULT_OK) return@registerForActivityResult
+        val data = result.data
+        val outcome = quizOutcome(
+            stageId = data?.getIntExtra(com.example.embeddedsystemscareerguide.ui.quiz.QuizActivity.EXTRA_STAGE_ID, -1) ?: -1,
+            score = data?.getIntExtra(com.example.embeddedsystemscareerguide.ui.quiz.QuizActivity.RESULT_QUIZ_SCORE, 0) ?: 0,
+            total = data?.getIntExtra(com.example.embeddedsystemscareerguide.ui.quiz.QuizActivity.RESULT_TOTAL_QUESTIONS, 5) ?: 5
+        )
+        if (outcome == null) {
+            Log.w("LearningPath", "Quiz result without a stage id")
+            return@registerForActivityResult
+        }
+        if (stages.isEmpty() || cloudProgress == null) {
+            // Recreated while the quiz was open: the path and progress are still
+            // loading. loadProgressFromCloud applies this once they are in.
+            pendingQuizOutcome = outcome
+        } else {
+            handleQuizOutcome(outcome)
+        }
+    }
+
+    private fun handleQuizOutcome(outcome: QuizOutcome) {
+        val stage = stages.find { it.id == outcome.stageId }
+        if (stage == null) {
+            Log.w("LearningPath", "Quiz result for stage ${outcome.stageId}, which is not on the path")
+            return
+        }
+        val score = outcome.score
+        val total = outcome.total
+        val stars = outcome.stars
+        when (quizAction(outcome, stage)) {
+            QuizAction.COMPLETE -> {
+                // First time completion - award XP and stars
+                completeStage(stage.id, stars)
             }
-            
-            // Handle quiz completion with star improvements
-            currentQuizStage?.let { stage ->
-                when {
-                    stars >= 1 && !stage.isCompleted -> {
-                        // First time completion - award XP and stars
-                        completeStage(stage.id, stars)
-                    }
-                    stars >= 1 && stage.isCompleted && stars > stage.starsEarned -> {
-                        // Improvement! Update stars only (no duplicate XP)
-                        updateStageStars(stage.id, stars, stage.starsEarned)
-                    }
-                    stars >= 1 && stage.isCompleted && stars <= stage.starsEarned -> {
-                        // Same or worse score - encourage but don't update
-                        val emoji = if (stars == stage.starsEarned) "🎯" else "💪"
-                        Toast.makeText(requireContext(),
-                            "$emoji Score: $score/$total (${stars}⭐)\nYour best: ${stage.starsEarned}⭐ - Keep practicing!",
-                            Toast.LENGTH_LONG).show()
-                    }
-                    else -> {
-                        // Failed (0 stars)
-                        Toast.makeText(requireContext(),
-                            "📚 Score: $score/$total (${percentage}%)\nYou need at least 40% to pass. Keep learning!",
-                            Toast.LENGTH_LONG).show()
-                    }
-                }
+            QuizAction.IMPROVE_STARS -> {
+                // Improvement! Update stars only (no duplicate XP)
+                updateStageStars(stage.id, stars, stage.starsEarned)
             }
-            
-            currentQuizStage = null
+            QuizAction.KEEP_BEST -> {
+                // Same or worse score - encourage but don't update
+                val emoji = if (stars == stage.starsEarned) "🎯" else "💪"
+                Toast.makeText(requireContext(),
+                    "$emoji Score: $score/$total (${stars}⭐)\nYour best: ${stage.starsEarned}⭐ - Keep practicing!",
+                    Toast.LENGTH_LONG).show()
+            }
+            QuizAction.NOT_PASSED -> {
+                Toast.makeText(requireContext(),
+                    "📚 Score: $score/$total (${outcome.percentage}%)\nYou need at least 40% to pass. Keep learning!",
+                    Toast.LENGTH_LONG).show()
+            }
         }
     }
 
@@ -866,18 +915,23 @@ class LearningPathFragment : Fragment() {
         // Set flag to prevent onResume from overwriting our optimistic update
         stageCompletionInProgress = true
         
-        // Immediately update UI state (optimistic update)
-        stage.isCompleted = true
-        stage.starsEarned = starsEarned
-        
-        // Unlock next stage
-        val nextStageId = (stageId.toInt() + 1).toString()
-        val nextStage = stages.find { it.id == nextStageId }
-        nextStage?.isUnlocked = true
-        
+        // Immediately update UI state (optimistic update), and the next stage unlocked
+        val undo = markCompleted(stages, stageId, starsEarned)
+
         // Rebuild UI immediately with optimistic update
         createGamePath()
-        
+
+        // The save is a transaction, which fails outright offline: nothing was saved.
+        // The path used to keep showing the stage done and the next one open until
+        // the next reload quietly took them back.
+        fun saveFailed() {
+            undo()
+            createGamePath()
+            showSaveFailed("Couldn't save this stage. Check your connection and try again.") {
+                completeStage(stageId, starsEarned)
+            }
+        }
+
         // Save to cloud (async)
         viewLifecycleOwner.lifecycleScope.launch {
             try {
@@ -901,23 +955,30 @@ class LearningPathFragment : Fragment() {
                         Toast.LENGTH_LONG).show()
                 } else {
                     Log.e("LearningPath", "Failed to save stage completion to cloud")
-                    Toast.makeText(requireContext(),
-                        "⚠️ Couldn't save progress to cloud. Please check your connection.",
-                        Toast.LENGTH_LONG).show()
+                    saveFailed()
                 }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 Log.e("LearningPath", "Error completing stage in cloud", e)
-                Toast.makeText(requireContext(),
-                    "⚠️ Error saving progress. Please try again.",
-                    Toast.LENGTH_SHORT).show()
+                saveFailed()
             } finally {
                 // Clear the flag after cloud operation completes
                 stageCompletionInProgress = false
                 Log.d("LearningPath", "Stage completion flag cleared")
             }
         }
+    }
+
+    /** A save that didn't happen: say so, with Retry. */
+    private fun showSaveFailed(message: String, retry: () -> Unit) {
+        val b = _binding ?: return
+        Snackbar.make(b.root, message, Snackbar.LENGTH_LONG)
+            .setAction(R.string.learning_path_retry) {
+                // The Snackbar can outlast this screen's view.
+                if (_binding != null) retry()
+            }
+            .show()
     }
 
     /**
@@ -932,7 +993,18 @@ class LearningPathFragment : Fragment() {
         
         // Optimistic UI update
         stage.starsEarned = newStars
-        
+
+        // Like a stage completion, this save is a transaction that fails outright
+        // offline. The new stars used to stay on screen until a reload took them
+        // back, with no message at all.
+        fun saveFailed() {
+            stage.starsEarned = oldStars
+            createGamePath()
+            showSaveFailed("Couldn't save your new score. Check your connection and try again.") {
+                updateStageStars(stageId, newStars, oldStars)
+            }
+        }
+
         // Save to cloud (async)
         viewLifecycleOwner.lifecycleScope.launch {
             try {
@@ -951,11 +1023,13 @@ class LearningPathFragment : Fragment() {
                         Toast.LENGTH_LONG).show()
                 } else {
                     Log.e("LearningPath", "Failed to update stars in cloud")
+                    saveFailed()
                 }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 Log.e("LearningPath", "Error updating stars in cloud", e)
+                saveFailed()
             }
         }
     }
@@ -1101,4 +1175,18 @@ class LearningPathFragment : Fragment() {
         super.onDestroyView()
         _binding = null
     }
+
+    /** A finished quiz: the stage it was for, and the score. */
+    internal data class QuizOutcome(val stageId: String, val score: Int, val total: Int) {
+        // A quiz with no questions is 0%, not a division by zero.
+        val percentage: Int get() = score * 100 / total.coerceAtLeast(1)
+        val stars: Int get() = when {
+            percentage >= 80 -> 3
+            percentage >= 60 -> 2
+            percentage >= 40 -> 1
+            else -> 0
+        }
+    }
+
+    internal enum class QuizAction { COMPLETE, IMPROVE_STARS, KEEP_BEST, NOT_PASSED }
 }

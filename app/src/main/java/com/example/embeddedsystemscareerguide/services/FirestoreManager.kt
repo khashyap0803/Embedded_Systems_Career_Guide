@@ -8,9 +8,11 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import com.google.gson.Gson
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 
 /**
  * FirestoreManager - Cloud Data Manager for V2.0
@@ -35,6 +37,26 @@ class FirestoreManager private constructor(private val context: Context) {
 
     companion object {
         private const val TAG = "FirestoreManager"
+
+        private const val FLASHCARD_WRITE_TIMEOUT_MS = 15_000L
+
+        /** A stage's stored flashcard list, as saveFlashcards writes it. */
+        internal fun flashcardsFrom(raw: Any?): List<Flashcard> =
+            (raw as? List<*>).orEmpty().filterIsInstance<Map<*, *>>().map { map ->
+                Flashcard(
+                    id = (map["id"] as? Number)?.toInt() ?: 0,
+                    front = map["front"] as? String ?: "",
+                    back = map["back"] as? String ?: "",
+                    difficulty = map["difficulty"] as? String ?: "medium",
+                    category = map["category"] as? String ?: "concept",
+                    needsReview = map["needsReview"] as? Boolean ?: false
+                )
+            }
+
+        /** [cards] with card [id] marked, or null if there is no such card. */
+        internal fun withReview(cards: List<Flashcard>, id: Int, needsReview: Boolean): List<Flashcard>? =
+            if (cards.none { it.id == id }) null
+            else cards.map { if (it.id == id) it.copy(needsReview = needsReview) else it }
         
         // SharedPreferences keys
         private const val PREFS_NAME = "user_prefs"
@@ -648,19 +670,7 @@ class FirestoreManager private constructor(private val context: Context) {
                 .get()
                 .await()
             
-            @Suppress("UNCHECKED_CAST")
-            val flashcardsList = doc.get("flashcards") as? List<Map<String, Any>> ?: emptyList()
-            val flashcards = flashcardsList.map { map ->
-                Flashcard(
-                    id = (map["id"] as? Number)?.toInt() ?: 0,
-                    front = map["front"] as? String ?: "",
-                    back = map["back"] as? String ?: "",
-                    difficulty = map["difficulty"] as? String ?: "medium",
-                    category = map["category"] as? String ?: "concept",
-                    needsReview = map["needsReview"] as? Boolean ?: false
-                )
-            }
-            Result.success(flashcards)
+            Result.success(flashcardsFrom(doc.get("flashcards")))
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -670,18 +680,31 @@ class FirestoreManager private constructor(private val context: Context) {
     }
 
     /**
-     * Update flashcard review status
+     * Mark one flashcard known or for review.
+     *
+     * A transaction: the whole list is one document, and this used to read it, change
+     * one card and write it back as two separate steps, so two quick taps each wrote
+     * their own copy and the later one dropped the earlier mark. It also reported
+     * success when the read or the write had failed.
      */
     suspend fun updateFlashcardReview(stageId: Int, flashcardId: Int, needsReview: Boolean): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            val flashcardsResult = getFlashcards(stageId)
-            if (flashcardsResult.isSuccess) {
-                val flashcards = flashcardsResult.getOrNull()?.map { card ->
-                    if (card.id == flashcardId) card.copy(needsReview = needsReview) else card
-                } ?: emptyList()
-                saveFlashcards(stageId, flashcards)
+            val docRef = getStagesDocRef()
+                .collection(COLLECTION_FLASHCARDS)
+                .document(stageId.toString())
+            // Offline a transaction fails rather than queueing; the timeout covers a
+            // connection too slow to answer either way.
+            withTimeout(FLASHCARD_WRITE_TIMEOUT_MS) {
+                firestore.runTransaction { transaction ->
+                    val cards = withReview(flashcardsFrom(transaction.get(docRef).get("flashcards")), flashcardId, needsReview)
+                        ?: throw IllegalStateException("No flashcard $flashcardId in stage $stageId")
+                    transaction.set(docRef, mapOf("flashcards" to cards, "stageId" to stageId))
+                }.await()
             }
             Result.success(Unit)
+        } catch (e: TimeoutCancellationException) {
+            Log.e(TAG, "Timed out updating flashcard review", e)
+            Result.failure(e)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {

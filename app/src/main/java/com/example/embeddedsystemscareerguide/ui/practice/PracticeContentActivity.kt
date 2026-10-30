@@ -218,13 +218,19 @@ class PracticeContentActivity : AppCompatActivity() {
     private fun onFlashcardReviewed(card: com.example.embeddedsystemscareerguide.services.Flashcard, needsReview: Boolean) {
         val stage = currentStage ?: return
         lifecycleScope.launch {
-            flashcardService.updateFlashcardReview(stage.id, card.id, needsReview)
+            // After the save, not before: this used to say "Marked" even when the
+            // save had failed.
+            val saved = flashcardService.updateFlashcardReview(stage.id, card.id, needsReview).isSuccess
+            Toast.makeText(
+                this@PracticeContentActivity,
+                when {
+                    !saved -> "Couldn't save that. Check your connection and try again."
+                    needsReview -> "Marked for review"
+                    else -> "Nice - marked as known"
+                },
+                Toast.LENGTH_SHORT
+            ).show()
         }
-        Toast.makeText(
-            this,
-            if (needsReview) "Marked for review" else "Nice - marked as known",
-            Toast.LENGTH_SHORT
-        ).show()
     }
 
     private fun onProjectStatusCycled(project: Project) {
