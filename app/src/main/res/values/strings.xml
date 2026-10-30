@@ -169,6 +169,8 @@
     <string name="practice_empty_projects">No project suggestions available right now.</string>
     <string name="practice_error_generic">Something went wrong. Pull down to try again.</string>
     <string name="practice_needs_assessment">Complete your assessment first to unlock personalized practice.</string>
+    <string name="quiz_fallback_title">General practice questions</string>
+    <string name="quiz_fallback_result">Score: %1$d/%2$d (%3$d%%)\n\nWe couldn\'t make a quiz for this stage right now, so these were general practice questions. They don\'t count toward the stage.</string>
     <string name="project_status_not_started">▶ Start Project</string>
     <string name="project_status_in_progress">✅ Mark Completed</string>
     <string name="project_status_completed">🎉 Completed</string>

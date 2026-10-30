@@ -34,9 +34,9 @@ class QuizRetryTest {
     @Test
     fun `a 429 waits out Retry-After, read as seconds`() {
         val sleeps = mutableListOf<Long>()
-        val (error, attempts) = ladder({ OllamaService.httpFailureFor(429, "", "20") }, sleeps)
+        val (error, attempts) = ladder({ OllamaService.httpFailureFor(429, "", "10") }, sleeps)
         assertEquals(3, attempts)
-        assertEquals(listOf(20_000L, 20_000L), sleeps)
+        assertEquals(listOf(10_000L, 10_000L), sleeps)
         assertEquals(NetworkModule.RATE_LIMITED_MESSAGE, error?.message)
     }
 
