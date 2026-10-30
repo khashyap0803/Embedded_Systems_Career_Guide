@@ -716,7 +716,7 @@ class AssessmentActivity : AppCompatActivity() {
     }
 
     /**
-     * A retake whose progress reset was refused replaced nothing: the old learning
+     * A retake whose path could not be replaced wrote nothing: the old learning
      * path and progress stand. The new report is already saved, so Try again runs
      * only the path step again; Continue to Home keeps the path the student had.
      */
