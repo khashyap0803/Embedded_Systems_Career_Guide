@@ -18,14 +18,9 @@ git clone https://github.com/your-repo/Embedded_Systems_Career_Guide.git
 cd Embedded_Systems_Career_Guide
 ```
 
-## Step 2: Configure Gemini API
+## Step 2: AI features need no API key
 
-1. Get API key from [Google AI Studio](https://aistudio.google.com/)
-2. Open `local.properties`
-3. Add:
-   ```properties
-   GEMINI_API_KEY=your_api_key_here
-   ```
+The app holds no AI API key. AI requests go through `NetworkModule` to the authenticated Ollama gateway, and each carries the student's Firebase ID token as `Authorization: Bearer <token>`. Nothing goes in `local.properties` for AI; Android Studio fills in `sdk.dir` itself.
 
 ## Step 3: Configure Firebase
 
@@ -80,8 +75,8 @@ app/
 
 ## Common Issues
 
-### GEMINI_API_KEY not found
-Ensure `local.properties` is not in `.gitignore` or create it manually.
+### AI features fail with "Server down" or a sign-in error
+The app needs a signed-in Firebase account and a reachable AI gateway. There is no API key to set.
 
 ### Google Sign-In fails
 Add correct SHA-1 fingerprint in Firebase Console.

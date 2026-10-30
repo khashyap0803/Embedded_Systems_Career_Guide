@@ -102,9 +102,10 @@ class StageContentService(private val context: Context) {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            Log.e(TAG, "Error getting stage content", e)
+            Log.e(TAG, "Error getting stage content (${e.javaClass.simpleName})")
+            Log.d(TAG, "Error getting stage content", e)
             withContext(Dispatchers.Main) {
-                callback.onError("Failed to load content: ${e.message}")
+                callback.onError("Couldn't load this lesson. ${StudentMessages.aiFailure(e)}")
             }
         }
     }
@@ -410,15 +411,13 @@ Return ONLY valid JSON:
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            Log.e(TAG, "Error generating content", e)
+            Log.e(TAG, "Error generating content (${e.javaClass.simpleName})")
+            Log.d(TAG, "Error generating content", e)
             // Previously this reported onSuccess(fallback), so an outage
             // delivered generic boilerplate that looked exactly like the real
             // AI-written lesson and left the retry UI unreachable.
             withContext(Dispatchers.Main) {
-                callback.onError(
-                    e.message?.takeIf { it.isNotBlank() }
-                        ?: "Could not generate this lesson. Check your connection and retry."
-                )
+                callback.onError("Couldn't generate this lesson. ${StudentMessages.aiFailure(e)}")
             }
         }
     }

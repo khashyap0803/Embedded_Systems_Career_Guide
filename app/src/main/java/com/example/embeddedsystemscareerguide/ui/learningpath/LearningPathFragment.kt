@@ -65,12 +65,7 @@ class LearningPathFragment : Fragment() {
     // M4 fix: Constants delegate to PrefsKeys for centralization
     companion object {
         private val PREFS_NAME = PrefsKeys.PREFS_LEARNING
-        private val KEY_TOTAL_XP = PrefsKeys.TOTAL_XP
         private val KEY_CURRENT_STAGE = PrefsKeys.CURRENT_STAGE
-        private val KEY_STREAK = PrefsKeys.STREAK
-        private val KEY_LAST_VISIT_DATE = PrefsKeys.LAST_ACTIVE_DATE
-        private val KEY_STAGE_STARS = PrefsKeys.STAGE_STARS_PREFIX
-        private const val KEY_FIRST_LAUNCH = "is_first_launch"
 
         /**
          * Decides what this screen shows, from the stored path and, if there is
@@ -546,31 +541,6 @@ class LearningPathFragment : Fragment() {
 
     // L2 fix: Empty setupUI() removed - was: "FAB help removed as per user request"
 
-    /**
-     * Initialize progress for first-time users with proper defaults
-     * CLOUD-ONLY: Only sets home page display values. Cloud is the source of truth.
-     */
-    private fun initializeProgressForNewUsers() {
-        val isFirstLaunch = prefs.getBoolean(KEY_FIRST_LAUNCH, true)
-
-        if (isFirstLaunch) {
-            // Just mark first launch as done and set home page defaults for display
-            prefs.edit()
-                .putBoolean(KEY_FIRST_LAUNCH, false)
-                // Reset home page display values only
-                .putInt("home_total_xp", 0)
-                .putInt("home_current_level", 1)
-                .putInt("home_streak", 1)
-                .putInt("home_progress_percentage", 0)
-                .putInt("home_completed_stages", 0)
-                // 0 means "path not generated yet". Writing a guessed total
-                // here would make Home render a denominator the user's actual
-                // generated path does not have.
-                .putInt("home_total_stages", 0)
-                .apply()
-        }
-    }
-
     // DEPRECATED: loadProgressFromPreferences removed - we now use cloud-only via loadProgressFromCloud()
 
     // The daily streak update moved to UserProgressSyncService.recordDailyVisit.
@@ -851,8 +821,7 @@ class LearningPathFragment : Fragment() {
 
         // completedStageCount comes from the caller's own UserProgress.completedStages
         // (the live cloud-backed source of truth) rather than the "completed_stages"
-        // prefs StringSet, which is only ever written by the dead saveLocalProgress()
-        // path and was therefore always empty, pinning this header at 0 permanently.
+        // prefs StringSet, which nothing writes any more.
         //
         // The denominator is the generated path's real length. It is not a fixed
         // 16 - StageGeneratorService asks the model for TARGET_STAGES and the

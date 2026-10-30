@@ -84,7 +84,8 @@ class HomeFragment : Fragment() {
         setupSwipeRefresh()
         setupUserWelcome()
         loadDailyTip()
-        loadProgressFromCloud() // CLOUD-ONLY: Load all data from cloud
+        // Progress is loaded in onResume, which always follows: loading here too
+        // made Home read everything twice whenever it appeared.
         setupQuickActions()
         setupAchievements()
         startAnimations()
@@ -92,7 +93,9 @@ class HomeFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        // Refresh progress from cloud when returning to home page
+        // CLOUD-ONLY: the one load when Home first appears and on every return to it
+        // (another tab recreates the view, another Activity only resumes it). Retry
+        // and pull-to-refresh load directly.
         loadProgressFromCloud()
     }
 

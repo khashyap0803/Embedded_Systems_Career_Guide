@@ -43,7 +43,7 @@ import java.util.concurrent.TimeUnit
 - **OkHttp** — Direct HTTP client usage (bypasses `NetworkModule`)
 - **Gson** — JSON parsing of Gemini API responses
 - **Coroutines** — Async execution on `Dispatchers.IO`
-- **BuildConfig** — Accesses `GEMINI_API_KEY`
+- **No API key** — `BuildConfig.GEMINI_API_KEY` no longer exists; requests go to the Ollama gateway through `NetworkModule`, authenticated with the student's Firebase ID token
 
 ---
 

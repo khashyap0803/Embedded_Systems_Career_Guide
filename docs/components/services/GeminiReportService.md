@@ -64,13 +64,15 @@ suspend fun generateReport(
 ### Gemini API Call Pattern
 
 ```kotlin
-// Uses gemini-2.0-flash-exp model
-val response = OkHttpClient.executeRequest(
-    url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent",
-    apiKey = BuildConfig.GEMINI_API_KEY,
-    prompt = buildPrompt(question, answer)
-)
+// Requests go to the Ollama gateway; no API key is sent
+val request = Request.Builder()
+    .url(NetworkModule.getOllamaGenerateUrl())
+    .post(body)
+    .build()
+NetworkModule.longTimeoutClient.newCall(request).execute()
 ```
+
+The app holds no AI API key. AI requests go through `NetworkModule` to the authenticated Ollama gateway, and each carries the student's Firebase ID token as `Authorization: Bearer <token>`.
 
 ### Safety Settings
 

@@ -17,6 +17,7 @@ import com.example.embeddedsystemscareerguide.models.challenge.*
 import com.example.embeddedsystemscareerguide.services.Challenge2QuestionInternal
 import com.example.embeddedsystemscareerguide.services.GeminiChallengeService
 import com.example.embeddedsystemscareerguide.services.PreReleaseEventService
+import com.example.embeddedsystemscareerguide.services.StudentMessages
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import org.json.JSONArray
@@ -220,7 +221,8 @@ class Challenge2Activity : AppCompatActivity() {
             } else {
                 // Show error dialog and allow retry
                 showLoading(false)
-                showGeminiErrorDialog(geminiResult.exceptionOrNull()?.message ?: "Failed to generate questions")
+                android.util.Log.d("Challenge2", "Question generation failed", geminiResult.exceptionOrNull())
+                showGeminiErrorDialog(StudentMessages.aiFailure(geminiResult.exceptionOrNull()))
             }
         }
     }
@@ -281,7 +283,7 @@ class Challenge2Activity : AppCompatActivity() {
     private fun showGeminiErrorDialog(errorMessage: String) {
         AlertDialog.Builder(this)
             .setTitle("⚠️ Connection Error")
-            .setMessage("Failed to generate questions.\n\nError: $errorMessage\n\nPlease check your internet connection and try again.")
+            .setMessage("Failed to generate questions.\n\n$errorMessage")
             .setPositiveButton("🔄 Retry") { _, _ ->
                 questions.clear()
                 questionAnswers.clear()

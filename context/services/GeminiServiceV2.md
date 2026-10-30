@@ -45,7 +45,7 @@ V1 had separate, duplicated Gemini API call logic in each service. V2 centralize
 ## Complete Code Walkthrough
 
 ### Lines 29-58: Class Setup
-- **API Config**: Uses `BuildConfig.GEMINI_API_KEY`, model is `gemini-2.5-flash`
+- **API Config**: Used `BuildConfig.GEMINI_API_KEY` with `gemini-2.5-flash`. Both this class and that field have since been removed; the app holds no AI API key
 - **Retry Config**: 3 retries, starting at 1 second delay
 - **Singleton**: Thread-safe double-checked locking
 - **HTTP Client**: Creates its OWN `OkHttpClient` (60s connect, 120s read, 60s write) — does NOT use `NetworkModule`

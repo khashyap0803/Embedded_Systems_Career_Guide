@@ -15,6 +15,7 @@ import com.example.embeddedsystemscareerguide.databinding.ActivityQuizBinding
 import com.example.embeddedsystemscareerguide.services.FirestoreManager
 import com.example.embeddedsystemscareerguide.services.GeminiQuizService
 import com.example.embeddedsystemscareerguide.services.QuizResult
+import com.example.embeddedsystemscareerguide.services.StudentMessages
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.CancellationException
@@ -183,7 +184,8 @@ class QuizActivity : AppCompatActivity() {
                 throw e
             } catch (e: Exception) {
                 showLoading(false)
-                Toast.makeText(this@QuizActivity, "Error loading quiz: ${e.message}", Toast.LENGTH_SHORT).show()
+                Log.d("QuizActivity", "Quiz generation failed", e)
+                Toast.makeText(this@QuizActivity, "Couldn't load the quiz. ${StudentMessages.aiFailure(e)}", Toast.LENGTH_SHORT).show()
                 finish()
             }
         }

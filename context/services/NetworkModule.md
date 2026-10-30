@@ -13,7 +13,7 @@ This file is the **central networking configuration** for the app. It provides p
 It provides:
 1. **`standardClient`** — for normal API calls (chat, quiz) with 60-second timeouts
 2. **`longTimeoutClient`** — for report generation with 5-minute timeouts
-3. **`getGeminiApiUrl()`** — builds the correct Gemini API URL with the API key
+3. **`getOllamaGenerateUrl()` / `getOllamaChatUrl()`** — the gateway's Ollama endpoints. The app holds no API key; an interceptor adds the student's Firebase ID token to every request
 
 It also implements **certificate pinning** for security in release builds.
 
@@ -90,15 +90,16 @@ val longTimeoutClient: OkHttpClient by lazy {
 
 Same as standard but with much longer timeouts — 90s connect, **5 minutes read**, 90s write. Needed because Gemini report generation processes 50 questions and can take several minutes.
 
-### Lines 63-65: API URL Builder
+### API URLs and authentication
 
 ```kotlin
-fun getGeminiApiUrl(model: String = "gemini-2.5-flash"): String {
-    return "https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=${BuildConfig.GEMINI_API_KEY}"
-}
+fun getOllamaGenerateUrl(): String = "$OLLAMA_BASE_URL/api/generate"
+fun getOllamaChatUrl(): String = "$OLLAMA_BASE_URL/api/chat"
 ```
 
-Constructs the full Gemini API URL. Default model is `gemini-2.5-flash`. The API key comes from `BuildConfig.GEMINI_API_KEY` (injected from `local.properties` at build time).
+`OLLAMA_BASE_URL` is an authenticated gateway in front of the Ollama server. The app holds no AI API key. AI requests go through `NetworkModule` to the authenticated Ollama gateway, and each carries the student's Firebase ID token as `Authorization: Bearer <token>`. The gateway answers 401 for a missing or expired token, 403 for a forbidden endpoint and 429 when one account sends too many requests.
+
+The old `getGeminiApiUrl()` and the `BuildConfig.GEMINI_API_KEY` field it read (filled from `local.properties` at build time) have been removed.
 
 ---
 
@@ -106,7 +107,7 @@ Constructs the full Gemini API URL. Default model is `gemini-2.5-flash`. The API
 
 | Import | Why |
 |--------|-----|
-| `BuildConfig` | Access to the GEMINI_API_KEY build config field |
+| `FirebaseAuth` | The signed-in student's ID token, sent as the `Authorization` header |
 | `CertificatePinner` | OkHttp's SSL certificate pinning |
 | `OkHttpClient` | HTTP client for API calls |
 | `TimeUnit` | For timeout configuration |
