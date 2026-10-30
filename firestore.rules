@@ -7,9 +7,15 @@ service cloud.firestore {
     // Allow anyone to READ usernames to check availability
     // Only authenticated users can CREATE their username
     match /usernames/{username} {
-      // Anyone can read to check availability during registration
-      // Also needed for username-based login
-      allow read: if true;
+      // Single-document reads stay public: registration checks availability
+      // and username login resolves a username before anyone is signed in.
+      allow get: if true;
+
+      // Listing is limited to a signed-in user's own mapping, which is the
+      // only query the app runs (LoginActivity: whereEqualTo("uid", <own uid>)).
+      // A public list handed out every username, and from there - one public
+      // get of users/{username} at a time - every user's email.
+      allow list: if request.auth != null && resource.data.uid == request.auth.uid;
       
       // Only the owner (matching UID) can create their username
       allow create: if request.auth != null && 
@@ -24,10 +30,17 @@ service cloud.firestore {
     // C2 fix: Restrict public reads to only allow fetching email for username-based login
     // Full profile access requires authentication
     match /users/{username} {
-      // Allow anyone to read ONLY for username-based login (email lookup)
-      // Note: This exposes email but is required for username login flow
-      // Sensitive data should be stored in authenticated subcollections
-      allow read: if true;
+      // Username login reads users/{username} before sign-in to find the email
+      // to sign in with, so a single-document get has to stay public. That
+      // still exposes the email of a username someone already knows; closing
+      // it needs the lookup moved server-side.
+      allow get: if true;
+
+      // Listing is limited to a signed-in user's own profile, which is the only
+      // query the app runs (LoginActivity: whereEqualTo("email", <own email>)).
+      // `allow read: if true` let anyone, signed in or not, list the whole
+      // collection and collect every user's email, uid and display name.
+      allow list: if request.auth != null && resource.data.email == request.auth.token.email;
       
       // Only authenticated users can create/update their own profile
       // Use request.resource.data.uid for create, resource.data.uid for update

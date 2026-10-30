@@ -11,13 +11,13 @@
       },
 
       "participants": {
-        ".read": "auth != null",
-        ".write": "auth != null"
+        ".read": "auth != null && (auth.token.admin === true || auth.token.email === 'exam1234@challenge.app')",
+        ".write": "auth != null && (auth.token.admin === true || auth.token.email === 'exam1234@challenge.app')"
       },
 
       "rankings": {
-        ".read": "auth != null",
-        ".write": "auth != null"
+        ".read": "auth != null && (auth.token.admin === true || auth.token.email === 'exam1234@challenge.app')",
+        ".write": "auth != null && (auth.token.admin === true || auth.token.email === 'exam1234@challenge.app')"
       }
     }
   }

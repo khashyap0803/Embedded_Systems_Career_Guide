@@ -1,0 +1,13 @@
+{
+  "name": "es-career-guide-rules-tests",
+  "private": true,
+  "description": "Emulator tests for firestore.rules and database.rules.json. Never deploys; runs under a demo- project id.",
+  "scripts": {
+    "test": "firebase --config ../firebase.json emulators:exec --only firestore,database --project demo-es-career-guide \"node --test rules.test.mjs\""
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "6.0.0",
+    "firebase": "13.0.0",
+    "firebase-tools": "15.33.0"
+  }
+}

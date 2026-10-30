@@ -522,9 +522,9 @@ object ChallengeConstants {
     const val PATH_UNIVERSAL = "universal"
     
     const val USER_EMAIL = "exam1234@challenge.app"
-    const val USER_PASSWORD = "exam1234"
+    const val USER_PASSWORD = "<redacted>"
     const val ADMIN_EMAIL = "admin@challenge.app"
-    const val ADMIN_PASSWORD = "admin1234"
+    const val ADMIN_PASSWORD = "<redacted>"
     
     val ROLL_NUMBER_REGEX = Regex("^1601[0-9]{8}$")
 }
@@ -563,9 +563,9 @@ object ChallengeConstants {
 | Constant | Value | Used For |
 |----------|-------|----------|
 | `USER_EMAIL` | `"exam1234@challenge.app"` | Participant login |
-| `USER_PASSWORD` | `"exam1234"` | Participant password |
+| `USER_PASSWORD` | *(redacted)* | Participant password |
 | `ADMIN_EMAIL` | `"admin@challenge.app"` | Admin login |
-| `ADMIN_PASSWORD` | `"admin1234"` | Admin password |
+| `ADMIN_PASSWORD` | *(redacted)* | Admin password |
 
 > ⚠️ **Security Warning**: These credentials are hardcoded in the source code and will be compiled into the APK. Anyone who decompiles the APK can extract them.
 

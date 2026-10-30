@@ -49,7 +49,7 @@ A special challenge mode for pre-release publicity event where attendees:
 └─────────────────────────────────────┘
 ```
 
-- **Special Account:** `exam1234` / `exam1234`
+- **Special Account:** `exam1234@challenge.app` (password held by the event organiser, not in this repository)
 - **Detection:** When this credential is detected → Skip normal app flow
 - **Single credential** for ALL devices at event
 
@@ -603,8 +603,8 @@ FinalScore = (80×0.4) + (90×0.4) + (25×0.2) = 32 + 36 + 5 = 73
 
 | Account | Email | Password | Role |
 |---------|-------|----------|------|
-| **User Account** | `exam1234@challenge.app` | `exam1234` | Participant login |
-| **Admin Account** | `admin@challenge.app` | `admin1234` | Full admin access |
+| **User Account** | `exam1234@challenge.app` | *held by the organiser* | Participant login |
+| **Admin Account** | `admin@challenge.app` | *held by the organiser* | Full admin access |
 
 **Pre-event Setup Required:**
 1. Create both accounts in Firebase Console → Authentication
@@ -613,7 +613,7 @@ FinalScore = (80×0.4) + (90×0.4) + (25×0.2) = 32 + 36 + 5 = 73
 
 ### Admin Credentials
 - **Email:** `admin@challenge.app`
-- **Password:** `admin1234`
+- **Password:** held by the event organiser, not in this repository
 - When detected (via custom claim) → Redirect directly to **Admin Dashboard** (not roll number entry)
 
 ### Login Flow Detection
@@ -1536,8 +1536,8 @@ private fun showChallengeBanner(message: String, challengeNumber: Int) {
 | Item | Decision |
 |------|----------|
 | **Authentication** | Real **Firebase Auth** accounts (not hardcoded) |
-| **User Credential** | `exam1234` / `exam1234` |
-| **Admin Credential** | `admin1234` / `admin1234` → Full dashboard |
+| **User Credential** | `exam1234@challenge.app` (password held by the organiser) |
+| **Admin Credential** | `admin@challenge.app` (password held by the organiser) → Full dashboard |
 | **Identification** | Roll number `1601XXXXXXXX` |
 | **Expected Participants** | 20-50 (max 50) |
 | **Data Storage** | **Cloud-only** - no local storage |
