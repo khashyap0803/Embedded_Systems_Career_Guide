@@ -28,11 +28,9 @@ class KeyPathCostHarness {
 
     private val moduleDir = File("").absoluteFile
     private val assets = File(moduleDir, "src/main/assets")
-    private val outDir = File(
-        "C:/Users/nani0/AppData/Local/Temp/claude/" +
-            "F--Documents-android-Embedded-Systems-Career-Guide/" +
-            "2424306d-39c5-4be8-b9c7-984c9e1fdfad/scratchpad/ecg015"
-    )
+    // Under the module's build/, which git ignores. A hard-coded C:/Users/... path
+    // here was relative everywhere but Windows, so it left an app/C:/ folder behind.
+    private val outDir = File(moduleDir, "build/harness/ecg015")
 
     private val gson = Gson()
 

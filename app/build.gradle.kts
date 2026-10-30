@@ -4,16 +4,7 @@ plugins {
     alias(libs.plugins.google.gms.services)
 }
 
-// Load API key from local.properties (outside android block for proper resolution)
 import java.util.Properties
-val localProperties = Properties()
-val localPropertiesFile = rootProject.file("local.properties")
-if (localPropertiesFile.exists()) {
-    localPropertiesFile.inputStream().use { stream ->
-        localProperties.load(stream)
-    }
-}
-val geminiApiKey: String = localProperties.getProperty("GEMINI_API_KEY") ?: ""
 
 // Release signing credentials live in keystore.properties (gitignored) next to
 // the jks, never in this file. Without a fixed release key every build fell back
@@ -39,9 +30,6 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-
-        // Inject API key into BuildConfig
-        buildConfigField("String", "GEMINI_API_KEY", "\"$geminiApiKey\"")
     }
 
     signingConfigs {

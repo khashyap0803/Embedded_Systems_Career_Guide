@@ -1128,24 +1128,6 @@ class LearningPathFragment : Fragment() {
         }
     }
 
-    /**
-     * CLOUD-ONLY: Sync cloudProgress object directly to cloud
-     * Does not use local SharedPreferences
-     */
-    private fun syncProgressToCloud() {
-        val progress = cloudProgress ?: return
-        viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                val success = progressSyncService.saveProgress(progress)
-                if (success) {
-                    android.util.Log.d("LearningPath", "Progress synced to cloud")
-                }
-            } catch (e: Exception) {
-                android.util.Log.e("LearningPath", "Cloud sync failed: ${e.message}")
-            }
-        }
-    }
-
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
