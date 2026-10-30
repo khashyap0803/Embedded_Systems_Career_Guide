@@ -138,6 +138,11 @@ class HomeFragment : Fragment() {
     private fun loadProgressFromCloud() {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
+                // Today's streak first (once a day, whichever screen asks first), so the
+                // read below includes it rather than yesterday's.
+                UserProgressSyncService.streakMessage(progressSyncService.recordDailyVisit())?.let {
+                    Toast.makeText(requireContext(), it, Toast.LENGTH_LONG).show()
+                }
                 val load = progressSyncService.loadProgressResult()
                 totalStageCount = resolveTotalStageCount()
 

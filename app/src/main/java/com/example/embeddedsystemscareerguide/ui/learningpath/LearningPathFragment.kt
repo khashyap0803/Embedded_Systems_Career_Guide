@@ -465,6 +465,13 @@ class LearningPathFragment : Fragment() {
      */
     private fun loadProgressFromCloud() {
         viewLifecycleOwner.lifecycleScope.launch {
+            // Today's streak is counted once a day, by whichever of MainActivity, Home
+            // and this screen asks first. This screen used to do it on every open; now
+            // it waits for that update so the read below includes it.
+            UserProgressSyncService.streakMessage(progressSyncService.recordDailyVisit())?.let {
+                Toast.makeText(requireContext(), it, Toast.LENGTH_LONG).show()
+            }
+
             // A failed read must NOT be treated as "new user".
             //
             // Both branches below previously assigned a zeroed UserProgress to
@@ -478,7 +485,6 @@ class LearningPathFragment : Fragment() {
                     cloudProgress = progress
                     Log.d("LearningPath", "Loaded progress from cloud: XP=${progress.totalXP}, completed=${progress.completedStages.size}, stars=${progress.stageStars}, streak=${progress.streak}")
                     applyProgressToStages(progress)
-                    updateStreakSystem()
                 }
 
                 is UserProgressSyncService.ProgressLoad.Absent -> {
@@ -486,13 +492,11 @@ class LearningPathFragment : Fragment() {
                     val fresh = UserProgressSyncService.UserProgress()
                     cloudProgress = fresh
                     applyProgressToStages(fresh)
-                    updateStreakSystem()
                 }
 
                 is UserProgressSyncService.ProgressLoad.Failed -> {
                     Log.e("LearningPath", "Cloud progress read failed; keeping existing state", load.cause)
-                    // Render whatever we already hold (possibly nothing) and, critically,
-                    // skip updateStreakSystem() so nothing is written back.
+                    // Render whatever we already hold (possibly nothing); nothing is written back.
                     cloudProgress?.let { applyProgressToStages(it) }
                     Toast.makeText(
                         context,
@@ -569,80 +573,7 @@ class LearningPathFragment : Fragment() {
 
     // DEPRECATED: loadProgressFromPreferences removed - we now use cloud-only via loadProgressFromCloud()
 
-    /**
-     * CLOUD-ONLY: Update streak system using cloud data directly
-     * Reads from cloudProgress, calculates new streak, saves directly to cloud
-     */
-    private fun updateStreakSystem() {
-        // Locale-independent: see AppDate for why SimpleDateFormat + Locale.getDefault()
-        // was silently resetting streaks on locale/calendar changes.
-        val today = com.example.embeddedsystemscareerguide.AppDate.todayIso()
-
-        // Use cloud progress directly - NO local SharedPreferences
-        val currentProgress = cloudProgress ?: return
-        val lastVisit = currentProgress.lastVisitDate
-        val currentStreak = currentProgress.streak
-        val bestStreak = currentProgress.bestStreak
-
-        val wasStreakBroken = lastVisit.isNotEmpty() && lastVisit != today && !isYesterday(lastVisit)
-
-        val newStreak = when {
-            lastVisit.isEmpty() -> currentStreak.coerceAtLeast(1) // First visit, keep cloud streak or default to 1
-            lastVisit == today -> currentStreak // Same day, keep streak
-            isYesterday(lastVisit) -> currentStreak + 1 // Consecutive day, increase streak
-            else -> 1 // Streak broken, reset to 1
-        }
-
-        // Update best streak if needed
-        val newBestStreak = maxOf(newStreak, bestStreak)
-
-        // Only update if something changed
-        if (newStreak != currentStreak || newBestStreak != bestStreak || lastVisit != today) {
-            // Update cloud progress object
-            cloudProgress = currentProgress.copy(
-                streak = newStreak,
-                bestStreak = newBestStreak,
-                lastVisitDate = today,
-                lastUpdated = System.currentTimeMillis()
-            )
-            
-            // Save directly to cloud - NO local storage
-            viewLifecycleOwner.lifecycleScope.launch {
-                try {
-                    // Streak fields only: writing the whole cached progress back
-                    // could undo a stage completed since this screen loaded it.
-                    progressSyncService.saveStreak(newStreak, newBestStreak, today)
-                    Log.d("LearningPath", "Streak updated in cloud: $currentStreak -> $newStreak")
-                } catch (e: Exception) {
-                    Log.e("LearningPath", "Failed to save streak to cloud", e)
-                }
-            }
-        }
-
-        // Show streak notifications
-        if (wasStreakBroken && currentStreak > 1) {
-            Toast.makeText(requireContext(),
-                "🔥 Previous streak: ${currentStreak} days\nStarting fresh! Let's build a new streak!",
-                Toast.LENGTH_LONG).show()
-        } else if (newStreak > currentStreak) {
-            val milestoneMessage = when (newStreak) {
-                7 -> "🔥 1 WEEK STREAK! Amazing dedication!"
-                14 -> "🔥 2 WEEK STREAK! You're unstoppable!"
-                30 -> "🔥 30 DAY STREAK! Legendary commitment!"
-                else -> if (newStreak % 10 == 0) "🔥 $newStreak DAY STREAK! Keep it up!" else null
-            }
-            milestoneMessage?.let {
-                Toast.makeText(requireContext(), it, Toast.LENGTH_LONG).show()
-            }
-        }
-        
-        // Update UI with new streak
-        updateUserStats(currentProgress.totalXP, currentProgress.currentStage, newStreak, currentProgress.completedStages.size)
-    }
-
-    private fun isYesterday(dateString: String): Boolean =
-        com.example.embeddedsystemscareerguide.AppDate.isYesterday(dateString)
-
+    // The daily streak update moved to UserProgressSyncService.recordDailyVisit.
 
     // NOTE: loadStagesFromAssets() and createFallbackStages() removed
     // The app now regenerates stages from assessment report or redirects to assessment
