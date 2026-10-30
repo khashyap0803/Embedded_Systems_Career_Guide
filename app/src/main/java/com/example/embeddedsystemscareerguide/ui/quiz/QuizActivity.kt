@@ -402,6 +402,8 @@ class QuizActivity : AppCompatActivity() {
     }
 
     private fun returnResult() {
+        // The launch intent, so EXTRA_STAGE_ID goes back with the score: Learning Path
+        // reads the stage from the result, since it may have been recreated meanwhile.
         val resultIntent = intent
         resultIntent.putExtra(RESULT_QUIZ_SCORE, correctAnswers)
         resultIntent.putExtra(RESULT_TOTAL_QUESTIONS, questions.size)
