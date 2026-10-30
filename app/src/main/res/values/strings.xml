@@ -216,6 +216,9 @@
     <!-- Not saved: an earlier complete report was kept rather than replaced. -->
     <string name="report_kept_title">This Attempt Didn\'t Finish</string>
     <string name="report_kept_body">We couldn\'t finish building your new report, so your earlier report has been kept and is the one shown.\nYour answers from this attempt weren\'t used. You can take the assessment again.</string>
+    <string name="retake_not_started_title">Couldn\'t start your retake. Please try again.</string>
+    <string name="retake_not_started_body">Your learning path and progress haven\'t changed.</string>
+    <string name="retake_try_again">Try again</string>
     <string name="report_preview_button">📄 Preview Report</string>
     <string name="report_kept_preview_button">📄 View Earlier Report</string>
 
