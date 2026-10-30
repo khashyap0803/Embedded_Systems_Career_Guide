@@ -1,14 +1,16 @@
 package com.example.embeddedsystemscareerguide
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
 
 /**
- * Log.w, Log.e and Log.i survive R8 in release builds, and some of them carried
- * the student's roll number. Log.d and Log.v are not checked: they are allowed
- * to carry diagnostics.
+ * Log.w, Log.e and Log.i survive R8 in release builds. Some of them carried the
+ * student's roll number, and the quiz and challenge services wrote the model's
+ * reply text. Log.d and Log.v are not checked: they are allowed to carry
+ * diagnostics.
  */
 class ReleaseLogIdentifierTest {
 
@@ -21,6 +23,26 @@ class ReleaseLogIdentifierTest {
             """|\$(rollNumber|username|userName|email|userEmail|uid|userId|displayName)\b""" +
             """|\+\s*(rollNumber|username|userName|email|userEmail|uid|userId|displayName)\b"""
     )
+
+    /** Variables that hold a model's reply, or text taken from one. */
+    private val replyText = setOf(
+        "response", "responseText", "cleaned", "cleanedResponse", "cleanJson", "rawResponse",
+        "reply", "content", "jsonArray", "problemStatement"
+    )
+
+    /**
+     * Whether a reply-text variable is interpolated into the message. Its length,
+     * size or HTTP code may be logged; the text may not. A bare ${'$'}name always
+     * prints the text, even with ".length" written after it.
+     */
+    private fun logsReplyText(call: String): Boolean {
+        val bare = Regex("""\$([A-Za-z_]\w*)""").findAll(call).any { it.groupValues[1] in replyText }
+        val braced = Regex("""\$\{\s*([A-Za-z_]\w*)([^}]*)\}""").findAll(call).any {
+            it.groupValues[1] in replyText &&
+                !it.groupValues[2].trim().matches(Regex("""\??\.(length|size|code)"""))
+        }
+        return bare || braced
+    }
 
     private fun releaseLogCalls(): List<String> {
         // Tests run from the module directory.
@@ -45,6 +67,21 @@ class ReleaseLogIdentifierTest {
     fun `release logs carry no student identifiers`() {
         val offenders = releaseLogCalls().filter { identifier.containsMatchIn(it) }
         assertEquals(offenders.joinToString("\n"), 0, offenders.size)
+    }
+
+    @Test
+    fun `release logs carry no model reply text`() {
+        val offenders = releaseLogCalls().filter { logsReplyText(it) }
+        assertEquals(offenders.joinToString("\n"), 0, offenders.size)
+    }
+
+    @Test
+    fun `the check sees reply text when there is some`() {
+        assertTrue(logsReplyText("""Log.e(TAG, "Raw response (first 500 chars): ${'$'}{response.take(500)}")"""))
+        assertTrue(logsReplyText("""Log.e(TAG, "No valid JSON object found. Cleaned response: ${'$'}cleaned")"""))
+        assertTrue(logsReplyText("""Log.w(TAG, "Bad reply ${'$'}cleaned.length")"""))
+        assertFalse(logsReplyText("""Log.e(TAG, "Error parsing quiz response (${'$'}{response.length} chars): ${'$'}{e.message}")"""))
+        assertFalse(logsReplyText("""Log.e(TAG, "API Error: ${'$'}{response.code}")"""))
     }
 
     @Test

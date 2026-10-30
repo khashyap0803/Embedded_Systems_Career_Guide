@@ -263,7 +263,7 @@ DO NOT include comments - students should order pure code blocks.
                     )
                 }.shuffled() // Shuffle for the challenge
             
-            Log.i(TAG, "Generated ${result.size} code blocks for problem: $problemStatement")
+            Log.i(TAG, "Generated ${result.size} code blocks for a ${problemStatement.length}-char problem")
             Result.success(result)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to generate code blocks", e)
@@ -1147,7 +1147,8 @@ Return ONLY this JSON (no markdown, no explanation):
         }
         
         if (finalStart == -1 || finalEnd == -1 || finalStart >= finalEnd) {
-            Log.e(TAG, "No valid JSON array found. Cleaned response: ${cleaned.take(500)}")
+            // The reply's length, not its text: Log.e survives R8 into release builds.
+            Log.e(TAG, "No valid JSON array found in the response (${cleaned.length} chars)")
             throw Exception("Invalid JSON array in response. No array brackets found.")
         }
         
@@ -1177,7 +1178,7 @@ Return ONLY this JSON (no markdown, no explanation):
         val start = cleaned.indexOf('{')
         val end = cleaned.lastIndexOf('}')
         if (start == -1 || end == -1 || start >= end) {
-            Log.e(TAG, "No valid JSON object found. Cleaned response: $cleaned")
+            Log.e(TAG, "No valid JSON object found in the response (${cleaned.length} chars)")
             throw Exception("Invalid JSON object in response")
         }
         return cleaned.substring(start, end + 1)

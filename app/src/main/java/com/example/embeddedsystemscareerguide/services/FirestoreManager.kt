@@ -112,11 +112,6 @@ class FirestoreManager private constructor(private val context: Context) {
             stages.firstOrNull { !it.isCompleted } ?: stages.lastOrNull()
 
         /**
-         * Keeps a failed read apart from an empty path. Callers used to turn a failure
-         * into an empty list, so a network or permission error told the student to
-         * take the assessment.
-         */
-        /**
          * Every write a retake makes, for one WriteBatch: reset the stage progress,
          * delete the old stages the new path doesn't reuse, save the new stages. A set
          * without merge replaces the whole document, so an old stage whose id comes
@@ -133,6 +128,11 @@ class FirestoreManager private constructor(private val context: Context) {
                 newStages.map { RetakeWrite.SaveStage(it) }
         }
 
+        /**
+         * Keeps a failed read apart from an empty path. Callers used to turn a failure
+         * into an empty list, so a network or permission error told the student to
+         * take the assessment.
+         */
         internal fun pathReadOf(read: Result<List<PersonalizedStage>>): PathRead {
             val stages = read.getOrElse {
                 // getPersonalizedStages hands a cancellation back as a failed Result.
@@ -549,30 +549,6 @@ class FirestoreManager private constructor(private val context: Context) {
         } catch (e: Exception) {
             Log.e(TAG, "Error collecting performance data", e)
             UserPerformanceData()
-        }
-    }
-
-    /**
-     * Delete all personalized stages (for regeneration)
-     */
-    suspend fun deleteAllPersonalizedStages(): Boolean = withContext(Dispatchers.IO) {
-        try {
-            val username = getCurrentUsername()
-            val stagesRef = getUserDocRef(username).collection(COLLECTION_PERSONALIZED_STAGES)
-            
-            val docs = stagesRef.get().await()
-            val batch = firestore.batch()
-            
-            docs.documents.forEach { doc ->
-                batch.delete(doc.reference)
-            }
-            
-            batch.commit().await()
-            Log.d(TAG, "Deleted ${docs.size()} personalized stages")
-            true
-        } catch (e: Exception) {
-            Log.e(TAG, "Error deleting stages", e)
-            false
         }
     }
 
