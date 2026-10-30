@@ -4,11 +4,13 @@ import com.example.embeddedsystemscareerguide.services.ThemeManager
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import com.example.embeddedsystemscareerguide.MainActivity
 import com.example.embeddedsystemscareerguide.databinding.ActivityIntroductionBinding
 import com.example.embeddedsystemscareerguide.ui.assessment.AssessmentActivity
+import com.example.embeddedsystemscareerguide.ui.auth.LoginActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
@@ -53,16 +55,11 @@ class IntroductionActivity : AppCompatActivity() {
                 .document("report")
                 .get()
                 .addOnSuccessListener { document ->
-                    if (document.exists()) {
-                        // Report exists in cloud - navigate to home
-                        navigateToHome()
-                    } else {
-                        // Check legacy path
-                        checkLegacyReport(user.uid)
-                    }
+                    followReportRoute(LoginActivity.reportRoute(Result.success(document.exists())), user.uid)
                 }
-                .addOnFailureListener {
-                    checkLegacyReport(user.uid)
+                .addOnFailureListener { e ->
+                    Log.w("IntroductionActivity", "Report lookup failed; not treating this as a first-time student", e)
+                    followReportRoute(LoginActivity.reportRoute(Result.failure(e)), user.uid)
                 }
         } else {
             checkLegacyReport(user.uid)
@@ -74,17 +71,29 @@ class IntroductionActivity : AppCompatActivity() {
             .document(userId)
             .get()
             .addOnSuccessListener { document ->
-                if (document.exists()) {
-                    // Legacy report exists - navigate to home
-                    navigateToHome()
-                } else {
-                    setupUI()
-                }
+                followReportRoute(
+                    LoginActivity.reportRoute(Result.success(false), Result.success(document.exists())),
+                    userId
+                )
             }
-            .addOnFailureListener {
-                // On error, show UI to start assessment
-                setupUI()
+            .addOnFailureListener { e ->
+                Log.w("IntroductionActivity", "Legacy report lookup failed", e)
+                followReportRoute(LoginActivity.reportRoute(Result.success(false), Result.failure(e)), userId)
             }
+    }
+
+    /**
+     * Same decision as sign-in. A failed lookup used to leave a returning student
+     * on this screen with "Start Assessment" as the only way forward.
+     */
+    private fun followReportRoute(route: LoginActivity.ReportRoute, userId: String) {
+        when (route) {
+            // Report exists (or could not be checked), here or at the legacy path
+            LoginActivity.ReportRoute.HOME,
+            LoginActivity.ReportRoute.MIGRATE_LEGACY -> navigateToHome()
+            LoginActivity.ReportRoute.CHECK_LEGACY -> checkLegacyReport(userId)
+            LoginActivity.ReportRoute.ASSESSMENT -> setupUI()
+        }
     }
 
     private fun setupUI() {

@@ -14,9 +14,11 @@ import androidx.lifecycle.lifecycleScope
 import com.example.embeddedsystemscareerguide.R
 import com.example.embeddedsystemscareerguide.databinding.FragmentPracticeBinding
 import com.example.embeddedsystemscareerguide.services.FirestoreManager
+import com.example.embeddedsystemscareerguide.services.PersonalizedStage
 import com.example.embeddedsystemscareerguide.services.UserProgressSyncService
 import com.example.embeddedsystemscareerguide.ui.quiz.QuizActivity
 import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
 /**
@@ -92,12 +94,22 @@ class PracticeFragment : Fragment() {
      */
     private fun launchQuickQuiz() {
         viewLifecycleOwner.lifecycleScope.launch {
-            val stages = firestoreManager.getPersonalizedStages().getOrNull() ?: emptyList()
-            if (stages.isEmpty()) {
-                Toast.makeText(requireContext(), R.string.practice_needs_assessment, Toast.LENGTH_LONG).show()
-                return@launch
+            val stage = when (val quiz = quickQuizFor(firestoreManager.getPersonalizedStages())) {
+                is QuickQuiz.Start -> quiz.stage
+                QuickQuiz.NeedsAssessment -> {
+                    Toast.makeText(requireContext(), R.string.practice_needs_assessment, Toast.LENGTH_LONG).show()
+                    return@launch
+                }
+                is QuickQuiz.Unavailable -> {
+                    Log.w("PracticeFragment", "Could not read the learning path for Quick Practice", quiz.cause)
+                    Toast.makeText(
+                        requireContext(),
+                        "Could not load your learning path. Check your connection and try again.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    return@launch
+                }
             }
-            val stage = stages.firstOrNull { it.isUnlocked && !it.isCompleted } ?: stages.first()
 
             val intent = Intent(requireContext(), QuizActivity::class.java).apply {
                 putExtra(QuizActivity.EXTRA_STAGE_ID, stage.id)
@@ -135,5 +147,31 @@ class PracticeFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+
+    companion object {
+        /**
+         * What Quick Practice does with a read of the student's learning path.
+         *
+         * A failed read used to be turned into an empty list, and an empty list
+         * means "no learning path yet" - so a student who had one, on a bad
+         * connection, was told to complete the assessment first.
+         */
+        internal fun quickQuizFor(stages: Result<List<PersonalizedStage>>): QuickQuiz {
+            val list = stages.getOrElse {
+                // FirestoreManager hands a cancellation back as a failed Result.
+                if (it is CancellationException) throw it
+                return QuickQuiz.Unavailable(it)
+            }
+            if (list.isEmpty()) return QuickQuiz.NeedsAssessment
+            return QuickQuiz.Start(list.firstOrNull { it.isUnlocked && !it.isCompleted } ?: list.first())
+        }
+    }
+
+    /** What [quickQuizFor] decided. */
+    internal sealed class QuickQuiz {
+        data class Start(val stage: PersonalizedStage) : QuickQuiz()
+        object NeedsAssessment : QuickQuiz()
+        data class Unavailable(val cause: Throwable) : QuickQuiz()
     }
 }

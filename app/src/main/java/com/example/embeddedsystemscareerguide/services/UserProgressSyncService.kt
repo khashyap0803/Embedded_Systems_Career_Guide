@@ -7,6 +7,7 @@ import com.example.embeddedsystemscareerguide.AppConstants
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withTimeout
@@ -60,6 +61,28 @@ class UserProgressSyncService(private val context: Context) {
             ProgressLoad.Absent -> UserProgress()
             is ProgressLoad.Failed -> null
         }
+
+        /**
+         * The fields a streak update writes - and the only ones.
+         *
+         * LearningPathFragment used to save the streak by merging its whole cached
+         * UserProgress back: totalXP, currentStage, completedStages and stageStars
+         * as they stood when the screen loaded. A stage completed after that read -
+         * on a second device, or by completeStageInCloud's transaction committing
+         * in between - was overwritten by the stale copy, and completedStages is an
+         * array, which a merge replaces outright.
+         */
+        internal fun streakFields(
+            streak: Int,
+            bestStreak: Int,
+            lastVisitDate: String,
+            now: Long
+        ): Map<String, Any> = mapOf(
+            "streak" to streak,
+            "bestStreak" to bestStreak,
+            "lastVisitDate" to lastVisitDate,
+            "lastUpdated" to now
+        )
     }
 
     private val auth = FirebaseAuth.getInstance()
@@ -244,6 +267,30 @@ class UserProgressSyncService(private val context: Context) {
             true
         } catch (e: Exception) {
             Log.e(TAG, "Failed to save progress to cloud", e)
+            false
+        }
+    }
+
+    /**
+     * Saves the daily streak without writing any other progress field.
+     * See [streakFields].
+     */
+    suspend fun saveStreak(streak: Int, bestStreak: Int, lastVisitDate: String): Boolean {
+        val username = getCurrentUsername()
+        if (username == null) {
+            Log.w(TAG, "Cannot save streak: Username not found")
+            return false
+        }
+
+        return try {
+            progressDocRef(username)
+                .set(streakFields(streak, bestStreak, lastVisitDate, System.currentTimeMillis()), SetOptions.merge())
+                .await()
+            true
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to save streak to cloud", e)
             false
         }
     }

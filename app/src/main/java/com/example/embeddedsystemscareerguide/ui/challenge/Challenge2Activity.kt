@@ -178,6 +178,11 @@ class Challenge2Activity : AppCompatActivity() {
                             android.util.Log.i("Challenge2", "Successfully resumed with ${questions.size} questions at index $currentQuestionIndex")
                             return@launch
                         }
+                    } catch (e: kotlinx.coroutines.CancellationException) {
+                        // Leaving mid-restore must end here. Falling through to the
+                        // new-challenge path below called startChallenge2, which
+                        // rewrote this participant's status and start time.
+                        throw e
                     } catch (e: Exception) {
                         android.util.Log.e("Challenge2", "Failed to parse saved questions/state", e)
                     }

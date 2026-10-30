@@ -169,6 +169,10 @@ class PreReleaseEventService private constructor() {
     // ============== CHALLENGE 1 OPERATIONS ==============
     
     suspend fun startChallenge1(rollNumber: String): Boolean = suspendCancellableCoroutine { cont ->
+        // The block runs even when the caller is already cancelled, and the write
+        // below would land regardless. A resume abandoned mid-restore reached
+        // here and reset the participant's status and start time.
+        if (!cont.isActive) return@suspendCancellableCoroutine
         val now = System.currentTimeMillis()
         val updates = mapOf(
             "status/currentStatus" to ParticipantStatus.STATUS_IN_PROGRESS,
@@ -242,6 +246,8 @@ class PreReleaseEventService private constructor() {
     // ============== CHALLENGE 2 OPERATIONS ==============
     
     suspend fun startChallenge2(rollNumber: String): Boolean = suspendCancellableCoroutine { cont ->
+        // See startChallenge1.
+        if (!cont.isActive) return@suspendCancellableCoroutine
         val now = System.currentTimeMillis()
         val updates = mapOf(
             "status/currentStatus" to ParticipantStatus.STATUS_IN_PROGRESS,
@@ -348,6 +354,8 @@ class PreReleaseEventService private constructor() {
     // ============== CHALLENGE 3 OPERATIONS ==============
     
     suspend fun startChallenge3(rollNumber: String): Boolean = suspendCancellableCoroutine { cont ->
+        // See startChallenge1.
+        if (!cont.isActive) return@suspendCancellableCoroutine
         val now = System.currentTimeMillis()
         val updates = mapOf(
             "status/currentStatus" to ParticipantStatus.STATUS_IN_PROGRESS,
