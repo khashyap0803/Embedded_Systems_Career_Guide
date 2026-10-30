@@ -84,7 +84,7 @@ class CurrentStageTest {
     }
 
     @Test
-    fun `a failed progress read is not "nothing completed"`() {
+    fun `a failed progress read is a failure, not nothing completed`() {
         val stages = load { throw IOException("offline") }
 
         assertTrue(stages.isFailure)
