@@ -93,7 +93,7 @@ class Challenge1Activity : AppCompatActivity() {
             return
         }
         
-        android.util.Log.i("Challenge1", "Starting Challenge 1 for $rollNumber, isResume=$isResume")
+        android.util.Log.i("Challenge1", "Starting Challenge 1, isResume=$isResume")
         
         setupUI()
         setupBackPressHandler()
@@ -143,7 +143,7 @@ class Challenge1Activity : AppCompatActivity() {
             if (isResume) {
                 // RESUME MODE: Load saved questions AND state from Firebase
                 showLoading(true, "Restoring your saved progress...")
-                android.util.Log.i("Challenge1", "Resume mode: Loading saved questions and state for $rollNumber")
+                android.util.Log.i("Challenge1", "Resume mode: Loading saved questions and state")
                 
                 // Load questions
                 val savedJson = eventService.loadSavedQuestions(rollNumber, 1)
