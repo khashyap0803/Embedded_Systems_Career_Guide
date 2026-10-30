@@ -31,11 +31,36 @@ class AnalyticsService(private val context: Context) {
                 instance ?: AnalyticsService(context.applicationContext).also { instance = it }
             }
         }
+
+        /**
+         * The streak as Home's Study Streak card shows it: from the progress
+         * document (users/{username}/data/progress) that LearningPathFragment's
+         * saveStreak keeps, with the same defaults when there is none yet. Null
+         * when the read failed. Analytics used to read users/{username}/progress/
+         * current, which nothing writes, so the streak and pace were always 0.
+         */
+        internal fun streakFrom(load: UserProgressSyncService.ProgressLoad): Streak? = when (load) {
+            is UserProgressSyncService.ProgressLoad.Loaded -> Streak(load.progress.streak, load.progress.bestStreak)
+            UserProgressSyncService.ProgressLoad.Absent ->
+                UserProgressSyncService.UserProgress().let { Streak(it.streak, it.bestStreak) }
+            is UserProgressSyncService.ProgressLoad.Failed -> null
+        }
+
+        /** Learning pace from the current streak. */
+        internal fun paceFor(streak: Int): String = when {
+            streak >= 5 -> "fast"
+            streak >= 3 -> "steady"
+            else -> "slow"
+        }
     }
 
     private val geminiService = OllamaService.getInstance(context)
     private val firestoreManager = FirestoreManager.getInstance(context)
+    private val progressSyncService = UserProgressSyncService(context)
     private val gson = Gson()
+
+    /** The streak figures analytics uses. */
+    internal data class Streak(val current: Int, val best: Int)
 
     /**
      * Learning analytics summary
@@ -96,6 +121,10 @@ class AnalyticsService(private val context: Context) {
                 }
             }
             val progress = firestoreManager.getProgress().getOrNull()
+            val streak = streakFrom(progressSyncService.loadProgressResult()) ?: run {
+                callback.onError(FirestoreManager.PROGRESS_LOAD_FAILED_MESSAGE)
+                return@withContext
+            }
 
             // Calculate basic analytics
             val totalStages = stages.size
@@ -114,10 +143,10 @@ class AnalyticsService(private val context: Context) {
             val (strongTopics, weakTopics) = categorizeTopics(stages)
 
             // Estimate completion time
-            val estimatedDays = estimateCompletionDays(stages, completedStages, progress)
+            val estimatedDays = estimateCompletionDays(stages, completedStages, streak.current)
             
             // Determine learning pace
-            val learningPace = determinePace(progress)
+            val learningPace = paceFor(streak.current)
 
             val analytics = LearningAnalytics(
                 totalXP = totalXP,
@@ -125,8 +154,8 @@ class AnalyticsService(private val context: Context) {
                 completedStages = completedStages,
                 averageStars = averageStars,
                 totalTimeMinutes = 0,  // Would need to track this separately
-                currentStreak = progress?.currentStreak ?: 0,
-                longestStreak = progress?.longestStreak ?: 0,
+                currentStreak = streak.current,
+                longestStreak = streak.best,
                 strongTopics = strongTopics,
                 weakTopics = weakTopics,
                 progressPercentage = progressPercentage,
@@ -202,29 +231,18 @@ class AnalyticsService(private val context: Context) {
     private fun estimateCompletionDays(
         stages: List<PersonalizedStage>,
         completedStages: Int,
-        progress: UserProgress?
+        currentStreak: Int
     ): Int {
         val remainingStages = stages.size - completedStages
         
         // Assume average of 1-2 stages per day based on pace
         val stagesPerDay = when {
             completedStages == 0 -> 1
-            progress?.currentStreak ?: 0 >= 7 -> 2
+            currentStreak >= 7 -> 2
             else -> 1
         }
         
         return (remainingStages / stagesPerDay.coerceAtLeast(1)).coerceAtLeast(1)
-    }
-
-    /**
-     * Determine learning pace based on activity
-     */
-    private fun determinePace(progress: UserProgress?): String {
-        return when {
-            progress?.currentStreak ?: 0 >= 5 -> "fast"
-            progress?.currentStreak ?: 0 >= 3 -> "steady"
-            else -> "slow"
-        }
     }
 
     /**
@@ -395,6 +413,8 @@ class AnalyticsService(private val context: Context) {
                 is PathRead.Failed -> return@withContext Result.failure(read.cause)
             }
             val progress = firestoreManager.getProgress().getOrNull()
+            val streak = streakFrom(progressSyncService.loadProgressResult())
+                ?: return@withContext Result.failure(IllegalStateException(FirestoreManager.PROGRESS_LOAD_FAILED_MESSAGE))
             
             val completedStages = stages.count { it.isCompleted }
             val totalStages = stages.size
@@ -408,8 +428,8 @@ class AnalyticsService(private val context: Context) {
                 totalStages = totalStages,
                 completedStages = completedStages,
                 averageStars = averageStars,
-                currentStreak = progress?.currentStreak ?: 0,
-                longestStreak = progress?.longestStreak ?: 0,
+                currentStreak = streak.current,
+                longestStreak = streak.best,
                 progressPercentage = (completedStages * 100) / totalStages.coerceAtLeast(1)
             ))
         } catch (e: Exception) {
