@@ -98,7 +98,14 @@ class LoginActivity : AppCompatActivity() {
         }
         val task = GoogleSignIn.getSignedInAccountFromIntent(data)
         try {
-            val account = task.getResult(ApiException::class.java)!!
+            val account = task.getResult(ApiException::class.java)
+            if (account == null) {
+                // Was `!!`: a successful result with no account crashed the app.
+                hideLoading()
+                Log.w("LoginActivity", "Google Sign-In succeeded but returned no account")
+                showError("Google sign in failed. Please try again.")
+                return@registerForActivityResult
+            }
             firebaseAuthWithGoogle(account)
         } catch (e: ApiException) {
             hideLoading()
@@ -347,7 +354,15 @@ class LoginActivity : AppCompatActivity() {
             .addOnCompleteListener(this) { task ->
                 if (task.isSuccessful) {
                     // Login successful - check for username
-                    checkUserProfileAndNavigate(auth.currentUser!!)
+                    val user = task.result?.user
+                    if (user != null) {
+                        checkUserProfileAndNavigate(user)
+                    } else {
+                        // Was `auth.currentUser!!`: a sign-in with no user crashed the app.
+                        hideLoading()
+                        Log.w("LoginActivity", "Email sign-in succeeded but returned no user")
+                        showError("Login failed. Please try again.")
+                    }
                 } else {
                     hideLoading()
                     showError("Login failed: ${task.exception?.message}")
@@ -453,7 +468,15 @@ class LoginActivity : AppCompatActivity() {
             .addOnCompleteListener(this) { task ->
                 if (task.isSuccessful) {
                     // Sign in success - check for username
-                    checkUserProfileAndNavigate(auth.currentUser!!)
+                    val user = task.result?.user
+                    if (user != null) {
+                        checkUserProfileAndNavigate(user)
+                    } else {
+                        // Was `auth.currentUser!!`: a sign-in with no user crashed the app.
+                        hideLoading()
+                        Log.w("LoginActivity", "Google sign-in succeeded but returned no user")
+                        showError("Authentication failed. Please try again.")
+                    }
                 } else {
                     hideLoading()
                     showError("Authentication failed: ${task.exception?.message}")
