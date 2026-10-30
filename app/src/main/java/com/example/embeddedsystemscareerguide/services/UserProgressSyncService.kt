@@ -36,14 +36,7 @@ class UserProgressSyncService(private val context: Context) {
         
         // SharedPreferences keys (matching LearningPathFragment)
         private const val PREFS_NAME = "learning_progress"
-        private const val KEY_TOTAL_XP = "total_xp"
         private const val KEY_CURRENT_STAGE = "current_stage"
-        private const val KEY_STREAK = "streak"
-        private const val KEY_BEST_STREAK = "best_streak"
-        private const val KEY_LAST_VISIT_DATE = "last_visit_date"
-        private const val KEY_COMPLETED_STAGES = "completed_stages"
-        private const val KEY_STAGE_STARS = "stage_stars_"
-        private const val KEY_FIRST_LAUNCH = "is_first_launch"
         
         // Firestore paths
         private const val COLLECTION_USERS = "users"
@@ -266,46 +259,12 @@ class UserProgressSyncService(private val context: Context) {
     }
 
     /**
-     * Save progress to local SharedPreferences
+     * Keeps the current stage where Learning Path reads it to highlight that
+     * stage. Nothing reads the rest of the progress locally any more - the
+     * screens take it from the progress document - so only this is kept.
      */
-    fun saveLocalProgress(progress: UserProgress) {
-        val editor = prefs.edit()
-        
-        editor.putInt(KEY_TOTAL_XP, progress.totalXP)
-        editor.putInt(KEY_CURRENT_STAGE, progress.currentStage)
-        editor.putInt(KEY_STREAK, progress.streak)
-        editor.putInt(KEY_BEST_STREAK, progress.bestStreak)
-        editor.putString(KEY_LAST_VISIT_DATE, progress.lastVisitDate)
-        editor.putStringSet(KEY_COMPLETED_STAGES, progress.completedStages.toSet())
-        editor.putBoolean(KEY_FIRST_LAUNCH, false)
-        
-        // Save stage stars
-        for ((stageId, stars) in progress.stageStars) {
-            editor.putInt(KEY_STAGE_STARS + stageId, stars)
-        }
-        
-        // Also update home page progress
-        updateHomeProgress(editor, progress)
-        
-        editor.apply()
-        
-        Log.d(TAG, "Saved local progress: XP=${progress.totalXP}, Stages=${progress.completedStages.size}")
-    }
-    
-    /**
-     * Update home page progress values for consistency
-     */
-    private fun updateHomeProgress(editor: SharedPreferences.Editor, progress: UserProgress) {
-        editor.putInt("home_total_xp", progress.totalXP)
-        editor.putInt("home_current_level", progress.currentStage)
-        editor.putInt("home_streak", progress.streak)
-        editor.putInt("home_completed_stages", progress.completedStages.size)
-        // Deliberately does not touch "home_total_stages" or the derived
-        // percentage: this class only sees UserProgress, which carries no path
-        // length. It previously divided by a constant 16 while the generated
-        // path is a different size per user, producing a percentage that did
-        // not match the learning path screen. LearningPathFragment owns those
-        // two keys because it is the only place that holds the real stage list.
+    fun saveLocalCurrentStage(progress: UserProgress) {
+        prefs.edit().putInt(KEY_CURRENT_STAGE, progress.currentStage).apply()
     }
 
     /**
@@ -485,29 +444,6 @@ class UserProgressSyncService(private val context: Context) {
     }
 
     /**
-     * Check if user has cloud progress (for determining if data should be restored)
-     */
-    suspend fun hasCloudProgress(): Boolean {
-        val username = getCurrentUsername() ?: return false
-        
-        return try {
-            val document = firestore.collection(COLLECTION_USERS)
-                .document(username)
-                .collection(COLLECTION_DATA)
-                .document(DOCUMENT_PROGRESS)
-                .get()
-                .await()
-            
-            document.exists() && document.data?.isNotEmpty() == true
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to check cloud progress", e)
-            false
-        }
-    }
-
-    /**
      * Clear local progress (for testing or logout)
      */
     fun clearLocalProgress() {
@@ -572,7 +508,7 @@ class UserProgressSyncService(private val context: Context) {
             }
 
             // Update local cache
-            saveLocalProgress(updatedProgress)
+            saveLocalCurrentStage(updatedProgress)
 
             Log.d(TAG, "Stage $stageId completed in cloud with $starsEarned stars, +$xpReward XP")
             updatedProgress
@@ -643,7 +579,7 @@ class UserProgressSyncService(private val context: Context) {
             }
 
             // Update local cache
-            saveLocalProgress(updatedProgress)
+            saveLocalCurrentStage(updatedProgress)
 
             Log.d(TAG, "Stars updated in cloud for stage $stageId -> $newStars")
             updatedProgress
@@ -690,7 +626,7 @@ class UserProgressSyncService(private val context: Context) {
                 .await()
             
             // Update local cache
-            saveLocalProgress(updatedProgress)
+            saveLocalCurrentStage(updatedProgress)
             
             Log.d(TAG, "Streak updated in cloud: $newStreak days")
             true

@@ -741,27 +741,6 @@ class FirestoreManager private constructor(private val context: Context) {
     // ==================== PROGRESS TRACKING ====================
 
     /**
-     * Save overall progress
-     */
-    suspend fun saveProgress(progress: UserProgress): Result<Unit> = withContext(Dispatchers.IO) {
-        try {
-            val username = getCurrentUsername()
-            getUserDocRef(username)
-                .collection(COLLECTION_PROGRESS)
-                .document("current")
-                .set(progress)
-                .await()
-            Log.d(TAG, "Progress saved: XP=${progress.totalXp}, Completed=${progress.completedStages}")
-            Result.success(Unit)
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            Log.e(TAG, "Error saving progress", e)
-            Result.failure(e)
-        }
-    }
-
-    /**
      * Get current progress
      */
     suspend fun getProgress(): Result<UserProgress?> = withContext(Dispatchers.IO) {
