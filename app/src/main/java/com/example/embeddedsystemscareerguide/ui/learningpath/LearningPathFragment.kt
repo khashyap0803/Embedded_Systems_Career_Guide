@@ -28,6 +28,7 @@ import com.example.embeddedsystemscareerguide.databinding.FragmentLearningPathBi
 import com.example.embeddedsystemscareerguide.models.LearningStage
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.snackbar.Snackbar
 
 /**
  * Learning Path Fragment - Main gamified learning journey screen
@@ -70,6 +71,26 @@ class LearningPathFragment : Fragment() {
         /** A finished quiz, from the result alone; null when it names no stage. */
         internal fun quizOutcome(stageId: Int, score: Int, total: Int): QuizOutcome? =
             if (stageId < 0) null else QuizOutcome(stageId.toString(), score, total)
+
+        /**
+         * Shows [stageId] completed with [stars] and the stage after it unlocked,
+         * before the save is confirmed. Returns what puts both back as they were.
+         */
+        internal fun markCompleted(stages: List<LearningStage>, stageId: String, stars: Int): () -> Unit {
+            val stage = stages.find { it.id == stageId } ?: return {}
+            val next = stageId.toIntOrNull()?.let { n -> stages.find { it.id == (n + 1).toString() } }
+            val wasCompleted = stage.isCompleted
+            val hadStars = stage.starsEarned
+            val nextWasUnlocked = next?.isUnlocked ?: false
+            stage.isCompleted = true
+            stage.starsEarned = stars
+            next?.isUnlocked = true
+            return {
+                stage.isCompleted = wasCompleted
+                stage.starsEarned = hadStars
+                next?.isUnlocked = nextWasUnlocked
+            }
+        }
 
         /** What a finished quiz does to [stage], which it was taken for. */
         internal fun quizAction(outcome: QuizOutcome, stage: LearningStage): QuizAction = when {
@@ -894,18 +915,23 @@ class LearningPathFragment : Fragment() {
         // Set flag to prevent onResume from overwriting our optimistic update
         stageCompletionInProgress = true
         
-        // Immediately update UI state (optimistic update)
-        stage.isCompleted = true
-        stage.starsEarned = starsEarned
-        
-        // Unlock next stage
-        val nextStageId = (stageId.toInt() + 1).toString()
-        val nextStage = stages.find { it.id == nextStageId }
-        nextStage?.isUnlocked = true
-        
+        // Immediately update UI state (optimistic update), and the next stage unlocked
+        val undo = markCompleted(stages, stageId, starsEarned)
+
         // Rebuild UI immediately with optimistic update
         createGamePath()
-        
+
+        // The save is a transaction, which fails outright offline: nothing was saved.
+        // The path used to keep showing the stage done and the next one open until
+        // the next reload quietly took them back.
+        fun saveFailed() {
+            undo()
+            createGamePath()
+            showSaveFailed("Couldn't save this stage. Check your connection and try again.") {
+                completeStage(stageId, starsEarned)
+            }
+        }
+
         // Save to cloud (async)
         viewLifecycleOwner.lifecycleScope.launch {
             try {
@@ -929,23 +955,30 @@ class LearningPathFragment : Fragment() {
                         Toast.LENGTH_LONG).show()
                 } else {
                     Log.e("LearningPath", "Failed to save stage completion to cloud")
-                    Toast.makeText(requireContext(),
-                        "⚠️ Couldn't save progress to cloud. Please check your connection.",
-                        Toast.LENGTH_LONG).show()
+                    saveFailed()
                 }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 Log.e("LearningPath", "Error completing stage in cloud", e)
-                Toast.makeText(requireContext(),
-                    "⚠️ Error saving progress. Please try again.",
-                    Toast.LENGTH_SHORT).show()
+                saveFailed()
             } finally {
                 // Clear the flag after cloud operation completes
                 stageCompletionInProgress = false
                 Log.d("LearningPath", "Stage completion flag cleared")
             }
         }
+    }
+
+    /** A save that didn't happen: say so, with Retry. */
+    private fun showSaveFailed(message: String, retry: () -> Unit) {
+        val b = _binding ?: return
+        Snackbar.make(b.root, message, Snackbar.LENGTH_LONG)
+            .setAction(R.string.learning_path_retry) {
+                // The Snackbar can outlast this screen's view.
+                if (_binding != null) retry()
+            }
+            .show()
     }
 
     /**
