@@ -11,12 +11,7 @@ The app uses **Google Gemini API** (gemini-2.0-flash-exp model) for AI-powered f
 
 ### API Key Setup
 
-1. Get API key from [Google AI Studio](https://aistudio.google.com/)
-2. Add to `local.properties`:
-   ```properties
-   GEMINI_API_KEY=your_api_key_here
-   ```
-3. Access in code via `BuildConfig.GEMINI_API_KEY`
+No key is needed, and none goes in `local.properties`. The app holds no AI API key. AI requests go through `NetworkModule` to the authenticated Ollama gateway, and each carries the student's Firebase ID token as `Authorization: Bearer <token>`. The `BuildConfig.GEMINI_API_KEY` field described here before has been removed.
 
 ### Endpoint
 

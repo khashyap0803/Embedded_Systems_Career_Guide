@@ -188,7 +188,7 @@ private fun callGeminiAPI(prompt: String, temperature: Double = 0.7): String
 ```
 
 - Constructs JSON request body with configurable temperature
-- Uses API key from `BuildConfig.GEMINI_API_KEY`
+- No API key: requests go to the Ollama gateway through `NetworkModule`, authenticated with the student's Firebase ID token (`BuildConfig.GEMINI_API_KEY` no longer exists)
 - **5 retry attempts** with exponential backoff: 1s, 2s, 4s, 8s, 16s + random jitter
 - Custom exceptions: `RateLimitException` (429), `ServerException` (5xx), `ClientException` (4xx)
 - Parses `candidates[0].content.parts[0].text` from response
